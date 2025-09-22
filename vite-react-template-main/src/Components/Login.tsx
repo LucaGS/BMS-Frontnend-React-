@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../constants';
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState(''); 
   const [jwt, setJwt] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8080/api/auth/login', {
+      const response = await fetch(API_BASE_URL+'/Login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, // <- korrekter Header
-        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ email, password, username }),
       });
 
       if (!response.ok) {
@@ -18,8 +20,8 @@ const Login: React.FC = () => {
       }
 
       const data = await response.json();
-
-      if (data.token) {
+      
+      if (data.token) {   
         setJwt(data.token);
         localStorage.setItem('token', data.token);
         console.log('JWT Token:', data.token);
@@ -44,10 +46,18 @@ const Login: React.FC = () => {
         <div style={{ marginBottom: '1rem' }}>
           <label htmlFor="email">Email:</label>
           <input
-            id="email"
-            type="email"
+            
             value={email}
             onChange={e => setEmail(e.target.value)}
+            required
+            style={{ width: '100%', padding: '0.5rem', marginTop: '0.5rem' }}
+          />
+          Benutzername
+          <input
+            id="name"
+            type="name"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
             required
             style={{ width: '100%', padding: '0.5rem', marginTop: '0.5rem' }}
           />

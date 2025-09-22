@@ -3,7 +3,6 @@ import GruenFlaechenAdder from "./GruenFlaechenAdder";
 
 const GruenFlaechen: React.FC = () => {
     const [showGruenFlaechenAdder, setGruenFlaechenAdder] = React.useState(false);
-    const GruenFlaechen = {}
     return (
         <div>
             <h1>GruenFlaechen Component</h1>
