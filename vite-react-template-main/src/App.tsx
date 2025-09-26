@@ -6,6 +6,7 @@ import Baum from './Components/Baum';
 import BaumAdder from './Components/BaumAdder';
 import Signup from './Components/Signup';
 import GruenFlaechen from './Components/GruenFlaechen';
+import GruenFlaeche from './Components/GruenFlaeche';
 
 const Home = () => <div>Home Page</div>;
 const About = () => <div>About Page</div>;
@@ -25,6 +26,7 @@ const App: React.FC = () => (
       <Route path='/baum-adder'element={<BaumAdder></BaumAdder>}/>
       <Route path="Signup" element={<Signup></Signup>} />
       <Route path ="/GruenFlaechen" element={<GruenFlaechen></GruenFlaechen>} />
+      <Route path="/GruenFlaechen/:gruenFlaecheId" element={<GruenFlaeche />} />
     </Routes>
   </Router>
 );
