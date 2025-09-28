@@ -40,7 +40,7 @@ const App: React.FC = () => (
             <Route path="/baum-adder" element={<BaumAdder />} />
             <Route path="/Signup" element={<Signup />} />
             <Route path="/GruenFlaechen" element={<GruenFlaechen />} />
-            <Route path="/GruenFlaechen/:gruenFlaecheId" element={<GruenFlaeche />} />
+            <Route path="/GruenFlaechen/:gruenFlaecheId/:gruenFlaecheName" element={<GruenFlaeche />} />
           </Routes>
         </div>
       </main>

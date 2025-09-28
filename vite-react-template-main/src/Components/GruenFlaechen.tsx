@@ -74,7 +74,7 @@ const GruenFlaechen: React.FC = () => {
                 <button
                   type="button"
                   className="btn btn-outline-success btn-sm"
-                  onClick={() => navigate(`/GruenFlaechen/${gf.id}`)}
+                  onClick={() => navigate(`/GruenFlaechen/${gf.id}/${gf.name}`)}
                 >
                   Details anzeigen
                 </button>

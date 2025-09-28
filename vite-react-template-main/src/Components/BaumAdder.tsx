@@ -1,72 +1,71 @@
 import React, { useState } from 'react';
 
 const BaumAdder: React.FC = () => {
-  const [name, setName] = useState('');
-  const [type, setType] = useState('');
-  const [age, setAge] = useState<number>(0);
+  const [Baum ,setBaum] = useState<Baum>();
+
+  interface Baum{
+  nummer: number;
+  id: number;
+  gruenFlaecheId: number;
+  Breitengrad: number;
+  Laengengrad: number;
+  Art:string;
+}
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!name || !type || age <= 0) {
-      return;
-    }
+    
     // TODO: Backend-Anbindung fuer neue Baeume ergaenzen
-    setName('');
-    setType('');
-    setAge(0);
+    
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="row g-3">
-        <div className="col-md-4">
-          <label htmlFor="treeName" className="form-label">
-            Name
-          </label>
-          <input
-            id="treeName"
-            type="text"
-            className="form-control"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            required
-            placeholder="z. B. Eiche"
-          />
-        </div>
-        <div className="col-md-4">
-          <label htmlFor="treeType" className="form-label">
-            Typ
-          </label>
-          <input
-            id="treeType"
-            type="text"
-            className="form-control"
-            value={type}
-            onChange={(event) => setType(event.target.value)}
-            required
-            placeholder="Baumart"
-          />
-        </div>
-        <div className="col-md-4">
-          <label htmlFor="treeAge" className="form-label">
-            Alter
-          </label>
-          <input
-            id="treeAge"
-            type="number"
-            className="form-control"
-            value={age}
-            onChange={(event) => setAge(Number(event.target.value))}
-            min={1}
-            required
-          />
-        </div>
+      <div className="mb-3">
+        <label htmlFor="art" className="form-label">Art</label>
+        <input
+          type="text"
+          className="form-control"
+          id="art"
+          value={Baum?.Art || ''}
+          onChange={(e) => setBaum({ ...Baum, Art: e.target.value } as Baum)}
+          required
+        />
+            <label htmlFor='Nummer' className='form-label'>Nummer</label>
+            <input
+              type='number'
+              className='form-control'
+              id='nummer'
+              value={Baum?.nummer || ''}
+              onChange={(e) => setBaum({ ...Baum, nummer: parseInt(e.target.value, 10) } as Baum)}
+              required
+            />
       </div>
-      <div className="d-flex justify-content-end mt-4">
-        <button type="submit" className="btn btn-success">
-          Baum hinzufuegen
-        </button>
+      <div className="mb-3">
+        <label htmlFor="breitengrad" className="form-label">Breitengrad</label>
+        <input
+          type="float"
+          className="form-control"
+          id="breitengrad"
+          value={Baum?.Breitengrad || ''}
+          onChange={(e) => setBaum({ ...Baum, Breitengrad: parseFloat(e.target.value) } as Baum)}
+          required
+          step="any"
+        />
       </div>
+      <div className="mb-3">
+        <label htmlFor="laengengrad" className="form-label">Laengengrad</label>
+        <input
+          type="float"
+          className="form-control"
+          id="laengengrad"
+          value={Baum?.Laengengrad || ''}
+          onChange={(e) => setBaum({ ...Baum, Laengengrad: parseFloat(e.target.value) } as Baum)}
+          required
+          step="any"
+        />  
+      </div>
+      <button type="submit" className="btn btn-primary">Baum hinzufuegen</button>
     </form>
   );
 };

@@ -1,10 +1,40 @@
 import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `nav-link${isActive ? ' active fw-semibold' : ''}`;
 
 const Header: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const readHasToken = React.useCallback(
+    () => typeof window !== 'undefined' && Boolean(localStorage.getItem('token')),
+    []
+  );
+  const [hasToken, setHasToken] = React.useState<boolean>(() => readHasToken());
+
+  const handleLogout = React.useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    localStorage.removeItem('token');
+    setHasToken(readHasToken());
+    navigate('/');
+  }, [navigate, readHasToken]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const handleStorage = () => setHasToken(readHasToken());
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [readHasToken]);
+
+  React.useEffect(() => {
+    setHasToken(readHasToken());
+  }, [location, readHasToken]);
+
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
       <div className="container">
@@ -44,16 +74,30 @@ const Header: React.FC = () => {
                 Gruenflaechen
               </NavLink>
             </li>
-            <li className="nav-item">
-              <NavLink to="/Login" className={navLinkClass}>
-                Login
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink to="/Signup" className={navLinkClass}>
-                Registrieren
-              </NavLink>
-            </li>
+            {hasToken ? (
+              <li className="nav-item">
+                <button
+                  type="button"
+                  className="nav-link btn btn-link px-0"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </li>
+            ) : (
+              <>
+                <li className="nav-item">
+                  <NavLink to="/Login" className={navLinkClass}>
+                    Login
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink to="/Signup" className={navLinkClass}>
+                    Registrieren
+                  </NavLink>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       </div>
