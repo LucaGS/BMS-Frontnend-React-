@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './Components/Header';
 import Login from './Components/Login';
 import Baum from './Components/Baum';
@@ -8,26 +8,46 @@ import Signup from './Components/Signup';
 import GruenFlaechen from './Components/GruenFlaechen';
 import GruenFlaeche from './Components/GruenFlaeche';
 
-const Home = () => <div>Home Page</div>;
-const About = () => <div>About Page</div>;
-const token = localStorage.getItem('token') || '';
+const Home: React.FC = () => (
+  <section className="py-5 text-center">
+    <h1 className="display-5 fw-semibold">Willkommen im BMS-Portal</h1>
+    <p className="lead text-muted">
+      Verwalten Sie Baeume und Gruenflaechen komfortabel mit dem neuen Bootstrap-Layout.
+    </p>
+  </section>
+);
+
+const About: React.FC = () => (
+  <section className="py-5">
+    <h1 className="h2 mb-3">Ueber diese Anwendung</h1>
+    <p className="text-muted">
+      Dieses Portal unterstuetzt Sie bei der Pflege und Verwaltung staedtischer Baeume und Gruenflaechen.
+    </p>
+  </section>
+);
+
 const App: React.FC = () => (
   <Router>
-    <Header />
-    <nav style={{ padding: '1rem', background: '#ffeaeaff' }}>
-      <Link to="/Login" >Login</Link> | <Link to="/about">About</Link> | <Link to="/Baum">Baum</Link>
-      | <Link to="/Signup">Signup</Link>| <Link to="/GruenFlaechen">GruenFlaechen</Link>
-    </nav>
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/Baum" element={<Baum />} />
-      <Route path="/Login" element={<Login></Login>} />
-      <Route path='/baum-adder'element={<BaumAdder></BaumAdder>}/>
-      <Route path="Signup" element={<Signup></Signup>} />
-      <Route path ="/GruenFlaechen" element={<GruenFlaechen></GruenFlaechen>} />
-      <Route path="/GruenFlaechen/:gruenFlaecheId" element={<GruenFlaeche />} />
-    </Routes>
+    <div className="d-flex flex-column min-vh-100 bg-light">
+      <Header />
+      <main className="flex-grow-1 py-4">
+        <div className="container">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/Baum" element={<Baum />} />
+            <Route path="/Login" element={<Login />} />
+            <Route path="/baum-adder" element={<BaumAdder />} />
+            <Route path="/Signup" element={<Signup />} />
+            <Route path="/GruenFlaechen" element={<GruenFlaechen />} />
+            <Route path="/GruenFlaechen/:gruenFlaecheId" element={<GruenFlaeche />} />
+          </Routes>
+        </div>
+      </main>
+      <footer className="bg-dark text-white text-center py-3 mt-auto">
+        <small>&copy; {new Date().getFullYear()} BMS</small>
+      </footer>
+    </div>
   </Router>
 );
 

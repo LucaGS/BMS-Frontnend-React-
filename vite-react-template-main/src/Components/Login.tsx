@@ -1,98 +1,110 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from '../constants';
+
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState(''); 
+  const [username, setUsername] = useState('');
   const [jwt, setJwt] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const response = await fetch(API_BASE_URL+'/Login', {
+      setError('');
+      const response = await fetch(`${API_BASE_URL}/Login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, 
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, username }),
       });
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error('Login fehlgeschlagen. Bitte Zugangsdaten pruefen.');
       }
 
       const data = await response.json();
-      
-      if (data.token) {   
+
+      if (data.token) {
         setJwt(data.token);
         localStorage.setItem('token', data.token);
-        console.log('JWT Token:', data.token);
+      } else {
+        setJwt('');
+        throw new Error('Kein Token erhalten.');
       }
-    } catch (error) {
-      console.error('Error during login:', error);
+    } catch (submitError) {
+      console.error('Error during login:', submitError);
+      setJwt('');
+      setError(submitError instanceof Error ? submitError.message : 'Unbekannter Fehler');
     }
-  }; // <- WICHTIG: handleSubmit hier schließen!
+  };
 
   return (
-    <div
-      style={{
-        maxWidth: 400,
-        margin: '2rem auto',
-        padding: '2rem',
-        border: '1px solid #ccc',
-        borderRadius: 8,
-      }}
-    >
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="email">Email:</label>
-          <input
-            
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: '0.5rem', marginTop: '0.5rem' }}
-          />
-          Benutzername
-          <input
-            id="name"
-            type="name"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            required
-            style={{ width: '100%', padding: '0.5rem', marginTop: '0.5rem' }}
-          />
+    <div className="container py-5">
+      <div className="row justify-content-center">
+        <div className="col-md-6 col-lg-5">
+          <div className="card shadow-sm border-0">
+            <div className="card-body p-4 p-lg-5">
+              <h2 className="h3 mb-4 text-center">Login</h2>
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label htmlFor="loginEmail" className="form-label">
+                    E-Mail-Adresse
+                  </label>
+                  <input
+                    id="loginEmail"
+                    type="email"
+                    className="form-control"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                    placeholder="name@example.com"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="loginUsername" className="form-label">
+                    Benutzername
+                  </label>
+                  <input
+                    id="loginUsername"
+                    type="text"
+                    className="form-control"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    required
+                    placeholder="Benutzername"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="loginPassword" className="form-label">
+                    Passwort
+                  </label>
+                  <input
+                    id="loginPassword"
+                    type="password"
+                    className="form-control"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-success w-100">
+                  Einloggen
+                </button>
+              </form>
+              {error && (
+                <div className="alert alert-danger mt-4 mb-0" role="alert">
+                  {error}
+                </div>
+              )}
+              {jwt && (
+                <div className="alert alert-success mt-4 mb-0" role="alert">
+                  Erfolgreich eingeloggt. Token: <span className="text-break">{jwt}</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="password">Password:</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '0.5rem', marginTop: '0.5rem' }}
-          />
-        </div>
-        <button
-          type="submit"
-          style={{
-            width: '100%',
-            padding: '0.75rem',
-            background: '#007bff',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 4,
-          }}
-        >
-          Login
-        </button>
-      </form>
-
-      {jwt && (
-        <p style={{ marginTop: '1rem', wordBreak: 'break-all' }}>
-          Logged in. JWT: {jwt}
-        </p>
-      )}
+      </div>
     </div>
   );
 };
