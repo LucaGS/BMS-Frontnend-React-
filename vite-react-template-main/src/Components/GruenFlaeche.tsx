@@ -1,7 +1,7 @@
 import React, { use, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '../constants';
-import Baum from './Baum';
+import Baum from './Baeume';
 import BaumAdder from './BaumAdder';
 
 interface Baum{

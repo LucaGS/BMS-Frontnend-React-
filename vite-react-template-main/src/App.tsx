@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './Components/Header';
 import Login from './Components/Login';
-import Baum from './Components/Baum';
+import Baum from './Components/Baeume';
 import BaumAdder from './Components/BaumAdder';
 import Signup from './Components/Signup';
 import GruenFlaechen from './Components/GruenFlaechen';

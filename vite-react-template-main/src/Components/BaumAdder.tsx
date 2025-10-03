@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../constants';
 
 const BaumAdder: React.FC = () => {
   const [Baum ,setBaum] = useState<Baum>();
@@ -12,10 +13,29 @@ const BaumAdder: React.FC = () => {
   Art:string;
 }
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    try{
+      const response = await fetch(API_BASE_URL +'/api/Baum/Create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
+        },
+        body: JSON.stringify(Baum),
+      });
+      if (!response || !response.ok) {
+        throw new Error('Failed to create Baum');
+      }
+      alert('Baum erfolgreich hinzugefuegt');
+      setBaum({} as Baum);
+    }catch (error) {
+      console.error('Error creating Baum:', error);
+      alert('Fehler beim Hinzufuegen des Baumes');
+
+    }
+
     
-    // TODO: Backend-Anbindung fuer neue Baeume ergaenzen
     
   };
 
