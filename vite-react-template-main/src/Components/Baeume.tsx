@@ -13,7 +13,7 @@ interface Baum {
 }
 
 const Baeume: React.FC = () => {
-  const [BaeumeList, setBaeuemeList] = useState<Baum[]>([]);
+  const [BaeumeList, setBaeumeList] = useState<Baum[]>([]);
 
   useEffect(() => {
     const fetchBaeume = async () => {
@@ -27,7 +27,7 @@ const Baeume: React.FC = () => {
           throw new Error('Failed to fetch Baeume');
         }
         const data = await response.json();
-        setBaeuemeList(data.result);
+        setBaeumeList(data.result);
         console.log(data.result);
       }catch (error) {
         console.error('Error fetching Baeume:', error);

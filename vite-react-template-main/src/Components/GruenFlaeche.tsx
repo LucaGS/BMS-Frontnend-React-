@@ -10,7 +10,7 @@ interface Baum{
   gruenFlaecheId: number;
   Breitengrad: number;
   Laengengrad: number;
-  Art:string;
+  art:string;
 }
 const GruenFlaeche: React.FC = () => {
   const navigate = useNavigate();
@@ -22,8 +22,27 @@ const [Baeume, setBaeume] = useState<Baum[]>([]);
 const[showBaumAdder, setBaumAdder] = useState(false);
 
 useEffect(() => {
-
-}, [gruenFlaecheId]);
+    const fetchBaeume = async () => {
+      try {
+        const response = await fetch(API_BASE_URL+'/api/Baum/GetByGruenFlaechenId/'+gruenFlaecheId, {
+          headers: {
+            Authorization: `bearer ${localStorage.getItem('token') || ''}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch Baeume');
+        }
+        const data = await response.json();
+        console.log(data);
+        setBaeume(data.result);
+        console.log(data.result);
+      }catch (error) {
+        console.error('Error fetching Baeume:', error);
+      }
+      
+    };
+    fetchBaeume();
+  }, []);
 
 
 
@@ -53,6 +72,13 @@ useEffect(() => {
               <BaumAdder/>
             </div>
           )}
+          <ul className="list-group list-group-horizontal">
+              {Baeume.map((baum) => (
+                <li key={baum.id} className="list-group-item d-flex justify-content-between align-items-center">
+                  {baum.art} 
+                </li>
+              ))}
+            </ul>
       </div>
       
     </div>  
