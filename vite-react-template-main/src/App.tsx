@@ -12,7 +12,7 @@ const Home: React.FC = () => (
   <section className="py-5 text-center">
     <h1 className="display-5 fw-semibold">Willkommen im BMS-Portal</h1>
     <p className="lead text-muted">
-      Verwalten Sie Baeume und Gruenflaechen komfortabel mit dem neuen Bootstrap-Layout.
+      Verwalten Sie Baeume und Gruenflaechen 
     </p>
   </section>
 );
@@ -26,22 +26,7 @@ const About: React.FC = () => (
   </section>
 );
 // Token expiration check
-useEffect(() => {
-  try {
-    const token = localStorage.getItem('token');
-    if (token) {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Math.floor(Date.now() / 1000);
-      if (payload.exp < currentTime) {
-        localStorage.removeItem('token');
-        window.location.href = '/Login';
-      }
-    }
-  }
-  catch (error) {
-    console.error('Error checking token expiration:', error);
-  }
-}, []);
+
 
 const App: React.FC = () => (
   <Router>
