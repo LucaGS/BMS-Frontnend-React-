@@ -27,8 +27,8 @@ const Baeume: React.FC = () => {
           throw new Error('Failed to fetch Baeume');
         }
         const data = await response.json();
-        setBaeumeList(data.result);
-        console.log(data.result);
+        console.log(data);
+        setBaeumeList(data);
       }catch (error) {
         console.error('Error fetching Baeume:', error);
       }

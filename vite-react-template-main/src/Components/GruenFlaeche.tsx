@@ -83,7 +83,7 @@ const GruenFlaeche: React.FC = () => {
         <ul className="list-group list-group-horizontal flex-wrap">
           {baeume.map((baum) => (
             <li key={baum.id} className="list-group-item d-flex justify-content-between align-items-center">
-              {baum.art}
+              {baum.nummer}
             </li>
           ))}
         </ul>

@@ -1,20 +1,12 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from '../constants';
-
+import { Baum } from '../constants';
 const BaumAdder: React.FC = () => {
   const [Baum ,setBaum] = useState<Baum>();
-
-  interface Baum{
-  nummer: number;
-  id: number;
-  gruenFlaecheId: number;
-  Breitengrad: number;
-  Laengengrad: number;
-  Art:string;
-}
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    console.log('Submitting form');
+    console.log(Baum);
     try{
       const response = await fetch(API_BASE_URL +'/api/Baum/Create', {
         method: 'POST',
@@ -29,16 +21,12 @@ const BaumAdder: React.FC = () => {
       }
       alert('Baum erfolgreich hinzugefuegt');
       setBaum({} as Baum);
+      console.log("response: "+response);
     }catch (error) {
       console.error('Error creating Baum:', error);
       alert('Fehler beim Hinzufuegen des Baumes');
-
     }
-
-    
-    
   };
-
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-3">
@@ -47,8 +35,8 @@ const BaumAdder: React.FC = () => {
           type="text"
           className="form-control"
           id="art"
-          value={Baum?.Art || ''}
-          onChange={(e) => setBaum({ ...Baum, Art: e.target.value } as Baum)}
+          value={Baum?.art || ''}
+          onChange={(e) => setBaum({ ...Baum, art: e.target.value } as Baum)}
           required
         />
             <label htmlFor='Nummer' className='form-label'>Nummer</label>
@@ -67,8 +55,8 @@ const BaumAdder: React.FC = () => {
           type="float"
           className="form-control"
           id="breitengrad"
-          value={Baum?.Breitengrad || ''}
-          onChange={(e) => setBaum({ ...Baum, Breitengrad: parseFloat(e.target.value) } as Baum)}
+          value={Baum?.breitengrad || ''}
+          onChange={(e) => setBaum({ ...Baum, breitengrad: parseFloat(e.target.value) } as Baum)}
           required
           step="any"
         />
@@ -79,8 +67,8 @@ const BaumAdder: React.FC = () => {
           type="float"
           className="form-control"
           id="laengengrad"
-          value={Baum?.Laengengrad || ''}
-          onChange={(e) => setBaum({ ...Baum, Laengengrad: parseFloat(e.target.value) } as Baum)}
+          value={Baum?.laengengrad || ''}
+          onChange={(e) => setBaum({ ...Baum, laengengrad: parseFloat(e.target.value) } as Baum)}
           required
           step="any"
         />  
@@ -89,5 +77,4 @@ const BaumAdder: React.FC = () => {
     </form>
   );
 };
-
 export default BaumAdder;
