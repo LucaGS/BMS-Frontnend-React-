@@ -1,15 +1,15 @@
-import React, { use, useEffect, useState } from 'react';
-import BaumAdder from './BaumAdder';
+﻿import React, { use, useEffect, useState } from 'react';
 import { API_BASE_URL } from '../constants';
 
 
 interface Baum {
-  nummer: number;
-  id: number;
-  gruenFlaecheId: number;
+  UserId: number;
+  Nummer: number;
+  Id: number;
+  GruenFlaecheId: number;
   Breitengrad: number;
   Laengengrad: number;
-  art:string;
+  Art:string;
 }
 
 const Baeume: React.FC = () => {
@@ -47,8 +47,8 @@ const Baeume: React.FC = () => {
             </div>
             <ul className="list-group list-group-horizontal">
               {BaeumeList.map((baum) => (
-                <li key={baum.id} className="list-group-item d-flex justify-content-between align-items-center">
-                  {baum.art} 
+                <li key={baum.Id} className="list-group-item d-flex justify-content-between align-items-center">
+                  {baum.Art} 
                 </li>
               ))}
             </ul>
