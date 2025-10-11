@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE_URL } from "../constants";
 import BaumAdder from "./BaumAdder";
@@ -14,29 +14,44 @@ const GruenFlaeche: React.FC = () => {
   const [baeume, setBaeume] = useState<Baum[]>([]);
   const [showBaumAdder, setBaumAdder] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  useEffect(() => {
-    const fetchBaeume = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/Baum/GetByGruenFlaechenId/${gruenFlaecheId}`, {
-          headers: {
-            Authorization: `bearer ${localStorage.getItem("token") || ""}`,
-          },
-        });
-        if (!response.ok) {
-          throw new Error("Baeume konnten nicht geladen werden.");
-        }
-        const data = await response.json();
-        console.log("Fetched Baeume data:", data);
-        setBaeume(data);
-        setError(null);
-      } catch (fetchError) {
-        console.error("Error fetching Baeume:", fetchError);
-        setError(fetchError instanceof Error ? fetchError.message : "Unbekannter Fehler beim Laden der Baeume.");
+  const fetchBaeume = useCallback(async () => {
+    if (!gruenFlaecheId) {
+      setError("Keine Gruenflaeche ausgewaehlt.");
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/Baum/GetByGruenFlaechenId/${gruenFlaecheId}`, {
+        headers: {
+          Authorization: `bearer ${localStorage.getItem("token") || ""}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Baeume konnten nicht geladen werden.");
       }
-    };
-
-    fetchBaeume();
+      const data = await response.json();
+      console.log("Fetched Baeume data:", data);
+      setBaeume(data);
+      setError(null);
+    } catch (fetchError) {
+      console.error("Error fetching Baeume:", fetchError);
+      setError(fetchError instanceof Error ? fetchError.message : "Unbekannter Fehler beim Laden der Baeume.");
+    }
   }, [gruenFlaecheId]);
+
+  useEffect(() => {
+    fetchBaeume();
+  }, [fetchBaeume]);
+
+  const handleBaumCreated = (createdBaum?: Baum) => {
+    // Push the freshly created tree into the list so the UI reflects the change instantly.
+    if (createdBaum) {
+      setBaeume((prev) => [...prev, createdBaum]);
+      setError(null);
+      return;
+    }
+    // API sent no payload for the new tree, so we trigger a refetch to stay in sync.
+    fetchBaeume();
+  };
 
   return (
     <div className="card shadow-sm border-0">
@@ -62,7 +77,10 @@ const GruenFlaeche: React.FC = () => {
 
         {showBaumAdder && (
           <div className="bg-light border rounded p-3 my-4">
-            <BaumAdder gruenFlaecheId={parseInt(gruenFlaecheId ?? "0")} />
+            <BaumAdder
+              gruenFlaecheId={parseInt(gruenFlaecheId ?? "0")}
+              onBaumCreated={handleBaumCreated}
+            />
           </div>
         )}
         <button 
@@ -93,3 +111,4 @@ const GruenFlaeche: React.FC = () => {
 };
 
 export default GruenFlaeche;
+

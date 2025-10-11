@@ -7,15 +7,16 @@ import { Baum } from '../constants';
 
 type BaumAdderProps = {
   gruenFlaecheId: number;
+  onBaumCreated: (baum?: Baum) => void;
 };
 
-const BaumAdder: React.FC<BaumAdderProps> = ({gruenFlaecheId}) => {
-  const [Baum ,setBaum] = useState<Baum>();
+const BaumAdder: React.FC<BaumAdderProps> = ({gruenFlaecheId, onBaumCreated}) => {
+  const [baum ,setBaum] = useState<Baum>();
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    Baum!.gruenFlaechenId=gruenFlaecheId;
+    const payload = { ...(baum ?? {}), gruenFlaecheId } as Baum;
     console.log('Submitting form');
-    console.log(Baum);
+    console.log(payload);
     try{
       const response = await fetch(API_BASE_URL +'/api/Baum/Create', {
         method: 'POST',
@@ -23,11 +24,19 @@ const BaumAdder: React.FC<BaumAdderProps> = ({gruenFlaecheId}) => {
           'Content-Type': 'application/json',
           Authorization: `bearer ${localStorage.getItem('token') || ''}`,
         },
-        body: JSON.stringify(Baum),
+        body: JSON.stringify(payload),
       });
       if (!response || !response.ok) {
         throw new Error('Failed to create Baum');
       }
+      let createdBaum: Baum | undefined;
+      try {
+        createdBaum = await response.json();
+      } catch {
+        createdBaum = undefined;
+      }
+      // Inform the parent so it can refresh its list without a full page reload.
+      onBaumCreated(createdBaum);
       alert('Baum erfolgreich hinzugefuegt');
       setBaum({} as Baum);
       console.log("response: "+response);
@@ -44,8 +53,8 @@ const BaumAdder: React.FC<BaumAdderProps> = ({gruenFlaecheId}) => {
           type="text"
           className="form-control"
           id="art"
-          value={Baum?.art || ''}
-          onChange={(e) => setBaum({ ...Baum, art: e.target.value } as Baum)}
+          value={baum?.art || ''}
+          onChange={(e) => setBaum({ ...(baum ?? {}), art: e.target.value } as Baum)}
           required
         />
             <label htmlFor='Nummer' className='form-label'>Nummer</label>
@@ -53,8 +62,8 @@ const BaumAdder: React.FC<BaumAdderProps> = ({gruenFlaecheId}) => {
               type='number'
               className='form-control'
               id='nummer'
-              value={Baum?.nummer || ''}
-              onChange={(e) => setBaum({ ...Baum, nummer: parseInt(e.target.value, 10) } as Baum)}
+              value={baum?.nummer || ''}
+              onChange={(e) => setBaum({ ...(baum ?? {}), nummer: parseInt(e.target.value, 10) } as Baum)}
               required
             />
       </div>
@@ -64,8 +73,8 @@ const BaumAdder: React.FC<BaumAdderProps> = ({gruenFlaecheId}) => {
           type="float"
           className="form-control"
           id="breitengrad"
-          value={Baum?.breitengrad || ''}
-          onChange={(e) => setBaum({ ...Baum, breitengrad: parseFloat(e.target.value) } as Baum)}
+          value={baum?.breitengrad || ''}
+          onChange={(e) => setBaum({ ...(baum ?? {}), breitengrad: parseFloat(e.target.value) } as Baum)}
           required
           step="any"
         />
@@ -76,8 +85,8 @@ const BaumAdder: React.FC<BaumAdderProps> = ({gruenFlaecheId}) => {
           type="float"
           className="form-control"
           id="laengengrad"
-          value={Baum?.laengengrad || ''}
-          onChange={(e) => setBaum({ ...Baum, laengengrad: parseFloat(e.target.value) } as Baum)}
+          value={baum?.laengengrad || ''}
+          onChange={(e) => setBaum({ ...(baum ?? {}), laengengrad: parseFloat(e.target.value) } as Baum)}
           required
           step="any"
         />  
