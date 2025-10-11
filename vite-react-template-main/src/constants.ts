@@ -11,5 +11,14 @@ export interface Baum {
   art: string;
   letzteKontrolleID: number
   laengengrad: number;
-    breitengrad: number;
+  breitengrad: number;
+}
+export interface CretateBaumDto {
+  userid : number;
+  gruenFlaechenId: number;
+  nummer: number;
+  art: string;
+  letzteKontrolleID: number
+  laengengrad: number;
+  breitengrad: number;
 }

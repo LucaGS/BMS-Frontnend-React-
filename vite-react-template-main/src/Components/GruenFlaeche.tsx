@@ -62,7 +62,7 @@ const GruenFlaeche: React.FC = () => {
 
         {showBaumAdder && (
           <div className="bg-light border rounded p-3 my-4">
-            <BaumAdder />
+            <BaumAdder gruenFlaecheId={parseInt(gruenFlaecheId ?? "0")} />
           </div>
         )}
         <button 

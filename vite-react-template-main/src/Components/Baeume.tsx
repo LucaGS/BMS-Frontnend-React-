@@ -1,16 +1,5 @@
 ﻿import React, { use, useEffect, useState } from 'react';
-import { API_BASE_URL } from '../constants';
-
-
-interface Baum {
-  UserId: number;
-  Nummer: number;
-  Id: number;
-  GruenFlaecheId: number;
-  Breitengrad: number;
-  Laengengrad: number;
-  Art:string;
-}
+import { API_BASE_URL,Baum } from '../constants';
 
 const Baeume: React.FC = () => {
   const [BaeumeList, setBaeumeList] = useState<Baum[]>([]);
@@ -45,10 +34,10 @@ const Baeume: React.FC = () => {
             <div>
               <h1 className="h4 mb-1">Baeume verwalten</h1>
             </div>
-            <ul className="list-group list-group-horizontal">
+            <ul className="list-group list-group-vertical">
               {BaeumeList.map((baum) => (
-                <li key={baum.Id} className="list-group-item d-flex justify-content-between align-items-center">
-                  {baum.Art} 
+                <li key={baum.id} className="list-group-item d-flex justify-content-between align-items-center">
+                  {baum.art} 
                 </li>
               ))}
             </ul>

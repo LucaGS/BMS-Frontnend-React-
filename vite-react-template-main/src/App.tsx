@@ -39,7 +39,6 @@ const App: React.FC = () => (
             <Route path="/about" element={<About />} />
             <Route path="/Baum" element={<Baum />} />
             <Route path="/Login" element={<Login />} />
-            <Route path="/baum-adder" element={<BaumAdder />} />
             <Route path="/Signup" element={<Signup />} />
             <Route path="/GruenFlaechen" element={<GruenFlaechen />} />
             <Route path="/GruenFlaechen/:gruenFlaecheId/:gruenFlaecheName" element={<GruenFlaeche />} />

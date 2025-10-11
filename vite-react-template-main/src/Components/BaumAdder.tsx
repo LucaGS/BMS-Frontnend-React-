@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from '../constants';
 import { Baum } from '../constants';
-const BaumAdder: React.FC = () => {
+
+
+
+
+type BaumAdderProps = {
+  gruenFlaecheId: number;
+};
+
+const BaumAdder: React.FC<BaumAdderProps> = ({gruenFlaecheId}) => {
   const [Baum ,setBaum] = useState<Baum>();
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    Baum!.gruenFlaechenId=gruenFlaecheId;
     console.log('Submitting form');
     console.log(Baum);
     try{
