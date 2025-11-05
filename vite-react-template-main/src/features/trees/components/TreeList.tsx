@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
-import { mapTreesFromApi, type Tree } from '@/entities/tree';
+import { mapTreesFromApi, type Tree } from '@/features/trees/types';
 
 const TreeList: React.FC = () => {
   const [trees, setTrees] = useState<Tree[]>([]);

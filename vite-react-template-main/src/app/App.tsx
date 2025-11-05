@@ -1,11 +1,11 @@
 import React from 'react';
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import type { Tree } from '@/entities/tree';
+import type { Tree } from '@/features/trees/types';
 import AppHeader from '@/widgets/layout/AppHeader';
-import HomePage from '@/pages/home/HomePage';
-import AboutPage from '@/pages/about/AboutPage';
-import LoginPage from '@/pages/auth/LoginPage';
-import SignupPage from '@/pages/auth/SignupPage';
+import HomePage from '@/features/landing/pages/HomePage';
+import AboutPage from '@/features/landing/pages/AboutPage';
+import LoginPage from '@/features/auth/pages/LoginPage';
+import SignupPage from '@/features/auth/pages/SignupPage';
 import TreeList from '@/features/trees/components/TreeList';
 import TreeDetails from '@/features/trees/components/TreeDetails';
 import GreenAreaList from '@/features/green-areas/components/GreenAreaList';

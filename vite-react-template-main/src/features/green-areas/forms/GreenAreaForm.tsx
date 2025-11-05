@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from '@/shared/config/appConfig';
-import type { GreenArea } from '@/entities/green-area';
+import type { GreenArea } from '@/features/green-areas/types';
 
 interface GreenAreaDto {
   name: string;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '@/shared/config/appConfig';
-import { mapInspectionsFromApi, type Inspection } from '@/entities/inspection';
-import type { Tree } from '@/entities/tree';
+import { mapInspectionsFromApi, type Inspection } from '@/features/trees/inspections';
+import type { Tree } from '@/features/trees/types';
 import InspectionForm from '../forms/InspectionForm';
 
 type TreeDetailsProps = {

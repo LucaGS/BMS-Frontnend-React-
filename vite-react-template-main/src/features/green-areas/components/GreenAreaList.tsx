@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
-import type { GreenArea } from '@/entities/green-area';
+import type { GreenArea } from '@/features/green-areas/types';
 import GreenAreaForm from '../forms/GreenAreaForm';
 
 const loadGreenAreas = async (): Promise<GreenArea[]> => {

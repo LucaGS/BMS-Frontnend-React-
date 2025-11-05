@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
-import { mapTreesFromApi, type Tree } from '@/entities/tree';
+import { mapTreesFromApi, type Tree } from '@/features/trees/types';
 import TreeForm from '@/features/trees/forms/TreeForm';
 import GreenAreaMap from '../maps/GreenAreaMap';
 
