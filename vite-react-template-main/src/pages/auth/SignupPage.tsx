@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_BASE_URL } from '../constants';
+import { API_BASE_URL } from '@/shared/config/appConfig';
 
 interface SignupFormData {
   username: string;
@@ -7,7 +7,7 @@ interface SignupFormData {
   password: string;
 }
 
-const Signup: React.FC = () => {
+const SignupPage: React.FC = () => {
   const [formData, setFormData] = useState<SignupFormData>({
     username: '',
     email: '',
@@ -155,4 +155,4 @@ const Signup: React.FC = () => {
   );
 };
 
-export default Signup;
+export default SignupPage;

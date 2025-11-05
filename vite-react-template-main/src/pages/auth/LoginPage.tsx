@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { API_BASE_URL } from '../constants';
+import { API_BASE_URL } from '@/shared/config/appConfig';
 
-const Login: React.FC = () => {
+const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -109,4 +109,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default LoginPage;

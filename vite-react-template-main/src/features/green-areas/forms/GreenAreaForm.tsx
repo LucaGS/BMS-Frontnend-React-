@@ -1,21 +1,17 @@
 import React, { useState } from 'react';
-import { API_BASE_URL } from '../constants';
+import { API_BASE_URL } from '@/shared/config/appConfig';
+import type { GreenArea } from '@/entities/green-area';
 
-interface GruenFlaeche {
-  id: number;
+interface GreenAreaDto {
   name: string;
 }
 
-interface GruenFlaecheDto {
-  name: string;
+interface GreenAreaFormProps {
+  greenAreas: GreenArea[];
+  onChange: (next: GreenArea[]) => void;
 }
 
-interface GruenFlaechenAdderProps {
-  value: GruenFlaeche[];
-  onChange: (next: GruenFlaeche[]) => void;
-}
-
-const GruenFlaechenAdder: React.FC<GruenFlaechenAdderProps> = ({ value, onChange }) => {
+const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
 
@@ -26,7 +22,7 @@ const GruenFlaechenAdder: React.FC<GruenFlaechenAdderProps> = ({ value, onChange
       return;
     }
 
-    const newGruenFlaeche: GruenFlaecheDto = {
+    const newGreenArea: GreenAreaDto = {
       name: name.trim(),
     };
 
@@ -38,22 +34,22 @@ const GruenFlaechenAdder: React.FC<GruenFlaechenAdderProps> = ({ value, onChange
           'Content-Type': 'application/json',
           Authorization: `bearer ${localStorage.getItem('token') || ''}`,
         },
-        body: JSON.stringify(newGruenFlaeche),
+        body: JSON.stringify(newGreenArea),
       });
 
       if (!response || !response.ok) {
-        throw new Error('Failed to add Gruenflaeche');
+        throw new Error('Failed to add green area');
       }
 
       const data = await response.json();
-      const createdGruenFlaeche: GruenFlaeche = {
+      const createdGreenArea: GreenArea = {
         id: data.id,
         name: data.name,
       };
-      onChange([...value, createdGruenFlaeche]);
+      onChange([...greenAreas, createdGreenArea]);
       setName('');
     } catch (submitError) {
-      console.error('Error adding GruenFlaeche:', submitError);
+      console.error('Error adding green area:', submitError);
       setError('Fehler beim Hinzufuegen der Gruenflaeche.');
     }
   };
@@ -61,11 +57,11 @@ const GruenFlaechenAdder: React.FC<GruenFlaechenAdderProps> = ({ value, onChange
   return (
     <form onSubmit={handleAdd} className="row g-3 align-items-end">
       <div className="col-sm-8">
-        <label htmlFor="newGruenFlaeche" className="form-label">
+        <label htmlFor="newGreenArea" className="form-label">
           Name der Gruenflaeche
         </label>
         <input
-          id="newGruenFlaeche"
+          id="newGreenArea"
           type="text"
           className="form-control"
           placeholder="z. B. Stadtpark"
@@ -90,4 +86,4 @@ const GruenFlaechenAdder: React.FC<GruenFlaechenAdderProps> = ({ value, onChange
   );
 };
 
-export default GruenFlaechenAdder;
+export default GreenAreaForm;

@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Baum } from "../constants";
+import React, { useEffect, useRef, useState } from 'react';
+import type { Tree } from '@/entities/tree';
 
-interface GruenFlaecheMapProps {
-  baeume: Baum[];
+interface GreenAreaMapProps {
+  trees: Tree[];
   onError?: (message: string | null) => void;
 }
 
@@ -55,7 +55,7 @@ const ensureLeafletAssets = (): Promise<void> => {
   });
 };
 
-const GruenFlaecheMap: React.FC<GruenFlaecheMapProps> = ({ baeume, onError }) => {
+const GreenAreaMap: React.FC<GreenAreaMapProps> = ({ trees, onError }) => {
   const [isMapReady, setIsMapReady] = useState(false);
   const [temporaryMarkers, setTemporaryMarkers] = useState<Array<{ lat: number; lng: number }>>([]);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -131,15 +131,15 @@ const GruenFlaecheMap: React.FC<GruenFlaecheMapProps> = ({ baeume, onError }) =>
 
     const positions: [number, number][] = [];
 
-    baeume.forEach((baum) => {
-      if (typeof baum.breitengrad !== "number" || typeof baum.laengengrad !== "number") {
+    trees.forEach((tree) => {
+      if (typeof tree.latitude !== "number" || typeof tree.longitude !== "number") {
         return;
       }
-      const coords: [number, number] = [baum.breitengrad, baum.laengengrad];
+      const coords: [number, number] = [tree.latitude, tree.longitude];
       positions.push(coords);
       const marker = L.marker(coords)
         .addTo(mapRef.current)
-        .bindPopup(`<strong>${baum.art ?? "Baum"}</strong><br/>Nr. ${baum.nummer ?? "-"}`);
+        .bindPopup(`<strong>${tree.species ?? "Baum"}</strong><br/>Nr. ${tree.number ?? "-"}`);
       treeMarkerRefs.current.push(marker);
     });
 
@@ -153,7 +153,7 @@ const GruenFlaecheMap: React.FC<GruenFlaecheMapProps> = ({ baeume, onError }) =>
       const bounds = L.latLngBounds(positions);
       mapRef.current.fitBounds(bounds, { padding: [24, 24], maxZoom: MAX_ZOOM });
     }
-  }, [baeume, isMapReady]);
+  }, [trees, isMapReady]);
 
   useEffect(() => {
     return () => {
@@ -223,7 +223,4 @@ const GruenFlaecheMap: React.FC<GruenFlaecheMapProps> = ({ baeume, onError }) =>
   );
 };
 
-export default GruenFlaecheMap;
-
-
-
+export default GreenAreaMap;

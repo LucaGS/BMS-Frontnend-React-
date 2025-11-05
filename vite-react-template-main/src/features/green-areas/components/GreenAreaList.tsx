@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../constants';
-import GruenFlaechenAdder from './GruenFlaechenAdder';
+import { API_BASE_URL } from '@/shared/config/appConfig';
+import type { GreenArea } from '@/entities/green-area';
+import GreenAreaForm from '../forms/GreenAreaForm';
 
-interface GruenFlaeche {
-  id: number;
-  name: string;
-}
-
-const fetchGruenFlaechen = async (): Promise<GruenFlaeche[]> => {
+const loadGreenAreas = async (): Promise<GreenArea[]> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/GruenFlaechen/GetAll`, {
       method: 'GET',
@@ -18,22 +14,22 @@ const fetchGruenFlaechen = async (): Promise<GruenFlaeche[]> => {
       },
     });
     if (!response || !response.ok) {
-      throw new Error('Failed to fetch Gruenflaechen');
+      throw new Error('Failed to fetch green areas');
     }
     return response.json();
   } catch (error) {
-    console.error('Error fetching GruenFlaechen:', error);
+    console.error('Error fetching green areas:', error);
     return Promise.resolve([]);
   }
 };
 
-const GruenFlaechen: React.FC = () => {
+const GreenAreaList: React.FC = () => {
   const navigate = useNavigate();
-  const [showGruenFlaechenAdder, setGruenFlaechenAdder] = useState(false);
-  const [gruenFlaechen, setGruenFlaechen] = useState<GruenFlaeche[]>([]);
+  const [showGreenAreaForm, setShowGreenAreaForm] = useState(false);
+  const [greenAreas, setGreenAreas] = useState<GreenArea[]>([]);
 
   useEffect(() => {
-    fetchGruenFlaechen().then(setGruenFlaechen);
+    loadGreenAreas().then(setGreenAreas);
   }, []);
 
   return (
@@ -50,31 +46,31 @@ const GruenFlaechen: React.FC = () => {
             <button
               type="button"
               className="btn btn-success"
-              onClick={() => setGruenFlaechenAdder((prev) => !prev)}
+              onClick={() => setShowGreenAreaForm((prev) => !prev)}
             >
-              {showGruenFlaechenAdder ? 'Formular verbergen' : 'Gruenflaeche hinzufuegen'}
+              {showGreenAreaForm ? 'Formular verbergen' : 'Gruenflaeche hinzufuegen'}
             </button>
           </div>
 
-          {showGruenFlaechenAdder && (
+          {showGreenAreaForm && (
             <div className="bg-light border rounded p-3 mb-4">
-              <GruenFlaechenAdder value={gruenFlaechen} onChange={setGruenFlaechen} />
+              <GreenAreaForm greenAreas={greenAreas} onChange={setGreenAreas} />
             </div>
           )}
 
           <ul className="list-group list-group-flush">
-            {gruenFlaechen.length === 0 && (
+            {greenAreas.length === 0 && (
               <li className="list-group-item text-center text-muted">
                 Keine Gruenflaechen vorhanden.
               </li>
             )}
-            {gruenFlaechen.map((gf) => (
-              <li key={gf.id} className="list-group-item d-flex justify-content-between align-items-center">
-                <span className="fw-medium">{gf.name}</span>
+            {greenAreas.map((greenArea) => (
+              <li key={greenArea.id} className="list-group-item d-flex justify-content-between align-items-center">
+                <span className="fw-medium">{greenArea.name}</span>
                 <button
                   type="button"
                   className="btn btn-outline-success btn-sm"
-                  onClick={() => navigate(`/GruenFlaechen/${gf.id}/${gf.name}`)}
+                  onClick={() => navigate(`/green-areas/${greenArea.id}/${greenArea.name}`)}
                 >
                   Details anzeigen
                 </button>
@@ -87,4 +83,4 @@ const GruenFlaechen: React.FC = () => {
   );
 };
 
-export default GruenFlaechen;
+export default GreenAreaList;

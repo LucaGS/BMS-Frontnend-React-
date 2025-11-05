@@ -4,7 +4,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `nav-link${isActive ? ' active fw-semibold' : ''}`;
 
-const Header: React.FC = () => {
+const AppHeader: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const readHasToken = React.useCallback(
@@ -65,12 +65,12 @@ const Header: React.FC = () => {
               </NavLink>
             </li>
             <li className="nav-item">
-              <NavLink to="/Baum" className={navLinkClass}>
+              <NavLink to="/trees" className={navLinkClass}>
                 Baeume
               </NavLink>
             </li>
             <li className="nav-item">
-              <NavLink to="/GruenFlaechen" className={navLinkClass}>
+              <NavLink to="/green-areas" className={navLinkClass}>
                 Gruenflaechen
               </NavLink>
             </li>
@@ -87,12 +87,12 @@ const Header: React.FC = () => {
             ) : (
               <>
                 <li className="nav-item">
-                  <NavLink to="/Login" className={navLinkClass}>
+                  <NavLink to="/login" className={navLinkClass}>
                     Login
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink to="/Signup" className={navLinkClass}>
+                  <NavLink to="/signup" className={navLinkClass}>
                     Registrieren
                   </NavLink>
                 </li>
@@ -105,4 +105,4 @@ const Header: React.FC = () => {
   );
 };
 
-export default Header;
+export default AppHeader;
