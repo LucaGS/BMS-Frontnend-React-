@@ -28,7 +28,7 @@ const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange }) =
 
     try {
       setError('');
-      const response = await fetch(`${API_BASE_URL}/api/GruenFlaechen/Create`, {
+      const response = await fetch(`${API_BASE_URL}/api/GreenAreas/Create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

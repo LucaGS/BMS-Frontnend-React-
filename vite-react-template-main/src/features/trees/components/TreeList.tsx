@@ -10,7 +10,7 @@ const TreeList: React.FC = () => {
   useEffect(() => {
     const fetchTrees = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/Baum/GetAll`, {
+        const response = await fetch(`${API_BASE_URL}/api/Tree/GetAll`, {
           headers: {
             Authorization: `bearer ${localStorage.getItem('token') || ''}`,
           },
