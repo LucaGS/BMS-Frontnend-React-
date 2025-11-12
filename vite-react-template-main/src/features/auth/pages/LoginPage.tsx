@@ -12,7 +12,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     try {
       setError('');
-      const response = await fetch(`${API_BASE_URL}/Login`, {
+      const response = await fetch(`${API_BASE_URL}/api/Auth/Login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, username }),
