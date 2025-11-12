@@ -24,7 +24,7 @@ const GreenAreaDetails: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch(`${API_BASE_URL}/api/Baum/GetByGruenFlaechenId/${greenAreaId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Tree/GetByGreenAreaId/${greenAreaId}`, {
         headers: {
           Authorization: `bearer ${localStorage.getItem('token') || ''}`,
         },

@@ -6,7 +6,7 @@ import GreenAreaForm from '../forms/GreenAreaForm';
 
 const loadGreenAreas = async (): Promise<GreenArea[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/GruenFlaechen/GetAll`, {
+    const response = await fetch(`${API_BASE_URL}/api/GreenAreas/GetAll`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
