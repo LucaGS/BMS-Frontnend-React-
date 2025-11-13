@@ -21,7 +21,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
         baumId: treeId,
         verkehrssicher: trafficSafe,
       };
-      const requestUrl = `${API_BASE_URL}/Create`;
+      const requestUrl = `${API_BASE_URL}/api/Inspections/Create`;
 
       const response = await fetch(requestUrl, {
         method: "POST",

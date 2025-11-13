@@ -27,7 +27,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
     const payload = mapTreeToApiPayload({ ...draftTree, greenAreaId });
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/Baum/Create`, {
+      const response = await fetch(`${API_BASE_URL}/api/Trees/Create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
