@@ -1,4 +1,4 @@
-export const API_BASE_URL = "spring-boot.railway.internal";
+export const API_BASE_URL = "https://spring-boot-production-8988.up.railway.app";
 export const APP_NAME = 'Baum Management System';
 export const DEFAULT_LANGUAGE = 'de';
 
