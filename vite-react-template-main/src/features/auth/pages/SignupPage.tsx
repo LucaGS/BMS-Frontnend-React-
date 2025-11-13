@@ -41,7 +41,7 @@ const SignupPage: React.FC = () => {
 
     try {
       const url = `${API_BASE_URL}/api/Auth/register`;
-      
+      console.log('Submitting to URL:', url);
       const response = await fetch(`${url}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
