@@ -7,6 +7,11 @@ export interface ApiTree {
   lastInspectionId?: number | null;
   longitude?: number | null;
   latitude?: number | null;
+  treeSizeMeters?: number | null;
+  crownDiameterMeters?: number | null;
+  crownAttachmentHeightMeters?: number | null;
+  numberOfTrunks?: number | null;
+  trunkInclination?: number | null;
 }
 
 export interface Tree {
@@ -18,16 +23,24 @@ export interface Tree {
   lastInspectionId?: number | null;
   longitude?: number | null;
   latitude?: number | null;
+  treeSizeMeters?: number | null;
+  crownDiameterMeters?: number | null;
+  crownAttachmentHeightMeters?: number | null;
+  numberOfTrunks?: number | null;
+  trunkInclination?: number | null;
 }
 
-export interface NewTree {
-  userId?: number | null;
+export interface ApiCreateTree {
   greenAreaId: number;
   number: number;
-  species?: string | null;
-  lastInspectionId?: number | null;
-  longitude?: number | null;
-  latitude?: number | null;
+  species: string;
+  longitude: number;
+  latitude: number;
+  treeSizeMeters: number;
+  crownDiameterMeters: number;
+  crownAttachmentHeightMeters: number;
+  numberOfTrunks: number;
+  trunkInclination: number;
 }
 
-export type ApiCreateTree = Omit<ApiTree, 'id'>;
+export interface NewTree extends ApiCreateTree {}

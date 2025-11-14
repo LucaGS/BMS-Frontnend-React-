@@ -136,6 +136,21 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
 
                 <dt className="col-sm-3">Letzte Kontrolle</dt>
                 <dd className="col-sm-9">{tree.lastInspectionId}</dd>
+
+                <dt className="col-sm-3">Baumhoehe (m)</dt>
+                <dd className="col-sm-9">{tree.treeSizeMeters ?? '-'}</dd>
+
+                <dt className="col-sm-3">Kronendurchmesser (m)</dt>
+                <dd className="col-sm-9">{tree.crownDiameterMeters ?? '-'}</dd>
+
+                <dt className="col-sm-3">Kronenansatzhoehe (m)</dt>
+                <dd className="col-sm-9">{tree.crownAttachmentHeightMeters ?? '-'}</dd>
+
+                <dt className="col-sm-3">Anzahl Staemme</dt>
+                <dd className="col-sm-9">{tree.numberOfTrunks ?? '-'}</dd>
+
+                <dt className="col-sm-3">Stamminneigung (Grad)</dt>
+                <dd className="col-sm-9">{tree.trunkInclination ?? '-'}</dd>
               </dl>
               <div className="d-flex justify-content-between align-items-center mt-4 mb-2">
                 <h2 className="h5 mb-0">Kontrollen</h2>
