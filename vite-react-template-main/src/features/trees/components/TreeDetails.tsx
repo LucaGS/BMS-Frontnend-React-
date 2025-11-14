@@ -34,7 +34,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
       setInspectionsError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/ByBaumId/${tree.id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/Inspections/ByTreeId/${tree.id}`, {
           headers: {
             Authorization: `bearer ${localStorage.getItem('token') || ''}`,
           },
