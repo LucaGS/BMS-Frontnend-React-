@@ -12,8 +12,8 @@ interface LeafletWindow extends Window {
 
 const LEAFLET_SCRIPT_ID = "leaflet-script";
 const LEAFLET_CSS_ID = "leaflet-css";
-const DEFAULT_CENTER: [number, number] = [51.1657, 10.4515];
-const DEFAULT_ZOOM = 12;
+const DEFAULT_CENTER: [number, number] = [49.6590, 8.9962];
+const DEFAULT_ZOOM = 16;
 const MAX_ZOOM = 21;
 
 const ensureLeafletAssets = (): Promise<void> => {
