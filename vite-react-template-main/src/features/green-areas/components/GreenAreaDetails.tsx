@@ -10,6 +10,8 @@ type GreenAreaRouteParams = {
   greenAreaName: string;
 };
 
+const DEFAULT_GREEN_AREA_CENTER: [number, number] = [49.6590, 8.9962];
+
 const GreenAreaDetails: React.FC = () => {
   const navigate = useNavigate();
   const { greenAreaId, greenAreaName } = useParams<GreenAreaRouteParams>();
@@ -98,7 +100,11 @@ const GreenAreaDetails: React.FC = () => {
 
         {showMap && (
           <div className="bg-light border rounded p-3 my-4">
-            <GreenAreaMap trees={trees} onError={setError} />
+            <GreenAreaMap
+              trees={trees}
+              onError={setError}
+              defaultCenter={DEFAULT_GREEN_AREA_CENTER}
+            />
           </div>
         )}
 

@@ -4,6 +4,7 @@ import type { Tree } from '@/entities/tree';
 interface GreenAreaMapProps {
   trees: Tree[];
   onError?: (message: string | null) => void;
+  defaultCenter?: [number, number];
 }
 
 interface LeafletWindow extends Window {
@@ -55,7 +56,7 @@ const ensureLeafletAssets = (): Promise<void> => {
   });
 };
 
-const GreenAreaMap: React.FC<GreenAreaMapProps> = ({ trees, onError }) => {
+const GreenAreaMap: React.FC<GreenAreaMapProps> = ({ trees, onError, defaultCenter }) => {
   const [isMapReady, setIsMapReady] = useState(false);
   const [temporaryMarkers, setTemporaryMarkers] = useState<Array<{ lat: number; lng: number }>>([]);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -63,6 +64,9 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({ trees, onError }) => {
   const temporaryMarkerRefs = useRef<any[]>([]);
   const treeMarkerRefs = useRef<any[]>([]);
   const mapClickCleanupRef = useRef<(() => void) | null>(null);
+  const centerLat = defaultCenter ? defaultCenter[0] : DEFAULT_CENTER[0];
+  const centerLng = defaultCenter ? defaultCenter[1] : DEFAULT_CENTER[1];
+  const effectiveCenter: [number, number] = [centerLat, centerLng];
 
   useEffect(() => {
     let isMounted = true;
@@ -78,7 +82,7 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({ trees, onError }) => {
             maxZoom: MAX_ZOOM,
             minZoom: 3,
             zoomControl: true,
-          }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+          }).setView(effectiveCenter, DEFAULT_ZOOM);
           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: "&copy; OpenStreetMap-Mitwirkende",
             maxZoom: MAX_ZOOM,
@@ -111,7 +115,7 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({ trees, onError }) => {
     return () => {
       isMounted = false;
     };
-  }, [onError]);
+  }, [onError, centerLat, centerLng]);
 
   useEffect(() => {
     const leafletWindow = window as LeafletWindow;
@@ -151,8 +155,10 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({ trees, onError }) => {
     } else if (positions.length > 1) {
       const bounds = L.latLngBounds(positions);
       mapRef.current.fitBounds(bounds, { padding: [24, 24], maxZoom: MAX_ZOOM });
+    } else if (typeof mapRef.current.setView === "function") {
+      mapRef.current.setView(effectiveCenter, DEFAULT_ZOOM);
     }
-  }, [trees, isMapReady]);
+  }, [trees, isMapReady, centerLat, centerLng]);
 
   useEffect(() => {
     return () => {

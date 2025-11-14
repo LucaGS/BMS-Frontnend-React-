@@ -61,7 +61,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
         crownDiameterMeters: 0,
         crownAttachmentHeightMeters: 0,
         numberOfTrunks: 1,
-        trunkInclination: 0,
+        trunkInclination: 1,
       });
     } catch (error) {
       console.error('Error creating tree:', error);
@@ -94,7 +94,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              number: Number.parseInt(event.target.value, 10) || 0,
+              number: Number.parseInt(event.target.value, 10) ,
             }))
           }
           required
@@ -112,7 +112,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              latitude: Number.parseFloat(event.target.value) || 0,
+              latitude: Number.parseFloat(event.target.value) ,
             }))
           }
           required
@@ -131,7 +131,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              longitude: Number.parseFloat(event.target.value) || 0,
+              longitude: Number.parseFloat(event.target.value) ,
             }))
           }
           required
@@ -150,7 +150,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              treeSizeMeters: Number.parseFloat(event.target.value) || 0,
+              treeSizeMeters: Number.parseFloat(event.target.value) ,
             }))
           }
           required
@@ -170,7 +170,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              crownDiameterMeters: Number.parseFloat(event.target.value) || 0,
+              crownDiameterMeters: Number.parseFloat(event.target.value) ,
             }))
           }
           required
@@ -190,7 +190,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              crownAttachmentHeightMeters: Number.parseFloat(event.target.value) || 0,
+              crownAttachmentHeightMeters: Number.parseFloat(event.target.value) ,
             }))
           }
           required
@@ -210,7 +210,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              numberOfTrunks: Number.parseInt(event.target.value, 10) || 1,
+              numberOfTrunks: Number.parseInt(event.target.value, 10) ,
             }))
           }
           required
