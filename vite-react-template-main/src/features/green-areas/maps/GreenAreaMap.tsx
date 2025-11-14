@@ -152,6 +152,8 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({ trees, onError }) => {
     } else if (positions.length > 1) {
       const bounds = L.latLngBounds(positions);
       mapRef.current.fitBounds(bounds, { padding: [24, 24], maxZoom: MAX_ZOOM });
+    } else if (typeof mapRef.current.setView === "function") {
+      mapRef.current.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
     }
   }, [trees, isMapReady]);
 
