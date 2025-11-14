@@ -18,8 +18,8 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
 
     try {
       const payload = {
-        baumId: treeId,
-        verkehrssicher: trafficSafe,
+        treeId,
+        trafficSafe,
       };
       const requestUrl = `${API_BASE_URL}/api/Inspections/Create`;
 

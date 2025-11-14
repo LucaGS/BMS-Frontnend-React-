@@ -1,8 +1,8 @@
 export interface ApiInspection {
   id: number;
-  baumId: number;
-  datum: string;
-  verkehrssicher: boolean;
+  treeId: number;
+  date: string;
+  trafficSafe: boolean;
   userId?: number | null;
 }
 

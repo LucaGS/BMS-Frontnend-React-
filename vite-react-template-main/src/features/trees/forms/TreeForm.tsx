@@ -24,9 +24,10 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const payload = mapTreeToApiPayload({ ...draftTree, greenAreaId });
+    const payload = draftTree;
 
     try {
+      console.log('Creating tree with payload:', payload);
       const response = await fetch(`${API_BASE_URL}/api/Trees/Create`, {
         method: 'POST',
         headers: {
