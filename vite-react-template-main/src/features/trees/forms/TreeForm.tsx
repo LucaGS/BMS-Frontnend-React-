@@ -229,7 +229,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              trunkInclination: Number.parseInt(event.target.value, 10) || 0,
+              trunkInclination: Number.parseInt(event.target.value, 10) ,
             }))
           }
           required

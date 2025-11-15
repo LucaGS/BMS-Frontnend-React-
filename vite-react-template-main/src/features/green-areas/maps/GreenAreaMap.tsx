@@ -17,6 +17,13 @@ const LEAFLET_CSS_ID = "leaflet-css";
 const DEFAULT_CENTER: [number, number] = [49.6590, 8.9962];
 const DEFAULT_ZOOM = 16;
 const MAX_ZOOM = 21;
+const TREE_MARKER_STYLE = {
+  color: "#064d25",
+  fillColor: "#0a6b30",
+  fillOpacity: 0.9,
+  radius: 8,
+  weight: 2,
+};
 
 const hasValidCoordinates = (
   latitude?: number | null,
@@ -168,9 +175,15 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
       }
       const coords: [number, number] = [tree.latitude!, tree.longitude!];
       positions.push(coords);
-      const marker = L.marker(coords)
-        .addTo(mapRef.current)
-        .bindPopup(`<strong>${tree.species ?? "Baum"}</strong><br/>Nr. ${tree.number ?? "-"}`);
+
+      const marker = L.circleMarker(coords, TREE_MARKER_STYLE).addTo(mapRef.current);
+      marker.bindTooltip(
+        `<strong>${tree.species ?? "Baum"}</strong><br/>${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`,
+        {
+          direction: "top",
+          opacity: 0.9,
+        },
+      );
       treeMarkerRefs.current.push(marker);
     });
 
