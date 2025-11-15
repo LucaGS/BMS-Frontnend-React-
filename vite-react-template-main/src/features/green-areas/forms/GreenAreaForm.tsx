@@ -4,6 +4,8 @@ import type { GreenArea } from '@/features/green-areas/types';
 
 interface GreenAreaDto {
   name: string;
+  longitude?: number;
+  latitude?: number;
 }
 
 interface GreenAreaFormProps {
@@ -13,6 +15,8 @@ interface GreenAreaFormProps {
 
 const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange }) => {
   const [name, setName] = useState('');
+  const [latitude, setLatitude] = useState<number | ''>('');
+  const [longitude, setLongitude] = useState<number | ''>('');
   const [error, setError] = useState('');
 
   const handleAdd = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -24,6 +28,8 @@ const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange }) =
 
     const newGreenArea: GreenAreaDto = {
       name: name.trim(),
+      longitude: typeof longitude === 'number' ? longitude : undefined,
+      latitude: typeof latitude === 'number' ? latitude : undefined,
     };
 
     try {
@@ -45,6 +51,8 @@ const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange }) =
       const createdGreenArea: GreenArea = {
         id: data.id,
         name: data.name,
+        longitude: data.longitude,
+        latitude: data.latitude,
       };
       onChange([...greenAreas, createdGreenArea]);
       setName('');
@@ -69,6 +77,24 @@ const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange }) =
           onChange={(event) => setName(event.target.value)}
           required
         />
+         <input
+        id ="latitude"
+        type="number"
+        className="form-control mt-2"
+        placeholder="Breitengrad"
+        value={latitude}
+        onChange ={(e) => setLatitude(e.target.value === '' ? '' : parseFloat(e.target.value))}
+      />
+        <input
+        id ="longitude"
+        type="number"
+        className="form-control mt-2"
+        placeholder="Längengrad"
+        value ={longitude}
+        onChange ={(e) => setLongitude(e.target.value === '' ? '' : parseFloat(e.target.value))}
+       
+      />
+     
       </div>
       <div className="col-sm-4 d-grid">
         <button type="submit" className="btn btn-success">

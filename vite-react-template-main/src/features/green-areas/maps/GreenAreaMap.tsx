@@ -56,7 +56,11 @@ const ensureLeafletAssets = (): Promise<void> => {
   });
 };
 
-const GreenAreaMap: React.FC<GreenAreaMapProps> = ({ trees, onError, defaultCenter }) => {
+const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
+  trees,
+  onError,
+  defaultCenter,
+}) => {
   const [isMapReady, setIsMapReady] = useState(false);
   const [temporaryMarkers, setTemporaryMarkers] = useState<Array<{ lat: number; lng: number }>>([]);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -64,9 +68,9 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({ trees, onError, defaultCent
   const temporaryMarkerRefs = useRef<any[]>([]);
   const treeMarkerRefs = useRef<any[]>([]);
   const mapClickCleanupRef = useRef<(() => void) | null>(null);
-  const centerLat = defaultCenter ? defaultCenter[0] : DEFAULT_CENTER[0];
-  const centerLng = defaultCenter ? defaultCenter[1] : DEFAULT_CENTER[1];
-  const effectiveCenter: [number, number] = [centerLat, centerLng];
+  const resolvedCenter: [number, number] = defaultCenter ?? DEFAULT_CENTER;
+  const [centerLat, centerLng] = resolvedCenter;
+  const effectiveCenter: [number, number] = resolvedCenter;
 
   useEffect(() => {
     let isMounted = true;

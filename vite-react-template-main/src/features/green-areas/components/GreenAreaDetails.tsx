@@ -1,24 +1,47 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapTreesFromApi, type Tree } from '@/features/trees/types';
 import TreeForm from '@/features/trees/forms/TreeForm';
 import GreenAreaMap from '../maps/GreenAreaMap';
+import type { GreenArea } from '@/features/green-areas/types';
 
 type GreenAreaRouteParams = {
   greenAreaId: string;
   greenAreaName: string;
 };
 
-const DEFAULT_GREEN_AREA_CENTER: [number, number] = [49.6590, 8.9962];
+type GreenAreaLocationState = {
+  longitude?: number;
+  latitude?: number;
+};
+
+const DEFAULT_GREEN_AREA_CENTER: [number, number] = [49.6590, 9.9962];
+
+const deriveCenterFromState = (
+  state?: GreenAreaLocationState,
+): [number, number] | null => {
+  if (
+    typeof state?.latitude === 'number' &&
+    typeof state?.longitude === 'number'
+  ) {
+    return [state.latitude, state.longitude];
+  }
+  return null;
+};
 
 const GreenAreaDetails: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = location.state as GreenAreaLocationState | undefined;
   const { greenAreaId, greenAreaName } = useParams<GreenAreaRouteParams>();
   const [error, setError] = useState<string | null>(null);
   const [trees, setTrees] = useState<Tree[]>([]);
   const [showTreeForm, setShowTreeForm] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(
+    deriveCenterFromState(locationState) ?? DEFAULT_GREEN_AREA_CENTER,
+  );
 
   const fetchTrees = useCallback(async () => {
     if (!greenAreaId) {
@@ -46,6 +69,75 @@ const GreenAreaDetails: React.FC = () => {
   useEffect(() => {
     fetchTrees();
   }, [fetchTrees]);
+
+  useEffect(() => {
+    const centerFromState = deriveCenterFromState(locationState);
+    if (centerFromState) {
+      setMapCenter(centerFromState);
+    }
+  }, [locationState]);
+
+  useEffect(() => {
+    const centerFromState = deriveCenterFromState(locationState);
+    if (centerFromState || !greenAreaId) {
+      return;
+    }
+
+    const numericGreenAreaId = Number.parseInt(greenAreaId, 10);
+    if (Number.isNaN(numericGreenAreaId)) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const fetchGreenAreaCenter = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/GreenAreas/GetAll`, {
+          headers: {
+            Authorization: `bearer ${localStorage.getItem('token') || ''}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to load green areas.');
+        }
+
+        const data = (await response.json()) as GreenArea[];
+        if (!Array.isArray(data)) {
+          return;
+        }
+
+        const currentGreenArea = data.find(
+          (area) => area.id === numericGreenAreaId,
+        );
+
+        if (
+          !isCancelled &&
+          currentGreenArea &&
+          typeof currentGreenArea.latitude === 'number' &&
+          typeof currentGreenArea.longitude === 'number'
+        ) {
+          setMapCenter([currentGreenArea.latitude, currentGreenArea.longitude]);
+        }
+      } catch (centerError) {
+        if (isCancelled) {
+          return;
+        }
+        console.error('Error fetching green area coordinates:', centerError);
+        setError(
+          (existing) =>
+            existing ??
+            'Koordinaten der ausgewaehlten Gruenflaeche konnten nicht geladen werden.',
+        );
+      }
+    };
+
+    fetchGreenAreaCenter();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [greenAreaId, locationState]);
 
   const handleTreeCreated = (createdTree?: Tree) => {
     if (createdTree) {
@@ -103,7 +195,7 @@ const GreenAreaDetails: React.FC = () => {
             <GreenAreaMap
               trees={trees}
               onError={setError}
-              defaultCenter={DEFAULT_GREEN_AREA_CENTER}
+              defaultCenter={mapCenter}
             />
           </div>
         )}

@@ -70,7 +70,14 @@ const GreenAreaList: React.FC = () => {
                 <button
                   type="button"
                   className="btn btn-outline-success btn-sm"
-                  onClick={() => navigate(`/green-areas/${greenArea.id}/${greenArea.name}`)}
+                  onClick={() =>
+                    navigate(`/green-areas/${greenArea.id}/${greenArea.name}`, {
+                      state: {
+                        longitude: greenArea.longitude,
+                        latitude: greenArea.latitude,
+                      },
+                    })
+                  }
                 >
                   Details anzeigen
                 </button>
