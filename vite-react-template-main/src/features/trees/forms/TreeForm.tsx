@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapTreeFromApi, mapTreeToApiPayload, type NewTree, type Tree } from '@/entities/tree';
+import TreeLocationPicker from '@/features/trees/components/TreeLocationPicker';
 
 type TreeFormProps = {
   greenAreaId: number;
+  defaultCenter?: [number, number];
   onTreeCreated: (tree?: Tree) => void;
 };
 
-const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
+const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeCreated }) => {
   const [draftTree, setDraftTree] = useState<NewTree>({
     greenAreaId,
     number: 0,
@@ -20,10 +22,27 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
     numberOfTrunks: 1,
     trunkInclination: 0,
   });
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   useEffect(() => {
     setDraftTree((current) => ({ ...current, greenAreaId }));
   }, [greenAreaId]);
+
+  useEffect(() => {
+    if (!defaultCenter) {
+      return;
+    }
+    setDraftTree((current) => {
+      if (current.latitude !== 0 || current.longitude !== 0) {
+        return current;
+      }
+      return {
+        ...current,
+        latitude: defaultCenter[0],
+        longitude: defaultCenter[1],
+      };
+    });
+  }, [defaultCenter]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -63,10 +82,27 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
         numberOfTrunks: 1,
         trunkInclination: 1,
       });
+      setShowLocationPicker(false);
     } catch (error) {
       console.error('Error creating tree:', error);
       alert('Fehler beim Hinzufuegen des Baumes');
     }
+  };
+
+  const handleCoordinatesSelected = ({ latitude, longitude }: { latitude: number; longitude: number }) => {
+    setDraftTree((current) => ({
+      ...current,
+      latitude,
+      longitude,
+    }));
+  };
+
+  const handleCoordinatesCleared = () => {
+    setDraftTree((current) => ({
+      ...current,
+      latitude: 0,
+      longitude: 0,
+    }));
   };
 
   return (
@@ -137,6 +173,31 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, onTreeCreated }) => {
           required
           step="any"
         />
+      </div>
+      <div className="mb-3">
+        <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+          <div>
+            <span className="form-label d-block mb-1">Koordinaten ueber Karte bestimmen</span>
+            <small className="text-muted">
+              Optional: Die Koordinaten koennen weiterhin manuell eingegeben werden.
+            </small>
+          </div>
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-sm align-self-md-start"
+            onClick={() => setShowLocationPicker((current) => !current)}
+          >
+            {showLocationPicker ? 'Karte ausblenden' : 'Karte anzeigen'}
+          </button>
+        </div>
+        {showLocationPicker && (
+          <TreeLocationPicker
+            value={{ latitude: draftTree.latitude, longitude: draftTree.longitude }}
+            defaultCenter={defaultCenter}
+            onChange={handleCoordinatesSelected}
+            onClear={handleCoordinatesCleared}
+          />
+        )}
       </div>
       <div className="mb-3">
         <label htmlFor="treeSizeMeters" className="form-label">

@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { Tree } from '@/entities/tree';
+import {
+  DEFAULT_MAP_CENTER,
+  DEFAULT_MAP_ZOOM,
+  ensureLeafletAssets,
+  hasValidCoordinates,
+  type LeafletWindow,
+  MAX_MAP_ZOOM,
+} from '@/shared/maps/leafletUtils';
 
 interface GreenAreaMapProps {
   trees: Tree[];
@@ -8,81 +16,12 @@ interface GreenAreaMapProps {
   greenAreaName?: string;
 }
 
-interface LeafletWindow extends Window {
-  L?: any;
-}
-
-const LEAFLET_SCRIPT_ID = "leaflet-script";
-const LEAFLET_CSS_ID = "leaflet-css";
-const DEFAULT_CENTER: [number, number] = [49.6590, 8.9962];
-const DEFAULT_ZOOM = 16;
-const MAX_ZOOM = 21;
 const TREE_MARKER_STYLE = {
   color: "#064d25",
   fillColor: "#0a6b30",
   fillOpacity: 0.9,
   radius: 8,
   weight: 2,
-};
-
-const hasValidCoordinates = (
-  latitude?: number | null,
-  longitude?: number | null,
-  { allowZero = true }: { allowZero?: boolean } = {},
-): boolean => {
-  if (
-    typeof latitude !== "number" ||
-    typeof longitude !== "number" ||
-    Number.isNaN(latitude) ||
-    Number.isNaN(longitude)
-  ) {
-    return false;
-  }
-
-  if (!allowZero && latitude === 0 && longitude === 0) {
-    return false;
-  }
-
-  return true;
-};
-
-const ensureLeafletAssets = (): Promise<void> => {
-  if (typeof window === "undefined" || typeof document === "undefined") {
-    return Promise.resolve();
-  }
-
-  const leafletWindow = window as LeafletWindow;
-  if (leafletWindow.L) {
-    return Promise.resolve();
-  }
-
-  return new Promise((resolve, reject) => {
-    const handleResolve = () => resolve();
-    const handleReject = () => reject(new Error("Leaflet konnte nicht geladen werden."));
-
-    const existingScript = document.getElementById(LEAFLET_SCRIPT_ID) as HTMLScriptElement | null;
-    if (existingScript) {
-      existingScript.addEventListener("load", handleResolve, { once: true });
-      existingScript.addEventListener("error", handleReject, { once: true });
-      return;
-    }
-
-    if (!document.getElementById(LEAFLET_CSS_ID)) {
-      const cssLink = document.createElement("link");
-      cssLink.id = LEAFLET_CSS_ID;
-      cssLink.rel = "stylesheet";
-      cssLink.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-      document.head.appendChild(cssLink);
-    }
-
-    const script = document.createElement("script");
-    script.id = LEAFLET_SCRIPT_ID;
-    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-    script.async = true;
-    script.onload = handleResolve;
-    script.onerror = handleReject;
-    document.body.appendChild(script);
-  });
 };
 
 const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
@@ -99,7 +38,7 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
   const treeMarkerRefs = useRef<any[]>([]);
   const areaMarkerRef = useRef<any | null>(null);
   const mapClickCleanupRef = useRef<(() => void) | null>(null);
-  const resolvedCenter: [number, number] = defaultCenter ?? DEFAULT_CENTER;
+  const resolvedCenter: [number, number] = defaultCenter ?? DEFAULT_MAP_CENTER;
   const [centerLat, centerLng] = resolvedCenter;
   const effectiveCenter: [number, number] = resolvedCenter;
 
@@ -114,13 +53,13 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
         if (!mapRef.current && mapContainerRef.current && leafletWindow.L) {
           const L = leafletWindow.L;
           mapRef.current = L.map(mapContainerRef.current, {
-            maxZoom: MAX_ZOOM,
+            maxZoom: MAX_MAP_ZOOM,
             minZoom: 3,
             zoomControl: true,
-          }).setView(effectiveCenter, DEFAULT_ZOOM);
+          }).setView(effectiveCenter, DEFAULT_MAP_ZOOM);
           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: "&copy; OpenStreetMap-Mitwirkende",
-            maxZoom: MAX_ZOOM,
+            maxZoom: MAX_MAP_ZOOM,
           }).addTo(mapRef.current);
 
           const handleClick = (event: any) => {
@@ -190,15 +129,15 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
     if (positions.length === 1) {
       const currentZoom = typeof mapRef.current.getZoom === "function"
         ? mapRef.current.getZoom()
-        : DEFAULT_ZOOM;
-      const targetZoom = Math.min(MAX_ZOOM, Math.max(currentZoom, 16));
-      mapRef.current.setView(positions[0], targetZoom);
-    } else if (positions.length > 1) {
-      const bounds = L.latLngBounds(positions);
-      mapRef.current.fitBounds(bounds, { padding: [24, 24], maxZoom: MAX_ZOOM });
-    } else if (typeof mapRef.current.setView === "function") {
-      mapRef.current.setView(effectiveCenter, DEFAULT_ZOOM);
-    }
+        : DEFAULT_MAP_ZOOM;
+          const targetZoom = Math.min(MAX_MAP_ZOOM, Math.max(currentZoom, 16));
+          mapRef.current.setView(positions[0], targetZoom);
+        } else if (positions.length > 1) {
+          const bounds = L.latLngBounds(positions);
+          mapRef.current.fitBounds(bounds, { padding: [24, 24], maxZoom: MAX_MAP_ZOOM });
+        } else if (typeof mapRef.current.setView === "function") {
+          mapRef.current.setView(effectiveCenter, DEFAULT_MAP_ZOOM);
+        }
   }, [trees, isMapReady, centerLat, centerLng]);
 
   useEffect(() => {
