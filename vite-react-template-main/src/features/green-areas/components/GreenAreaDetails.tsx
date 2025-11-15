@@ -177,6 +177,7 @@ const GreenAreaDetails: React.FC = () => {
           <div className="bg-light border rounded p-3 my-4">
             <TreeForm
               greenAreaId={Number.parseInt(greenAreaId ?? '0', 10)}
+              defaultCenter={mapCenter}
               onTreeCreated={handleTreeCreated}
             />
           </div>
