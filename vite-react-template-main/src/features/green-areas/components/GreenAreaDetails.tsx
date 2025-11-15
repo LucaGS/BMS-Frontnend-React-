@@ -196,6 +196,7 @@ const GreenAreaDetails: React.FC = () => {
               trees={trees}
               onError={setError}
               defaultCenter={mapCenter}
+              greenAreaName={greenAreaName}
             />
           </div>
         )}

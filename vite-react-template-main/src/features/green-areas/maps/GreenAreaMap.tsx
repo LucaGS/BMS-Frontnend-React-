@@ -5,6 +5,7 @@ interface GreenAreaMapProps {
   trees: Tree[];
   onError?: (message: string | null) => void;
   defaultCenter?: [number, number];
+  greenAreaName?: string;
 }
 
 interface LeafletWindow extends Window {
@@ -16,6 +17,27 @@ const LEAFLET_CSS_ID = "leaflet-css";
 const DEFAULT_CENTER: [number, number] = [49.6590, 8.9962];
 const DEFAULT_ZOOM = 16;
 const MAX_ZOOM = 21;
+
+const hasValidCoordinates = (
+  latitude?: number | null,
+  longitude?: number | null,
+  { allowZero = true }: { allowZero?: boolean } = {},
+): boolean => {
+  if (
+    typeof latitude !== "number" ||
+    typeof longitude !== "number" ||
+    Number.isNaN(latitude) ||
+    Number.isNaN(longitude)
+  ) {
+    return false;
+  }
+
+  if (!allowZero && latitude === 0 && longitude === 0) {
+    return false;
+  }
+
+  return true;
+};
 
 const ensureLeafletAssets = (): Promise<void> => {
   if (typeof window === "undefined" || typeof document === "undefined") {
@@ -60,6 +82,7 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
   trees,
   onError,
   defaultCenter,
+  greenAreaName,
 }) => {
   const [isMapReady, setIsMapReady] = useState(false);
   const [temporaryMarkers, setTemporaryMarkers] = useState<Array<{ lat: number; lng: number }>>([]);
@@ -67,6 +90,7 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
   const mapRef = useRef<any>(null);
   const temporaryMarkerRefs = useRef<any[]>([]);
   const treeMarkerRefs = useRef<any[]>([]);
+  const areaMarkerRef = useRef<any | null>(null);
   const mapClickCleanupRef = useRef<(() => void) | null>(null);
   const resolvedCenter: [number, number] = defaultCenter ?? DEFAULT_CENTER;
   const [centerLat, centerLng] = resolvedCenter;
@@ -139,10 +163,10 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
     const positions: [number, number][] = [];
 
     trees.forEach((tree) => {
-      if (typeof tree.latitude !== "number" || typeof tree.longitude !== "number") {
+      if (!hasValidCoordinates(tree.latitude, tree.longitude, { allowZero: false })) {
         return;
       }
-      const coords: [number, number] = [tree.latitude, tree.longitude];
+      const coords: [number, number] = [tree.latitude!, tree.longitude!];
       positions.push(coords);
       const marker = L.marker(coords)
         .addTo(mapRef.current)
@@ -165,6 +189,29 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
   }, [trees, isMapReady, centerLat, centerLng]);
 
   useEffect(() => {
+    const leafletWindow = window as LeafletWindow;
+    if (!isMapReady || !mapRef.current || !leafletWindow.L) {
+      return;
+    }
+
+    if (areaMarkerRef.current && typeof areaMarkerRef.current.remove === "function") {
+      areaMarkerRef.current.remove();
+      areaMarkerRef.current = null;
+    }
+
+    if (!hasValidCoordinates(centerLat, centerLng)) {
+      return;
+    }
+
+    const L = leafletWindow.L;
+    const marker = L.marker([centerLat, centerLng]).addTo(mapRef.current);
+    if (greenAreaName) {
+      marker.bindTooltip(greenAreaName, { direction: "top" });
+    }
+    areaMarkerRef.current = marker;
+  }, [isMapReady, centerLat, centerLng, greenAreaName]);
+
+  useEffect(() => {
     return () => {
       mapClickCleanupRef.current?.();
       mapClickCleanupRef.current = null;
@@ -182,6 +229,11 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
         }
       });
       temporaryMarkerRefs.current = [];
+
+      if (areaMarkerRef.current && typeof areaMarkerRef.current.remove === "function") {
+        areaMarkerRef.current.remove();
+      }
+      areaMarkerRef.current = null;
 
       if (mapRef.current && typeof mapRef.current.remove === "function") {
         mapRef.current.remove();
