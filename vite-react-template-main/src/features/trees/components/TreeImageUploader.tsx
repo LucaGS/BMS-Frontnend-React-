@@ -10,84 +10,53 @@ type TreeImageUploaderProps = {
   treeId: number;
 };
 
-const ensureAbsoluteUrl = (value: string) => {
-  if (/^https?:\/\//i.test(value)) {
-    return value;
-  }
-  const base = API_BASE_URL.replace(/\/$/, '');
-  const path = value.replace(/^\//, '');
-  return `${base}/${path}`;
-};
-
-const mapToImage = (input: unknown): TreeImage | null => {
-  if (!input) {
-    return null;
-  }
-
-  if (typeof input === 'string') {
-    const url = ensureAbsoluteUrl(input);
-    return { id: url, url };
-  }
-
-  if (typeof input === 'object') {
-    const candidate = input as Record<string, unknown>;
-    const { id, url, imageUrl, path, data, contentType } = candidate;
-
-    if (typeof url === 'string') {
-      return { id: String(id ?? url), url: ensureAbsoluteUrl(url) };
-    }
-    if (typeof imageUrl === 'string') {
-      return { id: String(id ?? imageUrl), url: ensureAbsoluteUrl(imageUrl) };
-    }
-    if (typeof path === 'string') {
-      return { id: String(id ?? path), url: ensureAbsoluteUrl(path) };
-    }
-    if (typeof data === 'string' && data.length > 0) {
-      const type = typeof contentType === 'string' && contentType.length > 0 ? contentType : 'image/png';
-      return {
-        id: String(id ?? `${Date.now()}-${Math.random()}`),
-        url: `data:${type};base64,${data}`,
-      };
-    }
-  }
-
-  return null;
-};
-
-const parseImageResponse = (payload: unknown): TreeImage[] => {
+const normalizeImagePayload = (payload: unknown): string[] => {
   if (!payload) {
     return [];
   }
 
   if (Array.isArray(payload)) {
-    return payload.map(mapToImage).filter((image): image is TreeImage => Boolean(image));
+    return payload
+      .map((item) => {
+        if (!item) {
+          return null;
+        }
+        if (typeof item === 'string') {
+          return item;
+        }
+        if (typeof item === 'object') {
+          const { url, imageUrl, path } = item as Record<string, unknown>;
+          if (typeof url === 'string') {
+            return url;
+          }
+          if (typeof imageUrl === 'string') {
+            return imageUrl;
+          }
+          if (typeof path === 'string') {
+            return path.startsWith('http')
+              ? path
+              : `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+          }
+        }
+        return null;
+      })
+      .filter((url): url is string => Boolean(url));
   }
 
-  const single = mapToImage(payload);
-  return single ? [single] : [];
+  if (typeof payload === 'string') {
+    return [payload];
+  }
+
+  return [];
 };
 
-const fileToBase64 = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64 = result.includes(',') ? result.split(',')[1] : result;
-      resolve(base64);
-    };
-    reader.onerror = (event) => {
-      reject(event);
-    };
-    reader.readAsDataURL(file);
-  });
-
 const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
-  const [images, setImages] = useState<TreeImage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [uploadedImages, setUploadedImages] = useState<TreeImage[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const revokePreview = () => {
@@ -96,41 +65,68 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
     }
   };
 
-  useEffect(
-    () => () => {
-      revokePreview();
-    },
-    [previewUrl],
-  );
+  useEffect(() => () => revokePreview(), [previewUrl]);
 
-  const loadImages = useCallback(async () => {
-    setIsLoading(true);
-    setFeedback(null);
+  const fetchImages = useCallback(async () => {
+    if (!treeId) {
+      setUploadedImages([]);
+      return;
+    }
+
+    setIsLoadingImages(true);
+    setMessage(null);
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/TreeImages/ByTreeId/${treeId}`, {
         headers: {
           Authorization: `bearer ${localStorage.getItem('token') || ''}`,
         },
       });
+
       if (!response.ok) {
-        throw new Error('Failed to fetch tree images.');
+        throw new Error('Failed to load images');
       }
+
       const payload = await response.json();
-      setImages(parseImageResponse(payload));
+      const normalized = normalizeImagePayload(payload).map<TreeImage>((url) => ({
+        id: crypto.randomUUID?.() ?? `${url}-${Date.now()}`,
+        url,
+      }));
+      setUploadedImages(normalized);
     } catch (error) {
       console.error('Error loading tree images:', error);
-      setImages([]);
-      setFeedback({ type: 'error', text: 'Bilder konnten nicht geladen werden.' });
+      setUploadedImages([]);
+      setMessage({ kind: 'error', text: 'Vorhandene Bilder konnten nicht geladen werden.' });
     } finally {
-      setIsLoading(false);
+      setIsLoadingImages(false);
     }
   }, [treeId]);
 
   useEffect(() => {
-    if (treeId) {
-      loadImages();
+    fetchImages();
+  }, [fetchImages]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    revokePreview();
+    setMessage(null);
+
+    if (!file) {
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      return;
     }
-  }, [treeId, loadImages]);
+
+    if (!file.type.startsWith('image/')) {
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setMessage({ kind: 'error', text: 'Bitte waehlen Sie eine gueltige Bilddatei.' });
+      return;
+    }
+
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
 
   const resetSelection = () => {
     revokePreview();
@@ -141,44 +137,34 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
     }
   };
 
-  const handleFileSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    setFeedback(null);
-    revokePreview();
+  const encodeFileToBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.includes(',') ? result.split(',')[1] : result;
+        resolve(base64);
+      };
+      reader.onerror = (event) => reject(event);
+      reader.readAsDataURL(file);
+    });
 
-    if (!file) {
-      resetSelection();
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      setFeedback({ type: 'error', text: 'Bitte waehlen Sie eine gueltige Bilddatei aus.' });
-      resetSelection();
-      return;
-    }
-
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-  };
-
-  const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const handleUpload = async () => {
     if (!selectedFile) {
-      setFeedback({ type: 'error', text: 'Bitte zuerst ein Bild auswaehlen.' });
+      setMessage({ kind: 'error', text: 'Bitte waehlen Sie zuerst eine Bilddatei aus.' });
       return;
     }
 
     setIsUploading(true);
-    setFeedback(null);
+    setMessage(null);
 
     try {
-      const base64 = await fileToBase64(selectedFile);
+      const base64Data = await encodeFileToBase64(selectedFile);
       const payload = {
         treeId,
         fileName: selectedFile.name,
         contentType: selectedFile.type,
-        data: base64,
+        data: base64Data,
       };
 
       const response = await fetch(`${API_BASE_URL}/api/TreeImages/Create`, {
@@ -194,103 +180,102 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
         throw new Error('Upload failed');
       }
 
-      await loadImages();
-      setFeedback({ type: 'success', text: 'Bild erfolgreich hochgeladen.' });
+      await fetchImages();
+      setMessage({ kind: 'success', text: 'Bild erfolgreich hochgeladen.' });
       resetSelection();
     } catch (error) {
       console.error('Error uploading tree image:', error);
-      setFeedback({ type: 'error', text: 'Bild konnte nicht hochgeladen werden.' });
+      setMessage({ kind: 'error', text: 'Bild konnte nicht hochgeladen werden.' });
     } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <section className="mt-4 pt-4 border-top">
-      <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-        <div>
-          <h2 className="h5 mb-1">Baumbilder</h2>
-          <p className="text-muted small mb-0">
-            Dokumentieren Sie den Zustand des Baumes mit aktuellen Fotos.
-          </p>
-        </div>
-        <span className="badge bg-light text-dark align-self-center">{images.length} Bilder</span>
+    <section className="mt-4">
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <h2 className="h5 mb-0">Baumbilder</h2>
+        <span className="badge bg-light text-dark">{uploadedImages.length}</span>
       </div>
-      <div className="row gy-4">
-        <div className="col-12 col-lg-5">
-          <div className="border rounded-3 p-3 h-100 bg-light">
-            <form onSubmit={handleUpload} className="d-flex flex-column gap-3">
-              <div>
-                <label htmlFor="tree-image-upload" className="form-label mb-2">
-                  Bild auswaehlen
-                </label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="form-control"
-                  id="tree-image-upload"
-                  accept="image/*"
-                  onChange={handleFileSelection}
-                  disabled={isUploading}
-                />
-              </div>
-              {previewUrl && (
-                <div className="rounded border overflow-hidden ratio ratio-4x3">
-                  <img src={previewUrl} alt="Bildvorschau" style={{ objectFit: 'cover' }} />
-                </div>
-              )}
-              <div className="d-flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={resetSelection}
-                  disabled={isUploading && !previewUrl}
-                >
-                  Auswahl entfernen
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary btn-sm"
-                  disabled={!selectedFile || isUploading}
-                >
-                  {isUploading ? 'Wird hochgeladen...' : 'Bild hochladen'}
-                </button>
-              </div>
-              {feedback && (
-                <div
-                  className={`alert mb-0 ${
-                    feedback.type === 'error' ? 'alert-danger' : 'alert-success'
-                  }`}
-                  role="alert"
-                >
-                  {feedback.text}
-                </div>
-              )}
-            </form>
-          </div>
-        </div>
-        <div className="col-12 col-lg-7">
-          <div className="border rounded-3 p-3 h-100">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h3 className="h6 mb-0">Hochgeladene Bilder</h3>
-              {isLoading && <span className="text-muted small">Wird geladen...</span>}
+      <p className="text-muted small mb-3">
+        Laden Sie aussagekraeftige Bilder hoch, um den Zustand des Baumes zu dokumentieren.
+      </p>
+      <div className="border rounded-3 p-3 bg-light mb-4">
+        <label htmlFor="tree-image-upload" className="form-label">
+          Neues Bild hochladen
+        </label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="form-control"
+          id="tree-image-upload"
+          accept="image/*"
+          onChange={handleFileChange}
+          disabled={isUploading}
+        />
+        {previewUrl && (
+          <div className="mt-3">
+            <div className="ratio ratio-16x9 rounded border overflow-hidden">
+              <img src={previewUrl} alt="Bildvorschau" style={{ objectFit: 'cover' }} />
             </div>
-            {!isLoading && images.length === 0 && (
-              <p className="text-muted small mb-0">Noch keine Bilder vorhanden.</p>
-            )}
-            {images.length > 0 && (
-              <div className="row g-3">
-                {images.map((image) => (
-                  <div key={image.id} className="col-12 col-sm-6">
-                    <div className="ratio ratio-4x3 rounded border overflow-hidden bg-white shadow-sm">
-                      <img src={image.url} alt="Baumbild" style={{ objectFit: 'cover' }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="d-flex gap-2 mt-2">
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={resetSelection}
+                disabled={isUploading}
+              >
+                Auswahl entfernen
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={handleUpload}
+                disabled={isUploading}
+              >
+                {isUploading ? 'Wird hochgeladen...' : 'Jetzt hochladen'}
+              </button>
+            </div>
           </div>
+        )}
+        {!previewUrl && (
+          <button
+            type="button"
+            className="btn btn-primary btn-sm mt-3"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+          >
+            Bild aus Dateien waehlen
+          </button>
+        )}
+        {message && (
+          <div
+            className={`alert mt-3 mb-0 ${message.kind === 'error' ? 'alert-danger' : 'alert-success'}`}
+            role="alert"
+          >
+            {message.text}
+          </div>
+        )}
+      </div>
+      <div>
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h3 className="h6 mb-0">Hochgeladene Bilder</h3>
+          {isLoadingImages && <span className="text-muted small">Wird geladen...</span>}
         </div>
+        {uploadedImages.length === 0 && !isLoadingImages && (
+          <p className="text-muted small mb-0">Noch keine Bilder vorhanden.</p>
+        )}
+        {uploadedImages.length > 0 && (
+          <div className="row g-3">
+            {uploadedImages.map((image) => (
+              <div key={image.id} className="col-12 col-sm-6">
+                <div className="ratio ratio-4x3 rounded border overflow-hidden bg-white">
+                  <img src={image.url} alt="Baumbild" style={{ objectFit: 'cover' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
