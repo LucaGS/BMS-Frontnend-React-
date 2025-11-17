@@ -77,7 +77,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
     setMessage(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/TreeImages/ByTreeId/${treeId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/Images/GetImages/${treeId}`, {
         headers: {
           Authorization: `bearer ${localStorage.getItem('token') || ''}`,
         },
@@ -167,7 +167,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
         data: base64Data,
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/TreeImages/Create`, {
+      const response = await fetch(`${API_BASE_URL}/api/Images/Create`, {
         method: 'POST',
         headers: {
           Authorization: `bearer ${localStorage.getItem('token') || ''}`,
