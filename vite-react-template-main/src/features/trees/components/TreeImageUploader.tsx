@@ -25,7 +25,7 @@ const normalizeImagePayload = (payload: unknown): string[] => {
           return item;
         }
         if (typeof item === 'object') {
-          const { url, imageUrl, path } = item as Record<string, unknown>;
+          const { url, imageUrl, path, data, contentType } = item as Record<string, unknown>;
           if (typeof url === 'string') {
             return url;
           }
@@ -36,6 +36,13 @@ const normalizeImagePayload = (payload: unknown): string[] => {
             return path.startsWith('http')
               ? path
               : `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+          }
+          if (typeof data === 'string' && data.length > 0) {
+            const type =
+              typeof contentType === 'string' && contentType.trim().length > 0
+                ? contentType
+                : 'image/jpeg';
+            return `data:${type};base64,${data}`;
           }
         }
         return null;
