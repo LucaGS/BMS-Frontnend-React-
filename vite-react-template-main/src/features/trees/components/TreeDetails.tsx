@@ -3,6 +3,7 @@ import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapInspectionsFromApi, type Inspection } from '@/features/trees/inspections';
 import type { Tree } from '@/features/trees/types';
 import InspectionForm from '../forms/InspectionForm';
+import TreeImageUploader from './TreeImageUploader';
 
 type TreeDetailsProps = {
   tree?: Tree | null;
@@ -152,6 +153,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                 <dt className="col-sm-3">Stamminneigung (Grad)</dt>
                 <dd className="col-sm-9">{tree.trunkInclination ?? '-'}</dd>
               </dl>
+              <TreeImageUploader treeId={tree.id} />
               <div className="d-flex justify-content-between align-items-center mt-4 mb-2">
                 <h2 className="h5 mb-0">Kontrollen</h2>
                 <button
