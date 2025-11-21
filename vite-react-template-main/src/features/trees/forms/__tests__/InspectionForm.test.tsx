@@ -1,6 +1,6 @@
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@/test/test-utils';
+import { fireEvent, render, screen, waitFor } from '@/test/test-utils';
 import InspectionForm from '../InspectionForm';
 
 const fetchMock = vi.spyOn(global, 'fetch');
@@ -16,14 +16,38 @@ describe('InspectionForm', () => {
 
     render(<InspectionForm treeId={5} onInspectionCreated={onCreated} />);
 
-    await userEvent.selectOptions(screen.getByLabelText(/verkehrssicher/i), 'false');
-    await userEvent.click(screen.getByRole('button', { name: /hinzufuegen/i }));
+    fireEvent.change(screen.getByLabelText(/kontrolldatum/i), {
+      target: { value: '2024-05-01T12:00' },
+    });
+    await userEvent.clear(screen.getByLabelText(/kontrollintervall/i));
+    await userEvent.type(screen.getByLabelText(/kontrollintervall/i), '18');
+    await userEvent.type(screen.getByLabelText(/entwicklungsstadium/i), 'Jungbaum');
+    await userEvent.type(screen.getByLabelText(/beschreibung/i), 'Keine Maengel');
+    fireEvent.change(screen.getByLabelText(/vitalitaet/i), { target: { value: 4 } });
+    fireEvent.change(screen.getByLabelText(/schaedigungsgrad/i), { target: { value: 5 } });
+    fireEvent.change(screen.getByLabelText(/standfestigkeit/i), { target: { value: 2 } });
+    fireEvent.change(screen.getByLabelText(/bruchsicherheit/i), { target: { value: 1 } });
+    await userEvent.click(screen.getByLabelText(/verkehrssicherheit/i));
+
+    await userEvent.click(screen.getByRole('button', { name: /kontrolle speichern/i }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/Inspections/Create'),
-      expect.objectContaining({ method: 'POST' })
-    );
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0];
+    expect(requestUrl).toContain('/api/Inspections/Create');
+    const body = JSON.parse((requestInit?.body as string) || '{}');
+
+    expect(body).toMatchObject({
+      treeId: 5,
+      performedAt: '2024-05-01T12:00',
+      isSafeForTraffic: false,
+      newInspectionIntervall: 18,
+      developmentalStage: 'Jungbaum',
+      damageLevel: 5,
+      standStability: 2,
+      breakageSafety: 1,
+      vitality: 4,
+      description: 'Keine Maengel',
+    });
     expect(onCreated).toHaveBeenCalled();
   });
 
@@ -32,7 +56,7 @@ describe('InspectionForm', () => {
 
     render(<InspectionForm treeId={8} />);
 
-    await userEvent.click(screen.getByRole('button', { name: /hinzufuegen/i }));
+    await userEvent.click(screen.getByRole('button', { name: /kontrolle speichern/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/fehler beim hinzufuegen/i);
   });

@@ -52,8 +52,32 @@ describe('TreeDetails', () => {
 
   it('loads inspections and renders details for a tree', async () => {
     const inspections = [
-      { id: 1, trafficSafe: true, date: '2024-01-01T12:00:00Z' },
-      { id: 2, trafficSafe: false, date: '2024-02-01T12:00:00Z' },
+      {
+        id: 1,
+        treeId: 1,
+        performedAt: '2024-01-01T12:00:00Z',
+        isSafeForTraffic: true,
+        newInspectionIntervall: 12,
+        developmentalStage: 'Jungbaum',
+        damageLevel: 1,
+        standStability: 2,
+        breakageSafety: 3,
+        vitality: 4,
+        description: 'Keine Maengel sichtbar.',
+      },
+      {
+        id: 2,
+        treeId: 1,
+        performedAt: '2024-02-01T12:00:00Z',
+        isSafeForTraffic: false,
+        newInspectionIntervall: 24,
+        developmentalStage: 'Altbaum',
+        damageLevel: 3,
+        standStability: 4,
+        breakageSafety: 5,
+        vitality: 2,
+        description: 'Rueckschnitt empfohlen.',
+      },
     ];
     fetchMock.mockResolvedValueOnce(
       new Response(JSON.stringify(inspections), {
@@ -67,6 +91,9 @@ describe('TreeDetails', () => {
     expect(await screen.findByText(/baum verwalten/i)).toBeInTheDocument();
     expect(screen.getByText(tree.species!)).toBeInTheDocument();
     expect(await screen.findAllByText(/verkehrssicher/i)).not.toHaveLength(0);
+    expect(screen.getByText(/jungbaum/i)).toBeInTheDocument();
+    expect(screen.getByText(/intervall: 12 tage/i)).toBeInTheDocument();
+    expect(screen.getByText(/bruchsicherheit: 5\/5/i)).toBeInTheDocument();
     expect(imageUploaderSpy).toHaveBeenCalledWith(expect.objectContaining({ treeId: tree.id }));
   });
 

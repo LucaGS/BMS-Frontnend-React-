@@ -79,6 +79,12 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
     setShowInspectionForm(false);
   };
 
+  const renderScorePill = (label: string, value: number) => (
+    <span className="badge rounded-pill bg-light border text-dark">
+      {label}: {value}/5
+    </span>
+  );
+
   const renderHeaderAction = () => {
     if (embedded) {
       return (
@@ -181,24 +187,50 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                   {inspections.length > 0 ? (
                     <ul className="list-group mt-3">
                       {inspections.map((inspection) => {
-                        const date = new Date(inspection.date);
+                        const date = new Date(inspection.performedAt);
                         const formattedDate = Number.isNaN(date.valueOf())
-                          ? inspection.date
+                          ? inspection.performedAt
                           : date.toLocaleString();
 
                         return (
                           <li
                             key={inspection.id}
-                            className="list-group-item d-flex justify-content-between align-items-center"
+                            className="list-group-item"
                           >
-                            <span>{formattedDate}</span>
-                            <span
-                              className={`badge ${
-                                inspection.trafficSafe ? 'bg-success' : 'bg-danger'
-                              }`}
-                            >
-                              {inspection.trafficSafe ? 'Verkehrssicher' : 'Nicht verkehrssicher'}
-                            </span>
+                            <div className="d-flex justify-content-between flex-wrap gap-3">
+                              <div>
+                                <div className="fw-semibold">{formattedDate}</div>
+                                <div className="text-muted small">
+                                  Entwicklungsphase: {inspection.developmentalStage || '-'}
+                                </div>
+                                <div className="text-muted small">
+                                  Intervall: {inspection.newInspectionIntervall} Tage | Vitalitaet:{' '}
+                                  {inspection.vitality}/5
+                                </div>
+                              </div>
+                              <div className="text-end">
+                                <span
+                                  className={`badge ${
+                                    inspection.isSafeForTraffic ? 'bg-success' : 'bg-danger'
+                                  }`}
+                                >
+                                  {inspection.isSafeForTraffic
+                                    ? 'Verkehrssicher'
+                                    : 'Nicht verkehrssicher'}
+                                </span>
+                                <div className="text-muted small mt-1">Kontrolle #{inspection.id}</div>
+                              </div>
+                            </div>
+
+                            <div className="d-flex flex-wrap gap-2 mt-3">
+                              {renderScorePill('Schaedigungsgrad', inspection.damageLevel)}
+                              {renderScorePill('Standfestigkeit', inspection.standStability)}
+                              {renderScorePill('Bruchsicherheit', inspection.breakageSafety)}
+                            </div>
+
+                            {inspection.description && (
+                              <p className="text-muted small mb-0 mt-3">{inspection.description}</p>
+                            )}
                           </li>
                         );
                       })}
