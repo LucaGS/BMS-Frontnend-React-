@@ -1,41 +1,27 @@
----
-title: Vite + React
-description: The default Vite + React starter, utilizing `Caddy` to serve the built app
-tags:
-  - node
-  - vite
-  - react
----
+# Baum Management System – Frontend
 
-# Vite + React + Caddy
+React + TypeScript Single Page App for BMS (tree and green-area management) powered by Vite. The UI covers authentication, tree/inspection workflows (inkl. 0–5 Slider und Vitalitaet), Bild-Uploads und Karten fuer Gruenflaechen.
 
-This is a [Vite + React](https://vitejs.dev/guide/#trying-vite-online) starter that uses [Caddy](https://caddyserver.com/).
+## Stack
+- React 19, TypeScript, React Router 7  
+- Vite 6 (bundle), Vitest + Testing Library (Tests)  
+- Bootstrap 5 Styling
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/NeiLty?referralCode=ySCnWl)
+## Getting started
+1) Abhaengigkeiten: `npm install`  
+2) Dev-Server: `npm run dev` und `http://localhost:5173` oeffnen  
+3) API-URL bei Bedarf anpassen in `src/shared/config/appConfig.ts` (`API_BASE_URL`)
 
-## ✨ Features
+## Scripts
+- `npm run dev` – Dev-Server starten
+- `npm run build` – Type-Check + Production-Build nach `dist/`
+- `npm test` – Vitest einmal ausfuehren
+- `npm run test:watch` – Tests im Watch-Modus
+- `npm run test:coverage` – Coverage-Report
 
-- Vite + React
-- [Caddy](https://caddyserver.com/)
+## Testing
+Vitest ist in `vite.config.ts` (happy-dom) konfiguriert. Globales Setup: `src/setupTests.ts`.  
+`renderWithRouter` aus `src/test/test-utils.tsx` nutzen, wenn Komponenten Routing brauchen.
 
-## 💁‍♀️ How to use
-
-- Install required dependencies with `npm install`
-- Start the server for local development `npm run dev`
-
-## ❓ Why use `Caddy` when deploying to Railway?
-
-Caddy is a powerful, enterprise-ready, open source web server, and therefore Caddy is far better suited to serve websites than Vite is, using Caddy will result in much less memory and cpu usage compared to serving with Vite (much lower running costs too)
-
-To see how this is achieved with nixpacks, check out the fully documented nixpacks.toml file in this repository
-
-The configuration for Caddy is called a Caddyfile, and you can edit that file to further suite your needs, by default it comes configured to serve a single page app for React, and to also gzip the responses
-
-**Relevant Caddy documentation:**
-
-- [The Caddyfile](https://caddyserver.com/docs/caddyfile)
-- [Caddyfile Directives](https://caddyserver.com/docs/caddyfile/directives)
-- [root](https://caddyserver.com/docs/caddyfile/directives/root)
-- [encode](https://caddyserver.com/docs/caddyfile/directives/encode)
-- [file_server](https://caddyserver.com/docs/caddyfile/directives/file_server)
-- [try_files](https://caddyserver.com/docs/caddyfile/directives/try_files)
+## Deployment
+Produktionsbundle liegt in `dist/`. Stelle sicher, dass `API_BASE_URL` zur Zielumgebung passt. Caddy/Container-Deployments funktionieren ohne weitere Anpassungen.

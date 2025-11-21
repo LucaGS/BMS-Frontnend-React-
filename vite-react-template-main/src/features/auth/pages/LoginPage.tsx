@@ -5,13 +5,14 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
-  const [jwt, setJwt] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       setError('');
+      setSuccess(false);
       const response = await fetch(`${API_BASE_URL}/api/Auth/Login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -25,15 +26,14 @@ const LoginPage: React.FC = () => {
       const data = await response.json();
 
       if (data.token) {
-        setJwt(data.token);
         localStorage.setItem('token', data.token);
+        setSuccess(true);
       } else {
-        setJwt('');
-        throw new Error('Kein Token erhalten.');
+        throw new Error('Login erfolgreich, aber Rueckmeldung fehlt.');
       }
     } catch (submitError) {
       console.error('Error during login:', submitError);
-      setJwt('');
+      setSuccess(false);
       setError(submitError instanceof Error ? submitError.message : 'Unbekannter Fehler');
     }
   };
@@ -96,9 +96,9 @@ const LoginPage: React.FC = () => {
                   {error}
                 </div>
               )}
-              {jwt && (
+              {success && (
                 <div className="alert alert-success mt-4 mb-0" role="alert">
-                  Erfolgreich eingeloggt. Token: <span className="text-break">{jwt}</span>
+                  Erfolgreich eingeloggt.
                 </div>
               )}
             </div>

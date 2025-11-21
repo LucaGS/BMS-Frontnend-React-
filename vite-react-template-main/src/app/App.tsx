@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { mapTreesFromApi, type Tree } from '@/features/trees/types';
 import AppHeader from '@/widgets/layout/AppHeader';
+import CookieBanner from '@/widgets/layout/CookieBanner';
 import HomePage from '@/features/landing/pages/HomePage';
 import AboutPage from '@/features/landing/pages/AboutPage';
+import ImprintPage from '@/features/landing/pages/ImprintPage';
 import LoginPage from '@/features/auth/pages/LoginPage';
 import SignupPage from '@/features/auth/pages/SignupPage';
 import TreeList from '@/features/trees/components/TreeList';
@@ -117,6 +119,7 @@ const App: React.FC = () => (
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/imprint" element={<ImprintPage />} />
             <Route path="/trees" element={<TreeList />} />
             <Route path="/trees/:treeId" element={<RoutedTreeDetails />} />
             <Route path="/login" element={<LoginPage />} />
@@ -129,6 +132,7 @@ const App: React.FC = () => (
       <footer className="bg-dark text-white text-center py-3 mt-auto">
         <small>&copy; {new Date().getFullYear()} BMS</small>
       </footer>
+      <CookieBanner />
     </div>
   </BrowserRouter>
 );

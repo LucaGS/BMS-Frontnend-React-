@@ -65,6 +65,11 @@ const AppHeader: React.FC = () => {
               </NavLink>
             </li>
             <li className="nav-item">
+              <NavLink to="/imprint" className={navLinkClass}>
+                Impressum
+              </NavLink>
+            </li>
+            <li className="nav-item">
               <NavLink to="/trees" className={navLinkClass}>
                 Baeume
               </NavLink>
