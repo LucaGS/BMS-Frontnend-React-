@@ -11,7 +11,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
   };
 });
 
-import { renderWithRouter, screen, waitFor } from '@/test/test-utils';
+import { renderWithRouter, screen } from '@/test/test-utils';
 import TreeList from '../TreeList';
 
 const fetchMock = vi.spyOn(global, 'fetch');

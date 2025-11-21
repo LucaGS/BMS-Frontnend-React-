@@ -1,6 +1,6 @@
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderWithRouter, screen, waitFor } from '@/test/test-utils';
+import { renderWithRouter, screen } from '@/test/test-utils';
 
 const treeFormSpy = vi.fn();
 const greenAreaMapSpy = vi.fn();

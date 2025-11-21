@@ -3,13 +3,14 @@ import { act, render, screen, waitFor } from '@/test/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 
 const mapHandlers: Record<string, (event: any) => void> = {};
-const markerFactory = () => ({
-  remove: vi.fn(),
-  addTo: vi.fn(function addTo() {
-    return this;
-  }),
-  bindTooltip: vi.fn(),
-});
+const markerFactory = () => {
+  const marker = {
+    remove: vi.fn(),
+    addTo: vi.fn(() => marker),
+    bindTooltip: vi.fn(),
+  };
+  return marker;
+};
 
 const circleMarkerMock = vi.fn(() => markerFactory());
 const markerMock = vi.fn(() => markerFactory());
@@ -42,7 +43,7 @@ vi.mock('@/shared/maps/leafletUtils', () => ({
 }));
 
 import GreenAreaMap from '../GreenAreaMap';
-import { ensureLeafletAssets, hasValidCoordinates } from '@/shared/maps/leafletUtils';
+import { ensureLeafletAssets } from '@/shared/maps/leafletUtils';
 
 describe('GreenAreaMap', () => {
   it('renders tree markers and allows clearing temporary markers', async () => {
