@@ -39,10 +39,7 @@ const HomePage: React.FC = () => (
       ))}
     </div>
 
-    <div className="alert alert-info mt-5 mb-0 text-center" role="alert">
-      Tipp: Nach dem Speichern einer Kontrolle wird die Liste aktualisiert. Wenn etwas nicht passt,
-      koennen Sie die Kontrolle sofort erneut anlegen.
-    </div>
+    
   </section>
 );
 
