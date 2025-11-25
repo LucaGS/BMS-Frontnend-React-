@@ -3,6 +3,7 @@ import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapInspectionsFromApi, type Inspection } from '@/features/trees/inspections';
 import type { Tree } from '@/features/trees/types';
 import InspectionForm from '../forms/InspectionForm';
+import TreeLocationMap from './TreeLocationMap';
 import TreeImageUploader from './TreeImageUploader';
 
 type TreeDetailsProps = {
@@ -121,44 +122,45 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
 
           {tree && (
             <>
-              <p className="text-muted">Details zum ausgewaehlten Baum.</p>
-              <dl className="row">
-                <dt className="col-sm-3">ID</dt>
-                <dd className="col-sm-9">{tree.id}</dd>
-
-                <dt className="col-sm-3">Nummer</dt>
-                <dd className="col-sm-9">{tree.number}</dd>
-
-                <dt className="col-sm-3">Art</dt>
-                <dd className="col-sm-9">{tree.species}</dd>
-
-                <dt className="col-sm-3">Gruenflaeche</dt>
-                <dd className="col-sm-9">{tree.greenAreaId}</dd>
-
-                <dt className="col-sm-3">Breitengrad</dt>
-                <dd className="col-sm-9">{tree.latitude}</dd>
-
-                <dt className="col-sm-3">Laengengrad</dt>
-                <dd className="col-sm-9">{tree.longitude}</dd>
-
-                <dt className="col-sm-3">Letzte Kontrolle</dt>
-                <dd className="col-sm-9">{tree.lastInspectionId}</dd>
-
-                <dt className="col-sm-3">Baumhoehe (m)</dt>
-                <dd className="col-sm-9">{tree.treeSizeMeters ?? '-'}</dd>
-
-                <dt className="col-sm-3">Kronendurchmesser (m)</dt>
-                <dd className="col-sm-9">{tree.crownDiameterMeters ?? '-'}</dd>
-
-                <dt className="col-sm-3">Kronenansatzhoehe (m)</dt>
-                <dd className="col-sm-9">{tree.crownAttachmentHeightMeters ?? '-'}</dd>
-
-                <dt className="col-sm-3">Anzahl Staemme</dt>
-                <dd className="col-sm-9">{tree.numberOfTrunks ?? '-'}</dd>
-
-                <dt className="col-sm-3">Stamminneigung (Grad)</dt>
-                <dd className="col-sm-9">{tree.trunkInclination ?? '-'}</dd>
-              </dl>
+              <p className="text-muted mb-3">Details zum ausgewaehlten Baum.</p>
+              <div className="row g-4 align-items-start">
+                <div className="col-lg-5 col-xl-4">
+                  <div className="bg-light border rounded-3 p-3 h-100">
+                    <div className="d-flex justify-content-between align-items-start mb-3">
+                      <div>
+                        <div className="text-uppercase text-muted small fw-semibold">Baum</div>
+                        <div className="fs-5 fw-semibold mb-0">
+                          {tree.species || 'Unbekannte Art'}
+                        </div>
+                        <div className="text-muted small">Nr. {tree.number}</div>
+                      </div>
+                      <span className="badge text-bg-secondary">ID {tree.id}</span>
+                    </div>
+                    <div className="row row-cols-1 row-cols-sm-2 g-2">
+                      {[
+                        { label: 'Breitengrad', value: tree.latitude },
+                        { label: 'Laengengrad', value: tree.longitude },
+                        { label: 'Letzte Kontrolle', value: tree.lastInspectionId ?? 'Keine' },
+                        { label: 'Baumhoehe (m)', value: tree.treeSizeMeters ?? '-' },
+                        { label: 'Kronendurchmesser (m)', value: tree.crownDiameterMeters ?? '-' },
+                        { label: 'Kronenansatzhoehe (m)', value: tree.crownAttachmentHeightMeters ?? '-' },
+                        { label: 'Anzahl Staemme', value: tree.numberOfTrunks ?? '-' },
+                        { label: 'Stamminneigung (Grad)', value: tree.trunkInclination ?? '-' },
+                      ].map(({ label, value }) => (
+                        <div className="col" key={label}>
+                          <div className="border rounded-3 px-3 py-2 h-100 bg-white">
+                            <div className="text-muted small">{label}</div>
+                            <div className="fw-semibold">{value}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="col-lg-7 col-xl-8">
+                  <TreeLocationMap latitude={tree.latitude ?? undefined} longitude={tree.longitude ?? undefined} />
+                </div>
+              </div>
               <TreeImageUploader treeId={tree.id} />
               <div className="d-flex justify-content-between align-items-center mt-4 mb-2">
                 <h2 className="h5 mb-0">Kontrollen</h2>
