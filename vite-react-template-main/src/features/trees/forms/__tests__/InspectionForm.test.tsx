@@ -27,6 +27,12 @@ describe('InspectionForm', () => {
     fireEvent.change(screen.getByLabelText(/schaedigungsgrad/i), { target: { value: 5 } });
     fireEvent.change(screen.getByLabelText(/standfestigkeit/i), { target: { value: 2 } });
     fireEvent.change(screen.getByLabelText(/bruchsicherheit/i), { target: { value: 1 } });
+    await userEvent.type(screen.getByLabelText(/notizen krone/i), 'Krone ok');
+    await userEvent.type(screen.getByLabelText(/notizen stamm/i), 'Stamm ok');
+    await userEvent.type(screen.getByLabelText(/notizen stammfuss/i), 'Stammfuss ok');
+    await userEvent.click(screen.getByLabelText(/abiotische stoerung \(krone\)/i));
+    await userEvent.click(screen.getByLabelText(/wunde mit kallusrand \(stamm\)/i));
+    await userEvent.click(screen.getByLabelText(/wuergewurzel \(stammfuss\)/i));
     await userEvent.click(screen.getByLabelText(/verkehrssicherheit/i));
 
     await userEvent.click(screen.getByRole('button', { name: /kontrolle speichern/i }));
@@ -47,6 +53,18 @@ describe('InspectionForm', () => {
       breakageSafety: 1,
       vitality: 4,
       description: 'Keine Maengel',
+      crownInspection: expect.objectContaining({
+        notes: 'Krone ok',
+        abioticDisturbance: true,
+      }),
+      trunkInspection: expect.objectContaining({
+        notes: 'Stamm ok',
+        woundWithCallusRidge: true,
+      }),
+      stemBaseInspection: expect.objectContaining({
+        notes: 'Stammfuss ok',
+        girdlingRoot: true,
+      }),
     });
     expect(onCreated).toHaveBeenCalled();
   });
