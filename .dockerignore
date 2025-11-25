@@ -1,8 +1,0 @@
-.git
-node_modules
-dist
-npm-debug.log
-Dockerfile
-.dockerignore
-vite-react-template-main/node_modules
-vite-react-template-main/dist
