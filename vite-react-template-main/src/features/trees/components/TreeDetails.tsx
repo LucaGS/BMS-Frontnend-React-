@@ -218,7 +218,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                                     ? 'Verkehrssicher'
                                     : 'Nicht verkehrssicher'}
                                 </span>
-                                <div className="text-muted small mt-1">Kontrolle #{inspection.id}</div>
+                              
                               </div>
                             </div>
 
