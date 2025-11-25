@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapInspectionsFromApi, type Inspection } from '@/features/trees/inspections';
 import type { Tree } from '@/features/trees/types';
@@ -134,7 +135,6 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                         </div>
                         <div className="text-muted small">Nr. {tree.number}</div>
                       </div>
-                      <span className="badge text-bg-secondary">ID {tree.id}</span>
                     </div>
                     <div className="row row-cols-1 row-cols-sm-2 g-2">
                       {[
@@ -210,7 +210,14 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                                   {inspection.vitality}/5
                                 </div>
                               </div>
-                              <div className="text-end">
+                              <div className="d-flex align-items-center gap-2">
+                                <Link
+                                  to={`/inspections/${inspection.id}`}
+                                  className="btn btn-outline-secondary btn-sm"
+                                  state={{ inspection, tree }}
+                                >
+                                  Details ansehen
+                                </Link>
                                 <span
                                   className={`badge ${
                                     inspection.isSafeForTraffic ? 'bg-success' : 'bg-danger'
