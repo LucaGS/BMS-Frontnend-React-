@@ -25,6 +25,9 @@ FROM nginx:1.27-alpine AS runtime
 # Copy built assets to nginx html directory
 COPY --from=build /app/vite-react-template-main/dist /usr/share/nginx/html
 
+# Use SPA-friendly nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Expose port 80 by convention
 EXPOSE 80
 
