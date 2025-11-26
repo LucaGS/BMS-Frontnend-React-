@@ -31,6 +31,14 @@ export const hasValidCoordinates = (
 };
 
 export const ensureLeafletAssets = (): Promise<void> => {
+  // During unit tests we do not need to load remote Leaflet assets
+  const isVitest =
+    (typeof import.meta !== 'undefined' && (import.meta as any).vitest) ||
+    (typeof process !== 'undefined' && Boolean(process.env?.VITEST));
+  if (isVitest) {
+    return Promise.resolve();
+  }
+
   if (typeof window === 'undefined' || typeof document === 'undefined') {
     return Promise.resolve();
   }

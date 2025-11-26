@@ -19,3 +19,24 @@ body {
 #root {
   min-height: 100vh;
 }
+
+.click-card {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.click-card .card {
+  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.click-card:hover .card,
+.click-card:focus-visible .card {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.1);
+  background-color: #f3f4f6;
+}
+
+.click-card:focus-visible {
+  outline: none;
+}

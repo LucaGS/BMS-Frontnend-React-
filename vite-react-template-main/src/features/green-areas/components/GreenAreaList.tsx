@@ -58,32 +58,42 @@ const GreenAreaList: React.FC = () => {
             </div>
           )}
 
-          <ul className="list-group list-group-flush">
-            {greenAreas.length === 0 && (
-              <li className="list-group-item text-center text-muted">
-                Keine Gruenflaechen vorhanden.
-              </li>
-            )}
-            {greenAreas.map((greenArea) => (
-              <li key={greenArea.id} className="list-group-item d-flex justify-content-between align-items-center">
-                <span className="fw-medium">{greenArea.name}</span>
-                <button
-                  type="button"
-                  className="btn btn-outline-success btn-sm"
-                  onClick={() =>
-                    navigate(`/green-areas/${greenArea.id}/${greenArea.name}`, {
-                      state: {
-                        longitude: greenArea.longitude,
-                        latitude: greenArea.latitude,
-                      },
-                    })
-                  }
-                >
-                  Details anzeigen
-                </button>
-              </li>
-            ))}
-          </ul>
+          {greenAreas.length === 0 && (
+            <div className="text-center text-muted py-4">Keine Gruenflaechen vorhanden.</div>
+          )}
+
+          {greenAreas.length > 0 && (
+            <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+              {greenAreas.map((greenArea) => (
+                <div className="col" key={greenArea.id}>
+                  <button
+                    type="button"
+                    className="click-card w-100 text-start"
+                    onClick={() =>
+                      navigate(`/green-areas/${greenArea.id}/${greenArea.name}`, {
+                        state: {
+                          longitude: greenArea.longitude,
+                          latitude: greenArea.latitude,
+                        },
+                      })
+                    }
+                  >
+                    <div className="card h-100 shadow-sm border-0">
+                      <div className="card-body">
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                          <span className="text-muted small">
+                            {greenArea.latitude.toFixed(3)}, {greenArea.longitude.toFixed(3)}
+                          </span>
+                        </div>
+                        <h2 className="h6 fw-semibold mb-1">{greenArea.name}</h2>
+                        <p className="text-muted small mb-0">Tippen, um Details und Karte zu oeffnen.</p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
