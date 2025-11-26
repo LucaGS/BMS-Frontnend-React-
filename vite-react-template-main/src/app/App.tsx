@@ -11,6 +11,7 @@ import SignupPage from '@/features/auth/pages/SignupPage';
 import TreeList from '@/features/trees/components/TreeList';
 import TreeDetails from '@/features/trees/components/TreeDetails';
 import InspectionDetails from '@/features/inspections/components/InspectionDetails';
+import InspectionListPage from '@/features/inspections/pages/InspectionListPage';
 import GreenAreaList from '@/features/green-areas/components/GreenAreaList';
 import GreenAreaDetails from '@/features/green-areas/components/GreenAreaDetails';
 import { API_BASE_URL } from '@/shared/config/appConfig';
@@ -123,6 +124,7 @@ const App: React.FC = () => (
             <Route path="/imprint" element={<ImprintPage />} />
             <Route path="/trees" element={<TreeList />} />
             <Route path="/trees/:treeId" element={<RoutedTreeDetails />} />
+            <Route path="/inspections" element={<InspectionListPage />} />
             <Route path="/inspections/:inspectionId" element={<InspectionDetails />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />

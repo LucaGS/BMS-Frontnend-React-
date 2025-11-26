@@ -110,6 +110,19 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
     <section>
       <div className="card shadow-sm border-0">
         <div className="card-body p-4">
+          <nav aria-label="breadcrumb" className="mb-3">
+            <ol className="breadcrumb mb-0">
+              <li className="breadcrumb-item">
+                <Link to="/">Start</Link>
+              </li>
+              <li className="breadcrumb-item">
+                <Link to="/trees">Baeume</Link>
+              </li>
+              <li className="breadcrumb-item active" aria-current="page">
+                {tree ? `Baum ${tree.number ?? tree.id}` : 'Baumdetails'}
+              </li>
+            </ol>
+          </nav>
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1 className="h4 mb-0">Baum verwalten</h1>
             {renderHeaderAction()}
@@ -187,7 +200,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
               {!inspectionsLoading && !inspectionsError && (
                 <>
                   {inspections.length > 0 ? (
-                    <ul className="list-group mt-3">
+                    <div className="row row-cols-1 row-cols-md-2 g-3 mt-1">
                       {inspections.map((inspection) => {
                         const date = new Date(inspection.performedAt);
                         const formattedDate = Number.isNaN(date.valueOf())
@@ -195,55 +208,48 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                           : date.toLocaleString();
 
                         return (
-                          <li
-                            key={inspection.id}
-                            className="list-group-item"
-                          >
-                            <div className="d-flex justify-content-between flex-wrap gap-3">
-                              <div>
-                                <div className="fw-semibold">{formattedDate}</div>
-                                <div className="text-muted small">
-                                  Entwicklungsphase: {inspection.developmentalStage || '-'}
-                                </div>
-                                <div className="text-muted small">
-                                  Intervall: {inspection.newInspectionIntervall} Tage | Vitalitaet:{' '}
-                                  {inspection.vitality}/5
+                          <div className="col" key={inspection.id}>
+                            <Link
+                              to={`/inspections/${inspection.id}`}
+                              state={{ inspection, tree }}
+                              className="click-card w-100 text-start text-decoration-none text-dark"
+                            >
+                              <div className="card h-100 shadow-sm border-0">
+                                <div className="card-body">
+                                  <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <div>
+                                      <div className="fw-semibold">{formattedDate}</div>
+                                      <div className="text-muted small">
+                                        Entwicklungsphase: {inspection.developmentalStage || '-'}
+                                      </div>
+                                      <div className="text-muted small">
+                                        Intervall: {inspection.newInspectionIntervall} Tage | Vitalitaet:{' '}
+                                        {inspection.vitality}/5
+                                      </div>
+                                    </div>
+                                    <span
+                                      className={`badge ${inspection.isSafeForTraffic ? 'bg-success' : 'bg-danger'}`}
+                                    >
+                                      {inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher'}
+                                    </span>
+                                  </div>
+
+                                  <div className="d-flex flex-wrap gap-2 mt-2">
+                                    {renderScorePill('Schaedigungsgrad', inspection.damageLevel)}
+                                    {renderScorePill('Standfestigkeit', inspection.standStability)}
+                                    {renderScorePill('Bruchsicherheit', inspection.breakageSafety)}
+                                  </div>
+
+                                  {inspection.description && (
+                                    <p className="text-muted small mb-0 mt-3">{inspection.description}</p>
+                                  )}
                                 </div>
                               </div>
-                              <div className="d-flex align-items-center gap-2">
-                                <Link
-                                  to={`/inspections/${inspection.id}`}
-                                  className="btn btn-outline-secondary btn-sm"
-                                  state={{ inspection, tree }}
-                                >
-                                  Details ansehen
-                                </Link>
-                                <span
-                                  className={`badge ${
-                                    inspection.isSafeForTraffic ? 'bg-success' : 'bg-danger'
-                                  }`}
-                                >
-                                  {inspection.isSafeForTraffic
-                                    ? 'Verkehrssicher'
-                                    : 'Nicht verkehrssicher'}
-                                </span>
-                              
-                              </div>
-                            </div>
-
-                            <div className="d-flex flex-wrap gap-2 mt-3">
-                              {renderScorePill('Schaedigungsgrad', inspection.damageLevel)}
-                              {renderScorePill('Standfestigkeit', inspection.standStability)}
-                              {renderScorePill('Bruchsicherheit', inspection.breakageSafety)}
-                            </div>
-
-                            {inspection.description && (
-                              <p className="text-muted small mb-0 mt-3">{inspection.description}</p>
-                            )}
-                          </li>
+                            </Link>
+                          </div>
                         );
                       })}
-                    </ul>
+                    </div>
                   ) : (
                     <p className="text-muted mt-3 mb-0">Noch keine Kontrollen vorhanden.</p>
                   )}

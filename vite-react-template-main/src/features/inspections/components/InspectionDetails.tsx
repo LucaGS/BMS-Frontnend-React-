@@ -194,6 +194,26 @@ const InspectionDetails: React.FC = () => {
     <section>
       <div className="card shadow-sm border-0">
         <div className="card-body p-4">
+          <nav aria-label="breadcrumb" className="mb-3">
+            <ol className="breadcrumb mb-0">
+              <li className="breadcrumb-item">
+                <Link to="/">Start</Link>
+              </li>
+              <li className="breadcrumb-item">
+                <Link to="/inspections">Kontrollen</Link>
+              </li>
+              {inspection?.treeId ? (
+                <li className="breadcrumb-item">
+                  <Link to={`/trees/${inspection.treeId}`} state={{ tree }}>
+                    Baum {tree?.number ?? inspection.treeId}
+                  </Link>
+                </li>
+              ) : null}
+              <li className="breadcrumb-item active" aria-current="page">
+                Kontrolle
+              </li>
+            </ol>
+          </nav>
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
               <div className="text-uppercase text-muted small fw-semibold mb-1">Kontrolle</div>

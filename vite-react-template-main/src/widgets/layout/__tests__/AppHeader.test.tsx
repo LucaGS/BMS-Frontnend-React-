@@ -24,10 +24,12 @@ describe('AppHeader', () => {
 
     const logoutButton = await screen.findByRole('button', { name: /logout/i });
     expect(logoutButton).toBeInTheDocument();
+    expect(screen.getByText(/eingeloggt/i)).toBeInTheDocument();
 
     await userEvent.click(logoutButton);
 
     expect(localStorage.getItem('token')).toBeNull();
     expect(await screen.findByRole('link', { name: /login/i })).toBeInTheDocument();
+    expect(screen.queryByText(/eingeloggt/i)).not.toBeInTheDocument();
   });
 });

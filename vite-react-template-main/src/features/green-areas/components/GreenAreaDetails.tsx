@@ -149,6 +149,10 @@ const GreenAreaDetails: React.FC = () => {
     fetchTrees();
   };
 
+  const handleOpenTree = (tree: Tree) => {
+    navigate(`/trees/${tree.id}`, { state: { tree } });
+  };
+
   return (
     <div className="card shadow-sm border-0">
       <div className="card-body p-4">
@@ -208,18 +212,39 @@ const GreenAreaDetails: React.FC = () => {
           </div>
         )}
 
-        <ul className="list-group list-group-vertical flex-wrap">
-          {trees.map((tree) => (
-            <li
-              key={tree.id}
-              className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-              role="button"
-              onClick={() => navigate(`/trees/${tree.id}`, { state: { tree } })}
-            >
-              {tree.number} - {tree.species}
-            </li>
-          ))}
-        </ul>
+        {trees.length === 0 && !error && (
+          <p className="text-muted mb-0">Noch keine Baeume in dieser Gruenflaeche.</p>
+        )}
+
+        {trees.length > 0 && (
+          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+            {trees.map((tree) => (
+              <div className="col" key={tree.id}>
+                <button
+                  type="button"
+                  className="click-card w-100 text-start"
+                  onClick={() => handleOpenTree(tree)}
+                >
+                  <div className="card h-100 shadow-sm border-0">
+                    <div className="card-body">
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <span className="badge rounded-pill bg-success-subtle text-success-emphasis">
+                          Nr. {tree.number ?? tree.id}
+                        </span>
+                      </div>
+                      <h2 className="h6 fw-semibold mb-1">{tree.species || 'Unbekannte Art'}</h2>
+                      <p className="text-muted small mb-0">
+                        {tree.crownDiameterMeters
+                          ? `Kronendurchmesser ${tree.crownDiameterMeters} m`
+                          : 'Keine Angaben'}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
