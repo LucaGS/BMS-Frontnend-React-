@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
-import { mapInspectionsFromApi, type Inspection } from '@/features/trees/inspections';
+import { mapInspectionsFromApi, type Inspection } from '@/features/inspections';
 import type { Tree } from '@/features/trees/types';
-import InspectionForm from '../forms/InspectionForm';
+import InspectionForm from '@/features/inspections/forms/InspectionForm';
 import TreeLocationMap from './TreeLocationMap';
 import TreeImageUploader from './TreeImageUploader';
 

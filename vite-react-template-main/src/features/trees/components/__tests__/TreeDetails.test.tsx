@@ -6,7 +6,7 @@ import type { Tree } from '@/features/trees/types';
 const inspectionFormSpy = vi.fn();
 const imageUploaderSpy = vi.fn();
 
-vi.mock('@/features/trees/forms/InspectionForm', () => ({
+vi.mock('@/features/inspections/forms/InspectionForm', () => ({
   default: (props: any) => {
     inspectionFormSpy(props);
     return <div data-testid="inspection-form-mock">InspectionForm</div>;

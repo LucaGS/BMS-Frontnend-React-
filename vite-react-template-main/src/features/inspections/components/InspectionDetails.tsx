@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
-import { mapInspectionFromApi, type Inspection } from '@/features/trees/inspections';
+import { mapInspectionFromApi, type Inspection } from '@/features/inspections';
 import type { Tree } from '@/features/trees/types';
 import {
   CrownInspectionState,
@@ -10,7 +10,7 @@ import {
   crownCheckboxes,
   stemBaseCheckboxes,
   trunkCheckboxes,
-} from '@/features/trees/forms/inspectionFormConfig';
+} from '@/features/inspections/forms/inspectionFormConfig';
 
 type InspectionDetail = Inspection & {
   crownInspection?: Partial<CrownInspectionState>;

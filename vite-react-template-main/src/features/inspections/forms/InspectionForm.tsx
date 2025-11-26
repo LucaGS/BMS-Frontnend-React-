@@ -124,7 +124,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
 
           <div className="col-md-3">
             <label htmlFor="newInspectionIntervall" className="form-label">
-              Kontrollintervall (Tage)
+              Kontrollintervall (Monate)
             </label>
             <input
               type="number"

@@ -10,7 +10,7 @@ import LoginPage from '@/features/auth/pages/LoginPage';
 import SignupPage from '@/features/auth/pages/SignupPage';
 import TreeList from '@/features/trees/components/TreeList';
 import TreeDetails from '@/features/trees/components/TreeDetails';
-import InspectionDetails from '@/features/trees/components/InspectionDetails';
+import InspectionDetails from '@/features/inspections/components/InspectionDetails';
 import GreenAreaList from '@/features/green-areas/components/GreenAreaList';
 import GreenAreaDetails from '@/features/green-areas/components/GreenAreaDetails';
 import { API_BASE_URL } from '@/shared/config/appConfig';
