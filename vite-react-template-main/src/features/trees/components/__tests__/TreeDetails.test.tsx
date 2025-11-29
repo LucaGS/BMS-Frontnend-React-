@@ -1,6 +1,6 @@
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, renderWithRouter, screen, waitFor } from '@/test/test-utils';
+import { renderWithRouter, screen, waitFor } from '@/test/test-utils';
 import type { Tree } from '@/features/trees/types';
 
 const inspectionFormSpy = vi.fn();
