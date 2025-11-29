@@ -57,9 +57,7 @@ export const buildMapPreviewDataUrl = (
   const lngRange = Math.max(maxLngRaw - minLngRaw, MIN_RANGE);
 
   const minLat = latRange === MIN_RANGE ? center[0] - latRange / 2 : minLatRaw;
-  const maxLat = latRange === MIN_RANGE ? center[0] + latRange / 2 : maxLatRaw;
   const minLng = lngRange === MIN_RANGE ? center[1] - lngRange / 2 : minLngRaw;
-  const maxLng = lngRange === MIN_RANGE ? center[1] + lngRange / 2 : maxLngRaw;
 
   const toPoint = (lat: number, lng: number) => {
     const x = padding + ((lng - minLng) / lngRange) * usableWidth;

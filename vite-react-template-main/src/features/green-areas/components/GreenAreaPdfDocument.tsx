@@ -25,7 +25,6 @@ type GreenAreaPdfDocumentProps = {
   greenAreaId?: string;
   greenAreaName?: string;
   trees: TreeInspectionExport[];
-  summaryMap?: string | null;
   mapCenterLabel?: string;
 };
 
@@ -328,7 +327,6 @@ const GreenAreaPdfDocument: React.FC<GreenAreaPdfDocumentProps> = ({
   greenAreaId,
   greenAreaName,
   trees,
-  summaryMap,
   mapCenterLabel,
 }) => (
   <div className="ga-print">

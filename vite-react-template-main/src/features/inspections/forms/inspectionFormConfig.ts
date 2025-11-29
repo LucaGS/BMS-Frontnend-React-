@@ -138,10 +138,10 @@ export type TrunkInspectionState = { notes: string } & WithDescriptions<TrunkIns
 export type StemBaseInspectionState = { notes: string } & WithDescriptions<StemBaseInspectionFlags>;
 
 const createInitialWithDescriptions = <T extends Record<string, boolean>>(flags: T): WithDescriptions<T> => {
-  const descriptions = Object.keys(flags).reduce((acc, key) => {
-    (acc as Record<string, string>)[`${key}Description`] = '';
-    return acc;
-  }, {} as { [K in keyof T as `${K}Description`]: string });
+  const descriptions = {} as { [K in keyof T as `${Extract<K, string>}Description`]: string };
+  (Object.keys(flags) as Array<Extract<keyof T, string>>).forEach((key) => {
+    (descriptions as Record<string, string>)[`${key}Description`] = '';
+  });
 
   return {
     ...flags,

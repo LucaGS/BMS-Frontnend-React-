@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
-import { mapInspectionFromApi, type Inspection } from '@/features/inspections';
+import { mapInspectionFromApi } from '@/features/inspections';
 import { mapTreesFromApi, type Tree } from '@/features/trees/types';
 import TreeForm from '@/features/trees/forms/TreeForm';
 import GreenAreaMap from '../maps/GreenAreaMap';
@@ -48,7 +48,6 @@ const GreenAreaDetails: React.FC = () => {
   const [showPdf, setShowPdf] = useState(false);
   const [pdfData, setPdfData] = useState<{
     entries: TreeInspectionExport[];
-    summaryMap: string | null;
     centerLabel: string;
   } | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>(
@@ -255,19 +254,8 @@ const GreenAreaDetails: React.FC = () => {
         mapImage: buildTreeMapPreviewDataUrl(tree, mapCenter),
       }));
 
-      const summaryMap = buildMapPreviewDataUrl(
-        trees.map((tree) => ({
-          id: tree.id,
-          number: tree.number,
-          latitude: tree.latitude,
-          longitude: tree.longitude,
-        })),
-        mapCenter,
-      );
-
       setPdfData({
         entries,
-        summaryMap,
         centerLabel: `${formatCoordinate(mapCenter[0])}, ${formatCoordinate(mapCenter[1])}`,
       });
       setShowPdf(true);
@@ -403,7 +391,6 @@ const GreenAreaDetails: React.FC = () => {
                 greenAreaId={greenAreaId}
                 greenAreaName={greenAreaName}
                 trees={pdfData.entries}
-                summaryMap={pdfData.summaryMap}
                 mapCenterLabel={pdfData.centerLabel}
               />
             </div>
