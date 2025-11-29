@@ -156,9 +156,10 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                         { label: 'Letzte Kontrolle', value: tree.lastInspectionId ?? 'Keine' },
                         { label: 'Baumhoehe (m)', value: tree.treeSizeMeters ?? '-' },
                         { label: 'Kronendurchmesser (m)', value: tree.crownDiameterMeters ?? '-' },
-                        { label: 'Kronenansatzhoehe (m)', value: tree.crownAttachmentHeightMeters ?? '-' },
                         { label: 'Anzahl Staemme', value: tree.numberOfTrunks ?? '-' },
-                        { label: 'Stamminneigung (Grad)', value: tree.trunkInclination ?? '-' },
+                        { label: 'Stammdurchmesser 1', value: tree.trunkDiameter1 ?? '-' },
+                        { label: 'Stammdurchmesser 2', value: tree.trunkDiameter2 ?? '-' },
+                        { label: 'Stammdurchmesser 3', value: tree.trunkDiameter3 ?? '-' },
                       ].map(({ label, value }) => (
                         <div className="col" key={label}>
                           <div className="border rounded-3 px-3 py-2 h-100 bg-white">
@@ -171,7 +172,11 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                   </div>
                 </div>
                 <div className="col-lg-7 col-xl-8">
-                  <TreeLocationMap latitude={tree.latitude ?? undefined} longitude={tree.longitude ?? undefined} />
+                  <TreeLocationMap
+                    latitude={tree.latitude ?? undefined}
+                    longitude={tree.longitude ?? undefined}
+                    treeNumber={tree.number ?? tree.id}
+                  />
                 </div>
               </div>
               <TreeImageUploader treeId={tree.id} />

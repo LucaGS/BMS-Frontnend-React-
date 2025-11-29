@@ -232,16 +232,20 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
             <td>{formatNumber(tree.crownDiameterMeters)}</td>
           </tr>
           <tr>
-            <th>Kronenansatzhoehe (m)</th>
-            <td>{formatNumber(tree.crownAttachmentHeightMeters)}</td>
             <th>Anzahl Staemme</th>
             <td>{formatNumber(tree.numberOfTrunks)}</td>
+            <th>Stammdurchmesser 1</th>
+            <td>{formatNumber(tree.trunkDiameter1)}</td>
           </tr>
           <tr>
-            <th>Stamminneigung (Grad)</th>
-            <td>{formatNumber(tree.trunkInclination)}</td>
+            <th>Stammdurchmesser 2</th>
+            <td>{formatNumber(tree.trunkDiameter2)}</td>
+            <th>Stammdurchmesser 3</th>
+            <td>{formatNumber(tree.trunkDiameter3)}</td>
+          </tr>
+          <tr>
             <th>Letzte Kontrolle</th>
-            <td>
+            <td colSpan={3}>
               {inspection ? (
                 <>
                   {formatDateTime(inspection.performedAt)}{' '}

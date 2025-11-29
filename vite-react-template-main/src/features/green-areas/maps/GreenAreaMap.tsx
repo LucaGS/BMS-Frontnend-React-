@@ -116,12 +116,15 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
       positions.push(coords);
 
       const marker = L.circleMarker(coords, TREE_MARKER_STYLE).addTo(mapRef.current);
-      marker.bindTooltip(
-        `<strong>${tree.species ?? "Baum"}</strong><br/>${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`,
-        {
-          direction: "top",
-          opacity: 0.9,
-        },
+      const numberLabel = typeof tree.number === "number" ? tree.number : tree.id ?? "-";
+      marker.bindTooltip(`Nr. ${numberLabel}`, {
+        direction: "top",
+        opacity: 1,
+        permanent: true,
+        className: "tree-number-tooltip",
+      });
+      marker.bindPopup(
+        `<strong>${tree.species ?? "Baum"}</strong><br/>${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`
       );
       treeMarkerRefs.current.push(marker);
     });

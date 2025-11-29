@@ -11,9 +11,10 @@ export const mapTreeFromApi = (tree: ApiTree): Tree => ({
   latitude: tree.latitude ?? null,
   treeSizeMeters: tree.treeSizeMeters ?? null,
   crownDiameterMeters: tree.crownDiameterMeters ?? null,
-  crownAttachmentHeightMeters: tree.crownAttachmentHeightMeters ?? null,
   numberOfTrunks: tree.numberOfTrunks ?? null,
-  trunkInclination: tree.trunkInclination ?? null,
+  trunkDiameter1: tree.trunkDiameter1 ?? null,
+  trunkDiameter2: tree.trunkDiameter2 ?? null,
+  trunkDiameter3: tree.trunkDiameter3 ?? null,
 });
 
 export const mapTreesFromApi = (trees: ApiTree[]): Tree[] => trees.map(mapTreeFromApi);
@@ -26,7 +27,8 @@ export const mapTreeToApiPayload = (tree: NewTree): ApiCreateTree => ({
   latitude: tree.latitude,
   treeSizeMeters: tree.treeSizeMeters,
   crownDiameterMeters: tree.crownDiameterMeters,
-  crownAttachmentHeightMeters: tree.crownAttachmentHeightMeters,
   numberOfTrunks: tree.numberOfTrunks,
-  trunkInclination: tree.trunkInclination,
+  trunkDiameter1: tree.trunkDiameter1,
+  trunkDiameter2: tree.trunkDiameter2,
+  trunkDiameter3: tree.trunkDiameter3,
 });

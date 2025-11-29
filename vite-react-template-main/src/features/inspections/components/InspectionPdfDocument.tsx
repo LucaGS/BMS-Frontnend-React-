@@ -119,9 +119,10 @@ const InspectionPdfDocument: React.FC<InspectionPdfDocumentProps> = ({
         ['Koordinaten', coordinateLabel ?? 'Keine Angabe'],
         ['Baumhoehe (m)', formatNumber(tree.treeSizeMeters)],
         ['Kronendurchmesser (m)', formatNumber(tree.crownDiameterMeters)],
-        ['Kronenansatzhoehe (m)', formatNumber(tree.crownAttachmentHeightMeters)],
         ['Anzahl Staemme', formatNumber(tree.numberOfTrunks)],
-        ['Stamminneigung (Grad)', formatNumber(tree.trunkInclination)],
+        ['Stammdurchmesser 1', formatNumber(tree.trunkDiameter1)],
+        ['Stammdurchmesser 2', formatNumber(tree.trunkDiameter2)],
+        ['Stammdurchmesser 3', formatNumber(tree.trunkDiameter3)],
       ]
     : [];
 

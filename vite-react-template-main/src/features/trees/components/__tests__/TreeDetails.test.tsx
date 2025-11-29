@@ -31,11 +31,12 @@ const tree: Tree = {
   greenAreaId: 7,
   latitude: 49.1,
   longitude: 8.6,
-  crownAttachmentHeightMeters: 2,
   crownDiameterMeters: 3,
   treeSizeMeters: 5,
   numberOfTrunks: 1,
-  trunkInclination: 0,
+  trunkDiameter1: 10,
+  trunkDiameter2: 0,
+  trunkDiameter3: 0,
 };
 
 describe('TreeDetails', () => {
@@ -44,7 +45,7 @@ describe('TreeDetails', () => {
   });
 
   it('renders placeholder when no tree is selected', () => {
-    render(<TreeDetails tree={null} />);
+    renderWithRouter(<TreeDetails tree={null} />);
     expect(
       screen.getByText(/kein baum ausgewaehlt/i)
     ).toBeInTheDocument();
@@ -87,7 +88,9 @@ describe('TreeDetails', () => {
     expect(await screen.findAllByText(/verkehrssicher/i)).not.toHaveLength(0);
     expect(screen.getByText(/jungbaum/i)).toBeInTheDocument();
     expect(screen.getByText(/intervall: 12 tage/i)).toBeInTheDocument();
-    expect(screen.getByText(/bruchsicherheit: 5\/5/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/vitalitaet: 4\/5/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/vitalitaet: 2\/5/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/stammdurchmesser 1/i)).toBeInTheDocument();
     expect(imageUploaderSpy).toHaveBeenCalledWith(expect.objectContaining({ treeId: tree.id }));
   });
 

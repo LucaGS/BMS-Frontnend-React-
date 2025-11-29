@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '@/shared/config/appConfig';
-import { mapTreeFromApi, mapTreeToApiPayload, type NewTree, type Tree } from '@/entities/tree';
+import { mapTreeFromApi, mapTreeToApiPayload, type Tree } from '@/entities/tree';
 import TreeLocationPicker from '@/features/trees/components/TreeLocationPicker';
 
 type TreeFormProps = {
@@ -9,19 +9,35 @@ type TreeFormProps = {
   onTreeCreated: (tree?: Tree) => void;
 };
 
+type TreeFormState = {
+  greenAreaId: number;
+  number: string;
+  species: string;
+  latitude: string;
+  longitude: string;
+  treeSizeMeters: string;
+  crownDiameterMeters: string;
+  numberOfTrunks: string;
+  trunkDiameter1: string;
+  trunkDiameter2: string;
+  trunkDiameter3: string;
+};
+
 const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeCreated }) => {
-  const [draftTree, setDraftTree] = useState<NewTree>({
+  const [draftTree, setDraftTree] = useState<TreeFormState>({
     greenAreaId,
-    number: 0,
+    number: '',
     species: '',
-    latitude: 0,
-    longitude: 0,
-    treeSizeMeters: 0,
-    crownDiameterMeters: 0,
-    crownAttachmentHeightMeters: 0,
-    numberOfTrunks: 1,
-    trunkInclination: 0,
+    latitude: '',
+    longitude: '',
+    treeSizeMeters: '',
+    crownDiameterMeters: '',
+    numberOfTrunks: '',
+    trunkDiameter1: '',
+    trunkDiameter2: '',
+    trunkDiameter3: '',
   });
+  const [diameterError, setDiameterError] = useState<string | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   useEffect(() => {
@@ -33,20 +49,80 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       return;
     }
     setDraftTree((current) => {
-      if (current.latitude !== 0 || current.longitude !== 0) {
+      if (current.latitude !== '' || current.longitude !== '') {
         return current;
       }
       return {
         ...current,
-        latitude: defaultCenter[0],
-        longitude: defaultCenter[1],
+        latitude: String(defaultCenter[0]),
+        longitude: String(defaultCenter[1]),
       };
     });
   }, [defaultCenter]);
 
+  const parseNonNegativeNumber = (value: string) => {
+    const parsed = Number.parseFloat(value);
+    if (Number.isNaN(parsed) || parsed < 0) {
+      return 0;
+    }
+    return parsed;
+  };
+
+  const parseNumber = (value: string) => {
+    const parsed = Number.parseFloat(value);
+    if (Number.isNaN(parsed)) {
+      return 0;
+    }
+    return parsed;
+  };
+
+  const parseInteger = (value: string) => {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed)) {
+      return 0;
+    }
+    return parsed;
+  };
+
+  const hasAnyTrunkDiameterValue = (
+    tree: Pick<TreeFormState, 'trunkDiameter1' | 'trunkDiameter2' | 'trunkDiameter3'>
+  ) => [tree.trunkDiameter1, tree.trunkDiameter2, tree.trunkDiameter3].some(
+      (value) => parseNonNegativeNumber(value) > 0
+    );
+
+  const handleTrunkDiameterChange =
+    (key: 'trunkDiameter1' | 'trunkDiameter2' | 'trunkDiameter3') =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const nextValue = event.target.value;
+      setDraftTree((current) => {
+        const updated = { ...current, [key]: nextValue };
+        if (diameterError && hasAnyTrunkDiameterValue(updated)) {
+          setDiameterError(null);
+        }
+        return updated;
+      });
+    };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const payload = mapTreeToApiPayload({ ...draftTree, greenAreaId });
+    if (!hasAnyTrunkDiameterValue(draftTree)) {
+      setDiameterError('Mindestens ein Stammdurchmesser muss groesser als 0 sein.');
+      return;
+    }
+    setDiameterError(null);
+    const payload = mapTreeToApiPayload({
+      greenAreaId,
+      number: parseInteger(draftTree.number),
+      species: draftTree.species,
+      longitude: parseNumber(draftTree.longitude),
+      latitude: parseNumber(draftTree.latitude),
+      treeSizeMeters: parseNonNegativeNumber(draftTree.treeSizeMeters),
+      crownDiameterMeters: parseNonNegativeNumber(draftTree.crownDiameterMeters),
+      numberOfTrunks: Math.max(1, parseInteger(draftTree.numberOfTrunks)),
+      trunkDiameter1: parseNonNegativeNumber(draftTree.trunkDiameter1),
+      trunkDiameter2: parseNonNegativeNumber(draftTree.trunkDiameter2),
+      trunkDiameter3: parseNonNegativeNumber(draftTree.trunkDiameter3),
+    });
 
     try {
       console.log('Creating tree with payload:', payload);
@@ -72,16 +148,18 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       alert('Baum erfolgreich hinzugefuegt');
       setDraftTree({
         greenAreaId,
-        number: 0,
+        number: '',
         species: '',
-        latitude: 0,
-        longitude: 0,
-        treeSizeMeters: 0,
-        crownDiameterMeters: 0,
-        crownAttachmentHeightMeters: 0,
-        numberOfTrunks: 1,
-        trunkInclination: 1,
+        latitude: '',
+        longitude: '',
+        treeSizeMeters: '',
+        crownDiameterMeters: '',
+        numberOfTrunks: '',
+        trunkDiameter1: '',
+        trunkDiameter2: '',
+        trunkDiameter3: '',
       });
+      setDiameterError(null);
       setShowLocationPicker(false);
     } catch (error) {
       console.error('Error creating tree:', error);
@@ -92,16 +170,16 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
   const handleCoordinatesSelected = ({ latitude, longitude }: { latitude: number; longitude: number }) => {
     setDraftTree((current) => ({
       ...current,
-      latitude,
-      longitude,
+      latitude: String(latitude),
+      longitude: String(longitude),
     }));
   };
 
   const handleCoordinatesCleared = () => {
     setDraftTree((current) => ({
       ...current,
-      latitude: 0,
-      longitude: 0,
+      latitude: '',
+      longitude: '',
     }));
   };
 
@@ -130,7 +208,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              number: Number.parseInt(event.target.value, 10) ,
+              number: event.target.value,
             }))
           }
           required
@@ -148,7 +226,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              latitude: Number.parseFloat(event.target.value) ,
+              latitude: event.target.value,
             }))
           }
           required
@@ -167,7 +245,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              longitude: Number.parseFloat(event.target.value) ,
+              longitude: event.target.value,
             }))
           }
           required
@@ -192,7 +270,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
         </div>
         {showLocationPicker && (
           <TreeLocationPicker
-            value={{ latitude: draftTree.latitude, longitude: draftTree.longitude }}
+            value={{ latitude: parseNumber(draftTree.latitude), longitude: parseNumber(draftTree.longitude) }}
             defaultCenter={defaultCenter}
             onChange={handleCoordinatesSelected}
             onClear={handleCoordinatesCleared}
@@ -211,7 +289,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              treeSizeMeters: Number.parseFloat(event.target.value) ,
+              treeSizeMeters: event.target.value,
             }))
           }
           required
@@ -231,27 +309,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              crownDiameterMeters: Number.parseFloat(event.target.value) ,
-            }))
-          }
-          required
-          min={0}
-          step="any"
-        />
-      </div>
-      <div className="mb-3">
-        <label htmlFor="crownAttachmentHeightMeters" className="form-label">
-          Kronenansatzhoehe (m)
-        </label>
-        <input
-          type="number"
-          className="form-control"
-          id="crownAttachmentHeightMeters"
-          value={draftTree.crownAttachmentHeightMeters}
-          onChange={(event) =>
-            setDraftTree((current) => ({
-              ...current,
-              crownAttachmentHeightMeters: Number.parseFloat(event.target.value) ,
+              crownDiameterMeters: event.target.value,
             }))
           }
           required
@@ -271,7 +329,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           onChange={(event) =>
             setDraftTree((current) => ({
               ...current,
-              numberOfTrunks: Number.parseInt(event.target.value, 10) ,
+              numberOfTrunks: event.target.value,
             }))
           }
           required
@@ -279,24 +337,66 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
         />
       </div>
       <div className="mb-3">
-        <label htmlFor="trunkInclination" className="form-label">
-          Stamminneigung (Grad)
-        </label>
-        <input
-          type="number"
-          className="form-control"
-          id="trunkInclination"
-          value={draftTree.trunkInclination}
-          onChange={(event) =>
-            setDraftTree((current) => ({
-              ...current,
-              trunkInclination: Number.parseInt(event.target.value, 10) ,
-            }))
-          }
-          required
-          min={0}
-          max={90}
-        />
+        <div className="d-flex justify-content-between align-items-baseline mb-1">
+          <span className="form-label mb-0">Stammdurchmesser</span>
+          <small className="text-muted">Mindestens ein Wert &gt; 0</small>
+        </div>
+        <div className="row g-3">
+          <div className="col-12 col-md-4">
+            <label htmlFor="trunkDiameter1" className="form-label">
+              Stammdurchmesser 1
+            </label>
+            <input
+              type="number"
+              className="form-control"
+              id="trunkDiameter1"
+              placeholder="z. B. 12.5"
+              value={draftTree.trunkDiameter1}
+              onChange={handleTrunkDiameterChange('trunkDiameter1')}
+              min={0}
+              step="any"
+            />
+          </div>
+          <div className="col-12 col-md-4">
+            <label htmlFor="trunkDiameter2" className="form-label">
+              Stammdurchmesser 2 (optional)
+            </label>
+            <input
+              type="number"
+              className="form-control"
+              id="trunkDiameter2"
+              placeholder="z. B. 12.5"
+              value={draftTree.trunkDiameter2}
+              onChange={handleTrunkDiameterChange('trunkDiameter2')}
+              min={0}
+              step="any"
+            />
+          </div>
+          <div className="col-12 col-md-4">
+            <label htmlFor="trunkDiameter3" className="form-label">
+              Stammdurchmesser 3 (optional)
+            </label>
+            <input
+              type="number"
+              className="form-control"
+              id="trunkDiameter3"
+              placeholder="z. B. 12.5"
+              value={draftTree.trunkDiameter3}
+              onChange={handleTrunkDiameterChange('trunkDiameter3')}
+              min={0}
+              step="any"
+            />
+          </div>
+        </div>
+        {diameterError ? (
+          <div className="text-danger small mt-2" role="alert">
+            {diameterError}
+          </div>
+        ) : (
+          <div className="text-muted small mt-2">
+            Optional; mindestens ein Stammdurchmesser muss groesser als 0 sein.
+          </div>
+        )}
       </div>
       <button type="submit" className="btn btn-primary">
         Baum hinzufuegen
