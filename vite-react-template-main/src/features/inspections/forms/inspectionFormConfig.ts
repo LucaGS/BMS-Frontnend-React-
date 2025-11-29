@@ -1,4 +1,5 @@
-type DescriptionKey<T> = T extends Record<string, unknown> ? `${Extract<keyof T, string>}Description` : never;
+type StringKeys<T> = Extract<keyof T, string>;
+type DescriptionKey<T> = T extends Record<string, unknown> ? `${StringKeys<T>}Description` : never;
 type ToggleableKey<T> = Exclude<keyof T, 'notes' | DescriptionKey<T>>;
 
 export type ToggleField<T extends { notes: string }> = { key: ToggleableKey<T>; label: string };
@@ -130,7 +131,7 @@ type StemBaseInspectionFlags = {
 };
 
 type WithDescriptions<T extends Record<string, boolean>> = T & {
-  [K in keyof T as `${K}Description`]: string;
+  [K in StringKeys<T> as `${K}Description`]: string;
 };
 
 export type CrownInspectionState = { notes: string } & WithDescriptions<CrownInspectionFlags>;
@@ -138,8 +139,8 @@ export type TrunkInspectionState = { notes: string } & WithDescriptions<TrunkIns
 export type StemBaseInspectionState = { notes: string } & WithDescriptions<StemBaseInspectionFlags>;
 
 const createInitialWithDescriptions = <T extends Record<string, boolean>>(flags: T): WithDescriptions<T> => {
-  const descriptions = {} as { [K in keyof T as `${Extract<K, string>}Description`]: string };
-  (Object.keys(flags) as Array<Extract<keyof T, string>>).forEach((key) => {
+  const descriptions = {} as { [K in StringKeys<T> as `${K}Description`]: string };
+  (Object.keys(flags) as Array<StringKeys<T>>).forEach((key) => {
     (descriptions as Record<string, string>)[`${key}Description`] = '';
   });
 

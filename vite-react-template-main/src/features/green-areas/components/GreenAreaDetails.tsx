@@ -6,7 +6,7 @@ import { mapTreesFromApi, type Tree } from '@/features/trees/types';
 import TreeForm from '@/features/trees/forms/TreeForm';
 import GreenAreaMap from '../maps/GreenAreaMap';
 import type { GreenArea } from '@/features/green-areas/types';
-import { buildMapPreviewDataUrl, buildTreeMapPreviewDataUrl } from '@/shared/maps/mapPreview';
+import { buildTreeMapPreviewDataUrl } from '@/shared/maps/mapPreview';
 import GreenAreaPdfDocument, {
   type LastInspectionDetail,
   type TreeInspectionExport,
