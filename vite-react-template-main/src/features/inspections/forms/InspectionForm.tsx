@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import {
   CrownInspectionState,
@@ -11,10 +11,13 @@ import {
   createInitialStemBaseInspection,
   createInitialTrunkInspection,
   crownCheckboxes,
+  DEVELOPMENTAL_STAGE_OPTIONS,
   stemBaseCheckboxes,
   trunkCheckboxes,
 } from './inspectionFormConfig';
 import { InspectionSection, ScoreSlider } from './InspectionFormSections';
+import type { ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
+import { mapMeasuresFromApi } from '@/entities/arboriculturalMeasure';
 
 type InspectionFormProps = {
   treeId: number;
@@ -31,8 +34,39 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
     trunk: true,
     stemBase: true,
   });
+  const [measures, setMeasures] = useState<ArboriculturalMeasure[]>([]);
+  const [selectedMeasureIds, setSelectedMeasureIds] = useState<number[]>([]);
+  const [measuresLoading, setMeasuresLoading] = useState(false);
+  const [measuresError, setMeasuresError] = useState<string | null>(null);
+  const [newMeasure, setNewMeasure] = useState<{ name: string; description: string }>({ name: '', description: '' });
+  const [isCreatingMeasure, setIsCreatingMeasure] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadMeasures = async () => {
+      setMeasuresLoading(true);
+      setMeasuresError(null);
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/ArboriculturalMeasures/GetAll`, {
+          headers: {
+            Authorization: `bearer ${localStorage.getItem('token') || ''}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Failed to load measures');
+        }
+        const data = await response.json();
+        setMeasures(mapMeasuresFromApi(data));
+      } catch (loadError) {
+        console.error('Error loading measures:', loadError);
+        setMeasuresError('Massnahmen konnten nicht geladen werden.');
+      } finally {
+        setMeasuresLoading(false);
+      }
+    };
+    loadMeasures();
+  }, []);
 
   const updateFormField = <K extends keyof FormFields>(key: K, value: FormFields[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -45,6 +79,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
     setCrownInspection(createInitialCrownInspection());
     setTrunkInspection(createInitialTrunkInspection());
     setStemBaseInspection(createInitialStemBaseInspection());
+    setSelectedMeasureIds([]);
   };
 
   const buildPayload = () => ({
@@ -55,6 +90,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
     crownInspection: { ...crownInspection, notes: crownInspection.notes.trim() },
     trunkInspection: { ...trunkInspection, notes: trunkInspection.notes.trim() },
     stemBaseInspection: { ...stemBaseInspection, notes: stemBaseInspection.notes.trim() },
+    arboriculturalMeasureIds: selectedMeasureIds,
   });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -95,9 +131,6 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
     isSafeForTraffic,
     newInspectionIntervall,
     developmentalStage,
-    damageLevel,
-    standStability,
-    breakageSafety,
     vitality,
     description,
   } = form;
@@ -164,15 +197,19 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
             <label htmlFor="developmentalStage" className="form-label">
               Entwicklungsstadium
             </label>
-            <input
-              type="text"
-              className="form-control"
+            <select
+              className="form-select"
               id="developmentalStage"
-              placeholder="z. B. Jungbaum, Reif, Alt"
               value={developmentalStage}
               onChange={(event) => updateFormField('developmentalStage', event.target.value)}
               disabled={isSubmitting}
-            />
+            >
+              {DEVELOPMENTAL_STAGE_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
 
           <ScoreSlider
@@ -187,32 +224,157 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
           <div className="col-12">
             <div className="border rounded-3 p-3 bg-light">
               <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className="fw-semibold">Stabilitaet & Schaeden</span>
-                <small className="text-muted">0 = keine Auffaelligkeit, 5 = kritisch</small>
+                <div>
+                  <div className="fw-semibold">Baumpflegerische Massnahmen</div>
+                  <small className="text-muted">Mehrere Massnahmen waehlen oder neue erfassen.</small>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-success"
+                  onClick={async () => {
+                    setIsCreatingMeasure(true);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  + Neue Massnahme
+                </button>
               </div>
-              <div className="row g-3">
-                <ScoreSlider
-                  id="damageLevel"
-                  label="Schaedigungsgrad"
-                  value={damageLevel}
-                  onChange={(value) => updateFormField('damageLevel', value)}
-                  disabled={isSubmitting}
-                />
-                <ScoreSlider
-                  id="standStability"
-                  label="Standfestigkeit"
-                  value={standStability}
-                  onChange={(value) => updateFormField('standStability', value)}
-                  disabled={isSubmitting}
-                />
-                <ScoreSlider
-                  id="breakageSafety"
-                  label="Bruchsicherheit"
-                  value={breakageSafety}
-                  onChange={(value) => updateFormField('breakageSafety', value)}
-                  disabled={isSubmitting}
-                />
-              </div>
+              {measuresError && <div className="alert alert-danger py-2 mb-2">{measuresError}</div>}
+              {measuresLoading ? (
+                <p className="text-muted small mb-0">Massnahmen werden geladen...</p>
+              ) : (
+                <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2">
+                  {measures.map((measure) => {
+                    const checked = selectedMeasureIds.includes(measure.id);
+                    return (
+                      <div className="col" key={measure.id}>
+                        <label className="border rounded-3 p-2 d-block h-100">
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id={`measure-${measure.id}`}
+                              checked={checked}
+                              onChange={(e) => {
+                                setSelectedMeasureIds((prev) =>
+                                  e.target.checked ? Array.from(new Set([...prev, measure.id])) : prev.filter((id) => id !== measure.id),
+                                );
+                              }}
+                              disabled={isSubmitting}
+                            />
+                            <span className="ms-2 fw-semibold">{measure.measureName}</span>
+                          </div>
+                          {measure.description ? (
+                            <div className="text-muted small mt-1">{measure.description}</div>
+                          ) : (
+                            <div className="text-muted small mt-1">Keine Beschreibung</div>
+                          )}
+                        </label>
+                      </div>
+                    );
+                  })}
+                  {measures.length === 0 && <div className="col text-muted small">Keine Massnahmen vorhanden.</div>}
+                </div>
+              )}
+
+              {isCreatingMeasure && (
+                <div className="mt-3 border-top pt-3">
+                  <div className="fw-semibold mb-2">Neue Massnahme anlegen</div>
+                  <div className="row g-2">
+                    <div className="col-12 col-md-5">
+                      <label htmlFor="newMeasureName" className="form-label small">
+                        Name *
+                      </label>
+                      <input
+                        id="newMeasureName"
+                        className="form-control form-control-sm"
+                        value={newMeasure.name}
+                        onChange={(e) => setNewMeasure((prev) => ({ ...prev, name: e.target.value }))}
+                        maxLength={120}
+                        disabled={isSubmitting}
+                        placeholder="z. B. Kronensicherung"
+                        required
+                      />
+                    </div>
+                    <div className="col-12 col-md-7">
+                      <label htmlFor="newMeasureDescription" className="form-label small">
+                        Beschreibung (optional)
+                      </label>
+                      <input
+                        id="newMeasureDescription"
+                        className="form-control form-control-sm"
+                        value={newMeasure.description}
+                        onChange={(e) => setNewMeasure((prev) => ({ ...prev, description: e.target.value }))}
+                        maxLength={300}
+                        disabled={isSubmitting}
+                        placeholder="Kurzbeschreibung"
+                      />
+                    </div>
+                  </div>
+                  <div className="d-flex gap-2 mt-2">
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-success"
+                      disabled={isSubmitting || !newMeasure.name.trim()}
+                      onClick={async () => {
+                        try {
+                          setIsSubmitting(true);
+                          const response = await fetch(`${API_BASE_URL}/api/ArboriculturalMeasures/Create`, {
+                            method: 'POST',
+                            headers: {
+                              Authorization: `bearer ${localStorage.getItem('token') || ''}`,
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              measureName: newMeasure.name.trim(),
+                              description: newMeasure.description.trim(),
+                            }),
+                          });
+                          if (!response.ok) {
+                            throw new Error('Create measure failed');
+                          }
+                          setNewMeasure({ name: '', description: '' });
+                          setIsCreatingMeasure(false);
+                          // Reload measures and select the new one
+                          setMeasuresLoading(true);
+                          const reload = await fetch(`${API_BASE_URL}/api/ArboriculturalMeasures/GetAll`, {
+                            headers: { Authorization: `bearer ${localStorage.getItem('token') || ''}` },
+                          });
+                          if (!reload.ok) {
+                            throw new Error('Reload measures failed');
+                          }
+                          const data = await reload.json();
+                          const mapped = mapMeasuresFromApi(data);
+                          setMeasures(mapped);
+                          if (mapped.length > 0) {
+                            const newest = mapped[mapped.length - 1];
+                            setSelectedMeasureIds((prev) => Array.from(new Set([...prev, newest.id])));
+                          }
+                        } catch (createError) {
+                          console.error('Error creating measure:', createError);
+                          setMeasuresError('Massnahme konnte nicht angelegt werden.');
+                        } finally {
+                          setIsSubmitting(false);
+                          setMeasuresLoading(false);
+                        }
+                      }}
+                    >
+                      Speichern
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => {
+                        setIsCreatingMeasure(false);
+                        setNewMeasure({ name: '', description: '' });
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      Abbrechen
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

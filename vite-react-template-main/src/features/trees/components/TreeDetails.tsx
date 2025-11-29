@@ -235,9 +235,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                                   </div>
 
                                   <div className="d-flex flex-wrap gap-2 mt-2">
-                                    {renderScorePill('Schaedigungsgrad', inspection.damageLevel)}
-                                    {renderScorePill('Standfestigkeit', inspection.standStability)}
-                                    {renderScorePill('Bruchsicherheit', inspection.breakageSafety)}
+                                    {renderScorePill('Vitalitaet', inspection.vitality)}
                                   </div>
 
                                   {inspection.description && (

@@ -6,11 +6,9 @@ export interface ApiInspection {
   userId?: number | null;
   newInspectionIntervall: number;
   developmentalStage: string;
-  damageLevel: number;
-  standStability: number;
-  breakageSafety: number;
   vitality: number;
   description: string;
+  arboriculturalMeasureIds?: number[];
 }
 
 export interface Inspection {
@@ -21,9 +19,7 @@ export interface Inspection {
   userId?: number | null;
   newInspectionIntervall: number;
   developmentalStage: string;
-  damageLevel: number;
-  standStability: number;
-  breakageSafety: number;
   vitality: number;
   description: string;
+  arboriculturalMeasureIds?: number[];
 }

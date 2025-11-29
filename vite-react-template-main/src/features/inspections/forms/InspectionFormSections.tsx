@@ -1,6 +1,8 @@
 import React from 'react';
 import { OpenSectionsState, ToggleField } from './inspectionFormConfig';
 
+const DESCRIPTION_MAX_LENGTH = 1000;
+
 const checkboxInputStyle: React.CSSProperties = {
   width: '1.15rem',
   height: '1.15rem',
@@ -50,6 +52,7 @@ type CheckboxGridProps<T extends { notes: string }> = {
   items: ToggleField<T>[];
   state: T;
   onChange: (key: ToggleField<T>['key'], value: boolean) => void;
+  onDescriptionChange: (key: ToggleField<T>['key'], value: string) => void;
   disabled: boolean;
 };
 
@@ -58,25 +61,39 @@ function CheckboxGrid<T extends { notes: string }>({
   items,
   state,
   onChange,
+  onDescriptionChange,
   disabled,
 }: CheckboxGridProps<T>) {
   return (
     <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
       {items.map(({ key, label }) => (
         <div className="col" key={`${sectionId}-${String(key)}`}>
-          <div className="form-check">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              id={`${sectionId}-${String(key)}`}
-              checked={Boolean(state[key])}
-              onChange={(event) => onChange(key, event.target.checked)}
-              disabled={disabled}
-              style={checkboxInputStyle}
-            />
-            <label className="form-check-label" htmlFor={`${sectionId}-${String(key)}`}>
-              {label}
-            </label>
+          <div className="border rounded-3 p-2 h-100 bg-white">
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id={`${sectionId}-${String(key)}`}
+                checked={Boolean(state[key])}
+                onChange={(event) => onChange(key, event.target.checked)}
+                disabled={disabled}
+                style={checkboxInputStyle}
+              />
+              <label className="form-check-label" htmlFor={`${sectionId}-${String(key)}`}>
+                {label}
+              </label>
+            </div>
+            {state[key] ? (
+              <textarea
+                className="form-control form-control-sm mt-2"
+                placeholder="Beschreibung (optional)"
+                value={(state as any)[`${String(key)}Description`] ?? ''}
+                maxLength={DESCRIPTION_MAX_LENGTH}
+                onChange={(event) => onDescriptionChange(key, event.target.value)}
+                disabled={disabled}
+                rows={2}
+              />
+            ) : null}
           </div>
         </div>
       ))}
@@ -157,7 +174,19 @@ export function InspectionSection<T extends { notes: string }>({
               sectionId={sectionKey}
               items={items}
               state={state}
-              onChange={(key, value) => setState((prev) => ({ ...prev, [key]: value }))}
+              onChange={(key, value) =>
+                setState((prev) => ({
+                  ...prev,
+                  [key]: value,
+                  [`${String(key)}Description`]: value ? (prev as any)[`${String(key)}Description`] ?? '' : '',
+                }))
+              }
+              onDescriptionChange={(key, value) =>
+                setState((prev) => ({
+                  ...prev,
+                  [`${String(key)}Description`]: value,
+                }))
+              }
               disabled={isSubmitting}
             />
           </div>

@@ -97,7 +97,7 @@ const InspectionDetails: React.FC = () => {
         }
       }
     };
-
+    
     loadInspection();
 
     return () => {
@@ -246,9 +246,6 @@ const InspectionDetails: React.FC = () => {
                   { label: 'Intervall (Tage)', value: inspection.newInspectionIntervall },
                   { label: 'Entwicklungsstadium', value: inspection.developmentalStage || '-' },
                   { label: 'Vitalitaet', value: `${inspection.vitality}/5` },
-                  { label: 'Schaedigungsgrad', value: `${inspection.damageLevel}/5` },
-                  { label: 'Standfestigkeit', value: `${inspection.standStability}/5` },
-                  { label: 'Bruchsicherheit', value: `${inspection.breakageSafety}/5` },
                 ].map(({ label, value }) => (
                   <div className="col-12 col-sm-6 col-lg-4" key={label}>
                     <div className="border rounded-3 px-3 py-2 h-100 bg-light">

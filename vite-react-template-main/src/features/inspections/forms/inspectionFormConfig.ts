@@ -1,7 +1,9 @@
-export type ToggleField<T extends { notes: string }> = { key: Exclude<keyof T, 'notes'>; label: string };
+type DescriptionKey<T> = T extends Record<string, unknown> ? `${Extract<keyof T, string>}Description` : never;
+type ToggleableKey<T> = Exclude<keyof T, 'notes' | DescriptionKey<T>>;
 
-export type CrownInspectionState = {
-  notes: string;
+export type ToggleField<T extends { notes: string }> = { key: ToggleableKey<T>; label: string };
+
+type CrownInspectionFlags = {
   abioticDisturbance: boolean;
   dying: boolean;
   overloadedBranchOrCrown: boolean;
@@ -55,8 +57,7 @@ export type CrownInspectionState = {
   forkCrack: boolean;
 };
 
-export type TrunkInspectionState = {
-  notes: string;
+type TrunkInspectionFlags = {
   abioticDisturbance: boolean;
   branchBreakWound: boolean;
   pruningWound: boolean;
@@ -101,8 +102,7 @@ export type TrunkInspectionState = {
   forkCrack: boolean;
 };
 
-export type StemBaseInspectionState = {
-  notes: string;
+type StemBaseInspectionFlags = {
   excavation: boolean;
   adventitiousRootFormation: boolean;
   exudation: boolean;
@@ -129,14 +129,157 @@ export type StemBaseInspectionState = {
   rootDamage: boolean;
 };
 
+type WithDescriptions<T extends Record<string, boolean>> = T & {
+  [K in keyof T as `${K}Description`]: string;
+};
+
+export type CrownInspectionState = { notes: string } & WithDescriptions<CrownInspectionFlags>;
+export type TrunkInspectionState = { notes: string } & WithDescriptions<TrunkInspectionFlags>;
+export type StemBaseInspectionState = { notes: string } & WithDescriptions<StemBaseInspectionFlags>;
+
+const createInitialWithDescriptions = <T extends Record<string, boolean>>(flags: T): WithDescriptions<T> => {
+  const descriptions = Object.keys(flags).reduce((acc, key) => {
+    (acc as Record<string, string>)[`${key}Description`] = '';
+    return acc;
+  }, {} as { [K in keyof T as `${K}Description`]: string });
+
+  return {
+    ...flags,
+    ...descriptions,
+  } as WithDescriptions<T>;
+};
+
+const CROWN_FLAGS: CrownInspectionFlags = {
+  abioticDisturbance: false,
+  dying: false,
+  overloadedBranchOrCrown: false,
+  branchBreak: false,
+  branchBreakWound: false,
+  pruningWound: false,
+  exudation: false,
+  treeInGroup: false,
+  treeIsDead: false,
+  foreignVegetation: false,
+  bioticDisturbance: false,
+  lightningDamage: false,
+  deformed: false,
+  compressionFork: false,
+  dryBranches: false,
+  includedBark: false,
+  oneSidedCrown: false,
+  foreignObject: false,
+  topped: false,
+  habitatStructure: false,
+  resinFlow: false,
+  cavity: false,
+  competingBranch: false,
+  competingTree: false,
+  canker: false,
+  crownSecured: false,
+  longitudinalCrack: false,
+  clearanceProfile2_50m: false,
+  clearanceProfile4_50m: false,
+  burl: false,
+  openDecay: false,
+  withoutLeaderShoot: false,
+  fungalFruitingBody: false,
+  rubbingBranches: false,
+  slimeFlux: false,
+  secondaryCrowns: false,
+  woodpeckerHole: false,
+  compressionDamage: false,
+  torsionCrack: false,
+  deadwood: false,
+  widowmakerBranch: false,
+  unfavorableCrownDevelopment: false,
+  graftPoint: false,
+  utilityLineConflict: false,
+  topDieback: false,
+  wound: false,
+  woundWithCallusRidge: false,
+  woundCallusClosed: false,
+  tensionFork: false,
+  forkedCrown: false,
+  forkCrack: false,
+};
+
+const TRUNK_FLAGS: TrunkInspectionFlags = {
+  abioticDisturbance: false,
+  branchBreakWound: false,
+  pruningWound: false,
+  exudation: false,
+  treeRemoved: false,
+  bulgeOrSwelling: false,
+  foreignVegetation: false,
+  bioticDisturbance: false,
+  lightningDamage: false,
+  leavesBrokenOff: false,
+  deformed: false,
+  spiralGrain: false,
+  compressionFork: false,
+  includedBark: false,
+  foreignObject: false,
+  topped: false,
+  habitatStructures: false,
+  resinFlow: false,
+  cavity: false,
+  canker: false,
+  longitudinalCrack: false,
+  mowingDamage: false,
+  burl: false,
+  openDecay: false,
+  fungalFruitingBody: false,
+  leaning: false,
+  slimeFlux: false,
+  secondaryRadialGrowthMissing: false,
+  woodpeckerHole: false,
+  compressionDamage: false,
+  torsionCrack: false,
+  deadwood: false,
+  widowmakerBranch: false,
+  graftPoint: false,
+  supplyShadow: false,
+  wobbles: false,
+  wound: false,
+  woundCallusRidge: false,
+  woundCallusClosed: false,
+  tensionFork: false,
+  forkedTrunk: false,
+  forkCrack: false,
+};
+
+const STEM_BASE_FLAGS: StemBaseInspectionFlags = {
+  excavation: false,
+  adventitiousRootFormation: false,
+  exudation: false,
+  structuresAtStemBase: false,
+  structuresNearTree: false,
+  bulgeOrSwelling: false,
+  foreignVegetation: false,
+  boreDust: false,
+  bottleneck: false,
+  foreignObject: false,
+  habitatStructures: false,
+  treeOnSlope: false,
+  resinFlow: false,
+  cavity: false,
+  canker: false,
+  openDecay: false,
+  fungalFruitingBody: false,
+  slimeFlux: false,
+  stemBaseThickened: false,
+  compressionDamage: false,
+  overfilled: false,
+  graftPoint: false,
+  girdlingRoot: false,
+  rootDamage: false,
+};
+
 export type FormFields = {
   performedAt: string;
   isSafeForTraffic: boolean;
   newInspectionIntervall: number;
   developmentalStage: string;
-  damageLevel: number;
-  standStability: number;
-  breakageSafety: number;
   vitality: number;
   description: string;
 };
@@ -275,146 +418,30 @@ const getDefaultPerformedAt = () => {
   return now.toISOString().slice(0, 16);
 };
 
-export const DEFAULT_RATING = 3;
+export const DEFAULT_RATING = 0;
 export const DEFAULT_INSPECTION_INTERVAL = 12;
+export const DEVELOPMENTAL_STAGE_OPTIONS = ['Jugendphase', 'Reifungsphase', 'Alterungsphase'] as const;
 
 export const createInitialFormFields = (): FormFields => ({
   performedAt: getDefaultPerformedAt(),
   isSafeForTraffic: true,
   newInspectionIntervall: DEFAULT_INSPECTION_INTERVAL,
-  developmentalStage: '',
-  damageLevel: DEFAULT_RATING,
-  standStability: DEFAULT_RATING,
-  breakageSafety: DEFAULT_RATING,
+  developmentalStage: DEVELOPMENTAL_STAGE_OPTIONS[0],
   vitality: DEFAULT_RATING,
   description: '',
 });
 
 export const createInitialCrownInspection = (): CrownInspectionState => ({
   notes: '',
-  abioticDisturbance: false,
-  dying: false,
-  overloadedBranchOrCrown: false,
-  branchBreak: false,
-  branchBreakWound: false,
-  pruningWound: false,
-  exudation: false,
-  treeInGroup: false,
-  treeIsDead: false,
-  foreignVegetation: false,
-  bioticDisturbance: false,
-  lightningDamage: false,
-  deformed: false,
-  compressionFork: false,
-  dryBranches: false,
-  includedBark: false,
-  oneSidedCrown: false,
-  foreignObject: false,
-  topped: false,
-  habitatStructure: false,
-  resinFlow: false,
-  cavity: false,
-  competingBranch: false,
-  competingTree: false,
-  canker: false,
-  crownSecured: false,
-  longitudinalCrack: false,
-  clearanceProfile2_50m: false,
-  clearanceProfile4_50m: false,
-  burl: false,
-  openDecay: false,
-  withoutLeaderShoot: false,
-  fungalFruitingBody: false,
-  rubbingBranches: false,
-  slimeFlux: false,
-  secondaryCrowns: false,
-  woodpeckerHole: false,
-  compressionDamage: false,
-  torsionCrack: false,
-  deadwood: false,
-  widowmakerBranch: false,
-  unfavorableCrownDevelopment: false,
-  graftPoint: false,
-  utilityLineConflict: false,
-  topDieback: false,
-  wound: false,
-  woundWithCallusRidge: false,
-  woundCallusClosed: false,
-  tensionFork: false,
-  forkedCrown: false,
-  forkCrack: false,
+  ...createInitialWithDescriptions(CROWN_FLAGS),
 });
 
 export const createInitialTrunkInspection = (): TrunkInspectionState => ({
   notes: '',
-  abioticDisturbance: false,
-  branchBreakWound: false,
-  pruningWound: false,
-  exudation: false,
-  treeRemoved: false,
-  bulgeOrSwelling: false,
-  foreignVegetation: false,
-  bioticDisturbance: false,
-  lightningDamage: false,
-  leavesBrokenOff: false,
-  deformed: false,
-  spiralGrain: false,
-  compressionFork: false,
-  includedBark: false,
-  foreignObject: false,
-  topped: false,
-  habitatStructures: false,
-  resinFlow: false,
-  cavity: false,
-  canker: false,
-  longitudinalCrack: false,
-  mowingDamage: false,
-  burl: false,
-  openDecay: false,
-  fungalFruitingBody: false,
-  leaning: false,
-  slimeFlux: false,
-  secondaryRadialGrowthMissing: false,
-  woodpeckerHole: false,
-  compressionDamage: false,
-  torsionCrack: false,
-  deadwood: false,
-  widowmakerBranch: false,
-  graftPoint: false,
-  supplyShadow: false,
-  wobbles: false,
-  wound: false,
-  woundCallusRidge: false,
-  woundCallusClosed: false,
-  tensionFork: false,
-  forkedTrunk: false,
-  forkCrack: false,
+  ...createInitialWithDescriptions(TRUNK_FLAGS),
 });
 
 export const createInitialStemBaseInspection = (): StemBaseInspectionState => ({
   notes: '',
-  excavation: false,
-  adventitiousRootFormation: false,
-  exudation: false,
-  structuresAtStemBase: false,
-  structuresNearTree: false,
-  bulgeOrSwelling: false,
-  foreignVegetation: false,
-  boreDust: false,
-  bottleneck: false,
-  foreignObject: false,
-  habitatStructures: false,
-  treeOnSlope: false,
-  resinFlow: false,
-  cavity: false,
-  canker: false,
-  openDecay: false,
-  fungalFruitingBody: false,
-  slimeFlux: false,
-  stemBaseThickened: false,
-  compressionDamage: false,
-  overfilled: false,
-  graftPoint: false,
-  girdlingRoot: false,
-  rootDamage: false,
+  ...createInitialWithDescriptions(STEM_BASE_FLAGS),
 });

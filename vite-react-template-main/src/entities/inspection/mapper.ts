@@ -11,11 +11,12 @@ export const mapInspectionFromApi = (inspection: ApiInspection): Inspection => (
   userId: inspection.userId ?? null,
   newInspectionIntervall: inspection.newInspectionIntervall ?? 0,
   developmentalStage: inspection.developmentalStage ?? '',
-  damageLevel: inspection.damageLevel ?? 0,
-  standStability: inspection.standStability ?? 0,
-  breakageSafety: inspection.breakageSafety ?? 0,
   vitality: inspection.vitality ?? 0,
   description: inspection.description ?? '',
+  arboriculturalMeasureIds:
+    (inspection as any).arboriculturalMeasureIds && Array.isArray((inspection as any).arboriculturalMeasureIds)
+      ? ((inspection as any).arboriculturalMeasureIds as number[])
+      : [],
 });
 
 export const mapInspectionsFromApi = (inspections: ApiInspection[]): Inspection[] =>
