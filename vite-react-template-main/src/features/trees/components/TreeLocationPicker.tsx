@@ -21,6 +21,7 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
   onClear,
   defaultCenter,
 }) => {
+  const DESIRED_ACCURACY_METERS = 10;
   const [isMapReady, setIsMapReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
@@ -28,7 +29,10 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
   const [bestAccuracy, setBestAccuracy] = useState<number | null>(null);
   const bestAccuracyRef = useRef<number | null>(null);
+  const [bestFix, setBestFix] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+  const [fixCount, setFixCount] = useState(0);
   const accuracyCircleRef = useRef<any | null>(null);
+  const liveMarkerRef = useRef<any | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any | null>(null);
   const markerRef = useRef<any | null>(null);
@@ -167,6 +171,10 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
         markerRef.current.remove();
       }
       markerRef.current = null;
+      if (liveMarkerRef.current && typeof liveMarkerRef.current.remove === 'function') {
+        liveMarkerRef.current.remove();
+      }
+      liveMarkerRef.current = null;
       if (accuracyCircleRef.current && typeof accuracyCircleRef.current.remove === 'function') {
         accuracyCircleRef.current.remove();
       }
@@ -190,19 +198,38 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
     onClear?.();
   };
 
+  const applySelection = (coords: { latitude: number; longitude: number }) => {
+    const leafletWindow = window as LeafletWindow;
+    if (mapRef.current && leafletWindow.L) {
+      const L = leafletWindow.L;
+      const latLng: [number, number] = [coords.latitude, coords.longitude];
+      if (!markerRef.current) {
+        markerRef.current = L.marker(latLng, { title: 'Auswahl' }).addTo(mapRef.current);
+      } else {
+        markerRef.current.setLatLng(latLng);
+      }
+    }
+    onChangeRef.current?.(coords);
+  };
+
   const handleLocateMe = () => {
     if (!navigator.geolocation) {
       setLocationError('Geolocation wird von diesem Browser nicht unterstuetzt.');
       return;
     }
     setIsLocating(true);
-    setLocationError(null);
+    setLocationError(
+      'Pruefe, ob Praezise Ortung/GPS an ist (WLAN/5G einschalten). Wir nehmen mehrere Messungen und waehlen die beste.',
+    );
     setBestAccuracy(null);
     bestAccuracyRef.current = null;
+    setBestFix(null);
+    setFixCount(0);
 
     const applyPosition = (pos: GeolocationPosition) => {
       const { latitude, longitude, accuracy } = pos.coords;
       const coords: [number, number] = [latitude, longitude];
+      setFixCount((c) => c + 1);
       if (bestAccuracyRef.current == null || accuracy < bestAccuracyRef.current) {
         bestAccuracyRef.current = accuracy;
         setBestAccuracy(accuracy);
@@ -211,10 +238,10 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
       const leafletWindow = window as LeafletWindow;
       if (mapRef.current && leafletWindow.L) {
         const L = leafletWindow.L;
-        if (!markerRef.current) {
-          markerRef.current = L.marker(coords).addTo(mapRef.current);
+        if (!liveMarkerRef.current) {
+          liveMarkerRef.current = L.marker(coords, { title: 'Live-Position', opacity: 0.85 }).addTo(mapRef.current);
         } else {
-          markerRef.current.setLatLng(coords);
+          liveMarkerRef.current.setLatLng(coords);
         }
         if (accuracyCircleRef.current) {
           accuracyCircleRef.current.setLatLng(coords);
@@ -230,8 +257,14 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
         }
         mapRef.current.setView(coords, Math.max(DEFAULT_MAP_ZOOM, 17));
       }
-      onChangeRef.current?.({ latitude: coords[0], longitude: coords[1] });
-      if (accuracy <= 10) {
+      setBestFix((current) => {
+        if (!current || (accuracy && current.accuracy !== undefined && accuracy < current.accuracy)) {
+          return { lat: coords[0], lng: coords[1], accuracy };
+        }
+        return current;
+      });
+      if (accuracy <= DESIRED_ACCURACY_METERS) {
+        applySelection({ latitude: coords[0], longitude: coords[1] });
         setIsLocating(false);
         stopGeoWatch();
       }
@@ -254,12 +287,20 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
       stopGeoWatch();
       if (!userLocation) {
         setLocationError('Keine praezise Position gefunden. Bitte erneut versuchen oder manuell waehlen.');
-      } else if (bestAccuracyRef.current != null && bestAccuracyRef.current > 25) {
+      } else if (bestAccuracyRef.current != null && bestAccuracyRef.current > DESIRED_ACCURACY_METERS * 2) {
         setLocationError(
           `Position ist ungenau (~${Math.round(bestAccuracyRef.current)} m). Bitte erneut versuchen oder manuell setzen.`,
         );
       }
     }, 30000);
+  };
+
+  const handleUseBestFix = () => {
+    if (!bestFix) {
+      return;
+    }
+    applySelection({ latitude: bestFix.lat, longitude: bestFix.lng });
+    setLocationError(null);
   };
 
   return (
@@ -271,11 +312,19 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
         <div className="d-flex align-items-center gap-2">
           <span className="badge bg-light text-dark border">
             {hasSelection && typeof value?.latitude === 'number' && typeof value?.longitude === 'number'
-              ? `${value.latitude.toFixed(5)}, ${value.longitude.toFixed(5)}`
+              ? `${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}`
               : 'Keine Auswahl'}
           </span>
           <button type="button" className="btn btn-outline-primary btn-sm" onClick={handleLocateMe} disabled={isLocating}>
             {isLocating ? 'Bestimme Position...' : 'Eigene Position'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-success btn-sm"
+            onClick={handleUseBestFix}
+            disabled={!bestFix}
+          >
+            Beste Position uebernehmen
           </button>
           <button
             type="button"
@@ -307,8 +356,17 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
       )}
       {userLocation && (
         <div className="text-muted small mt-2">
-          Eigene Position: {userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}
+          Eigene Position: {userLocation.lat.toFixed(6)}, {userLocation.lng.toFixed(6)}
           {userLocation.accuracy != null ? ` (Genauigkeit ~${Math.round(userLocation.accuracy)} m)` : ''}
+          {bestFix?.accuracy != null && bestAccuracy != null ? ` | Beste Genauigkeit ~${Math.round(bestAccuracy)} m` : ''}
+          {fixCount > 0 ? ` | Messungen: ${fixCount}` : ''}
+        </div>
+      )}
+      {bestFix && !hasSelection && (
+        <div className="alert alert-info mt-2 mb-0 py-2">
+          Beste gefundene Position: {bestFix.lat.toFixed(6)}, {bestFix.lng.toFixed(6)}{' '}
+          {bestFix.accuracy != null ? `(~${Math.round(bestFix.accuracy)} m)` : ''}. Uebernehmen, um die Felder zu fuellen.
+          <div className="small text-muted">Tipp: Praezise Ortung aktivieren (GPS + WLAN + 5G) und etwas warten, bis mehrere Fixes eingetroffen sind.</div>
         </div>
       )}
     </div>
