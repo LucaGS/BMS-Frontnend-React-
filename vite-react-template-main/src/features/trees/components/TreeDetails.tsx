@@ -6,6 +6,7 @@ import type { Tree } from '@/features/trees/types';
 import InspectionForm from '@/features/inspections/forms/InspectionForm';
 import TreeLocationMap from './TreeLocationMap';
 import TreeImageUploader from './TreeImageUploader';
+import TreeEditForm from '@/features/trees/forms/TreeEditForm';
 
 type TreeDetailsProps = {
   tree?: Tree | null;
@@ -15,14 +16,20 @@ type TreeDetailsProps = {
 };
 
 const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClose, onBack }) => {
+  const [activeTree, setActiveTree] = useState<Tree | null>(tree ?? null);
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [inspectionsLoading, setInspectionsLoading] = useState(false);
   const [inspectionsError, setInspectionsError] = useState<string | null>(null);
   const [inspectionsRefreshIndex, setInspectionsRefreshIndex] = useState(0);
   const [showInspectionForm, setShowInspectionForm] = useState(false);
+  const [showTreeEditForm, setShowTreeEditForm] = useState(false);
 
   useEffect(() => {
-    if (!tree) {
+    setActiveTree(tree ?? null);
+  }, [tree]);
+
+  useEffect(() => {
+    if (!activeTree) {
       setInspections([]);
       setInspectionsError(null);
       setInspectionsLoading(false);
@@ -37,7 +44,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
       setInspectionsError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/Inspections/ByTreeId/${tree!.id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/Inspections/ByTreeId/${activeTree!.id}`, {
           headers: {
             Authorization: `bearer ${localStorage.getItem('token') || ''}`,
           },
@@ -74,7 +81,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
     return () => {
       isActive = false;
     };
-  }, [tree, inspectionsRefreshIndex]);
+  }, [activeTree, inspectionsRefreshIndex]);
 
   const handleInspectionCreated = () => {
     setInspectionsRefreshIndex((current) => current + 1);
@@ -128,13 +135,13 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
             {renderHeaderAction()}
           </div>
 
-          {!tree && (
+          {!activeTree && (
             <p className="text-muted mb-0">
               Kein Baum ausgewaehlt. Bitte waehlen Sie einen Baum aus der Liste.
             </p>
           )}
 
-          {tree && (
+          {activeTree && (
             <>
               <p className="text-muted mb-3">Details zum ausgewaehlten Baum.</p>
               <div className="row g-4 align-items-start">
@@ -144,23 +151,23 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                       <div>
                         <div className="text-uppercase text-muted small fw-semibold">Baum</div>
                         <div className="fs-5 fw-semibold mb-0">
-                          {tree.species || 'Unbekannte Art'}
+                          {activeTree.species || 'Unbekannte Art'}
                         </div>
-                      <div className="text-muted small">Nr. {tree.number}</div>
+                      <div className="text-muted small">Nr. {activeTree.number}</div>
                     </div>
                   </div>
                   <div className="row row-cols-1 row-cols-sm-2 g-2">
                     {[
-                      { label: 'Sicherheitserwartung Verkehr', value: tree.trafficSafetyExpectation || 'None' },
-                      { label: 'Breitengrad', value: tree.latitude },
-                      { label: 'Laengengrad', value: tree.longitude },
-                      { label: 'Letzte Kontrolle', value: tree.lastInspectionId ?? 'Keine' },
-                      { label: 'Baumhoehe (m)', value: tree.treeSizeMeters ?? '-' },
-                      { label: 'Kronendurchmesser (m)', value: tree.crownDiameterMeters ?? '-' },
-                        { label: 'Anzahl Staemme', value: tree.numberOfTrunks ?? '-' },
-                        { label: 'Stammdurchmesser 1', value: tree.trunkDiameter1 ?? '-' },
-                        { label: 'Stammdurchmesser 2', value: tree.trunkDiameter2 ?? '-' },
-                        { label: 'Stammdurchmesser 3', value: tree.trunkDiameter3 ?? '-' },
+                      { label: 'Sicherheitserwartung Verkehr', value: activeTree.trafficSafetyExpectation || 'None' },
+                      { label: 'Breitengrad', value: activeTree.latitude },
+                      { label: 'Laengengrad', value: activeTree.longitude },
+                      { label: 'Letzte Kontrolle', value: activeTree.lastInspectionId ?? 'Keine' },
+                      { label: 'Baumhoehe (m)', value: activeTree.treeSizeMeters ?? '-' },
+                      { label: 'Kronendurchmesser (m)', value: activeTree.crownDiameterMeters ?? '-' },
+                        { label: 'Anzahl Staemme', value: activeTree.numberOfTrunks ?? '-' },
+                        { label: 'Stammdurchmesser 1', value: activeTree.trunkDiameter1 ?? '-' },
+                        { label: 'Stammdurchmesser 2', value: activeTree.trunkDiameter2 ?? '-' },
+                        { label: 'Stammdurchmesser 3', value: activeTree.trunkDiameter3 ?? '-' },
                       ].map(({ label, value }) => (
                         <div className="col" key={label}>
                           <div className="border rounded-3 px-3 py-2 h-100 bg-white">
@@ -174,13 +181,35 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                 </div>
                 <div className="col-lg-7 col-xl-8">
                   <TreeLocationMap
-                    latitude={tree.latitude ?? undefined}
-                    longitude={tree.longitude ?? undefined}
-                    treeNumber={tree.number ?? tree.id}
+                    latitude={activeTree.latitude ?? undefined}
+                    longitude={activeTree.longitude ?? undefined}
+                    treeNumber={activeTree.number ?? activeTree.id}
                   />
                 </div>
               </div>
-              <TreeImageUploader treeId={tree.id} />
+              <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
+                <h2 className="h5 mb-0">Bearbeiten</h2>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => setShowTreeEditForm((prev) => !prev)}
+                >
+                  {showTreeEditForm ? 'Formular verbergen' : 'Baum bearbeiten'}
+                </button>
+              </div>
+              {showTreeEditForm && (
+                <TreeEditForm
+                  tree={activeTree}
+                  defaultCenter={[activeTree.latitude ?? 0, activeTree.longitude ?? 0]}
+                  onUpdated={(updated) => {
+                    if (updated) {
+                      setActiveTree(updated);
+                    }
+                    setShowTreeEditForm(false);
+                  }}
+                />
+              )}
+              <TreeImageUploader treeId={activeTree.id} />
               <div className="d-flex justify-content-between align-items-center mt-4 mb-2">
                 <h2 className="h5 mb-0">Kontrollen</h2>
                 <button
@@ -193,7 +222,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                 </button>
               </div>
               {showInspectionForm && (
-                <InspectionForm treeId={tree.id} onInspectionCreated={handleInspectionCreated} />
+                <InspectionForm treeId={activeTree.id} onInspectionCreated={handleInspectionCreated} />
               )}
               {inspectionsLoading && (
                 <p className="text-muted mt-3 mb-0">Kontrollen werden geladen...</p>

@@ -298,7 +298,7 @@ const GreenAreaDetails: React.FC = () => {
         fetchLatestInspections(trees),
         fetchMeasuresLookup().catch((measureError) => {
           console.error('Error fetching measures for export:', measureError);
-          return {};
+          return {} as Record<number, ArboriculturalMeasure>;
         }),
       ]);
       setInspectionLookup(latestInspections);
@@ -313,10 +313,11 @@ const GreenAreaDetails: React.FC = () => {
           if (baseInspection.arboriculturalMeasures && baseInspection.arboriculturalMeasures.length > 0) {
             return baseInspection;
           }
+          const safeLookup: Record<number, ArboriculturalMeasure> = measuresLookup ?? {};
           const resolvedMeasures =
             baseInspection.arboriculturalMeasureIds && baseInspection.arboriculturalMeasureIds.length > 0
               ? baseInspection.arboriculturalMeasureIds
-                  .map((id) => measuresLookup[id])
+                  .map((id) => safeLookup[id])
                   .filter(Boolean) as ArboriculturalMeasure[]
               : null;
           return { ...baseInspection, arboriculturalMeasures: resolvedMeasures };
