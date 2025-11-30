@@ -4,13 +4,14 @@ import { API_BASE_URL } from '@/shared/config/appConfig';
 type TreeImage = {
   id: string;
   url: string;
+  canDelete: boolean;
 };
 
 type TreeImageUploaderProps = {
   treeId: number;
 };
 
-const normalizeImagePayload = (payload: unknown): string[] => {
+const normalizeImagePayload = (payload: unknown): TreeImage[] => {
   if (!payload) {
     return [];
   }
@@ -22,36 +23,49 @@ const normalizeImagePayload = (payload: unknown): string[] => {
           return null;
         }
         if (typeof item === 'string') {
-          return item;
+          return { id: item, url: item, canDelete: false };
         }
         if (typeof item === 'object') {
-          const { url, imageUrl, path, data, contentType } = item as Record<string, unknown>;
-          if (typeof url === 'string') {
-            return url;
+          const { url, imageUrl, path, data, contentType, id, imageId } = item as Record<string, unknown>;
+          const resolvedUrl =
+            typeof url === 'string'
+              ? url
+              : typeof imageUrl === 'string'
+                ? imageUrl
+                : typeof path === 'string'
+                  ? path.startsWith('http')
+                    ? path
+                    : `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
+                  : typeof data === 'string' && data.length > 0
+                    ? (() => {
+                        const type =
+                          typeof contentType === 'string' && contentType.trim().length > 0
+                            ? contentType
+                            : 'image/jpeg';
+                        return `data:${type};base64,${data}`;
+                      })()
+                    : null;
+          if (!resolvedUrl) {
+            return null;
           }
-          if (typeof imageUrl === 'string') {
-            return imageUrl;
-          }
-          if (typeof path === 'string') {
-            return path.startsWith('http')
-              ? path
-              : `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
-          }
-          if (typeof data === 'string' && data.length > 0) {
-            const type =
-              typeof contentType === 'string' && contentType.trim().length > 0
-                ? contentType
-                : 'image/jpeg';
-            return `data:${type};base64,${data}`;
-          }
+          const resolvedId = (typeof id === 'number' || typeof id === 'string'
+            ? id
+            : typeof imageId === 'number' || typeof imageId === 'string'
+              ? imageId
+              : null) as string | number | null;
+          return {
+            id: String(resolvedId ?? resolvedUrl),
+            url: resolvedUrl,
+            canDelete: resolvedId != null,
+          };
         }
         return null;
       })
-      .filter((url): url is string => Boolean(url));
+      .filter((entry): entry is TreeImage => Boolean(entry));
   }
 
   if (typeof payload === 'string') {
-    return [payload];
+    return [{ id: payload, url: payload, canDelete: false }];
   }
 
   return [];
@@ -95,10 +109,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
       }
 
       const payload = await response.json();
-      const normalized = normalizeImagePayload(payload).map<TreeImage>((url) => ({
-        id: crypto.randomUUID?.() ?? `${url}-${Date.now()}`,
-        url,
-      }));
+      const normalized = normalizeImagePayload(payload);
       setUploadedImages(normalized);
     } catch (error) {
       console.error('Error loading tree images:', error);
@@ -198,6 +209,33 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
     }
   };
 
+  const handleDelete = async (image: TreeImage) => {
+    if (!image.canDelete) {
+      setMessage({ kind: 'error', text: 'Dieses Bild kann nicht geloescht werden (keine ID vorhanden).' });
+      return;
+    }
+    const confirmed = window.confirm('Dieses Bild wirklich loeschen?');
+    if (!confirmed) {
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/Images/${image.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Delete failed');
+      }
+      await fetchImages();
+      setMessage({ kind: 'success', text: 'Bild wurde geloescht.' });
+    } catch (error) {
+      console.error('Error deleting tree image:', error);
+      setMessage({ kind: 'error', text: 'Bild konnte nicht geloescht werden.' });
+    }
+  };
+
   return (
     <section className="mt-4">
       <div className="d-flex justify-content-between align-items-center mb-2">
@@ -276,8 +314,18 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
           <div className="row g-3">
             {uploadedImages.map((image) => (
               <div key={image.id} className="col-12 col-sm-6">
-                <div className="ratio ratio-4x3 rounded border overflow-hidden bg-white">
+                <div className="ratio ratio-4x3 rounded border overflow-hidden bg-white position-relative">
                   <img src={image.url} alt="Baumbild" style={{ objectFit: 'cover' }} />
+                  <div className="position-absolute top-0 end-0 m-2 d-flex gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => handleDelete(image)}
+                      disabled={isLoadingImages || !image.canDelete}
+                    >
+                      Loeschen
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

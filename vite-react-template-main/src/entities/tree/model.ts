@@ -5,6 +5,7 @@ export interface ApiTree {
   number: number;
   species?: string | null;
   lastInspectionId?: number | null;
+  nextInspection?: string | null;
   longitude?: number | null;
   latitude?: number | null;
   treeSizeMeters?: number | null;
@@ -22,6 +23,7 @@ export interface Tree {
   number: number;
   species?: string | null;
   lastInspectionId?: number | null;
+  nextInspection?: string | null;
   longitude?: number | null;
   latitude?: number | null;
   treeSizeMeters?: number | null;

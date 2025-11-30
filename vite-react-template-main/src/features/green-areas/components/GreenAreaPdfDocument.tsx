@@ -8,6 +8,7 @@ import type {
 import type { Inspection } from '@/features/inspections';
 import type { Tree } from '@/features/trees/types';
 import { DEFAULT_MAP_CENTER, MAX_MAP_ZOOM, ensureLeafletAssets, hasValidCoordinates, type LeafletWindow } from '@/shared/maps/leafletUtils';
+import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
 
 export type LastInspectionDetail = Inspection & {
   crownInspection?: Partial<CrownInspectionState> | null;
@@ -172,6 +173,7 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
   const coordsLabel = hasCoords
     ? `${formatCoordinate(tree.latitude)}, ${formatCoordinate(tree.longitude)}`
     : 'Keine Koordinaten';
+  const nextInspectionStatus = getNextInspectionStatus(tree.nextInspection);
 
   const inspectionFields: Array<[string, string]> | null = inspection
     ? [
@@ -255,6 +257,20 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
                 </>
               ) : (
                 'Keine Kontrolle'
+              )}
+            </td>
+          </tr>
+          <tr>
+            <th>Naechste Kontrolle</th>
+            <td colSpan={3}>
+              {nextInspectionStatus.hasValue ? (
+                <>
+                  {nextInspectionStatus.label}
+                  {nextInspectionStatus.relativeLabel ? ` (${nextInspectionStatus.relativeLabel})` : ''}{' '}
+                  {nextInspectionStatus.isOverdue && <span className="badge bg-danger ms-1">Faellig</span>}
+                </>
+              ) : (
+                'Keine geplant'
               )}
             </td>
           </tr>

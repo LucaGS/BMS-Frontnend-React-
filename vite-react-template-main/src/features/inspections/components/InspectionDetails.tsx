@@ -243,7 +243,7 @@ const InspectionDetails: React.FC = () => {
               <div className="row g-3 mb-4">
                 {[
                   { label: 'Datum', value: toDateLabel(inspection.performedAt) },
-                  { label: 'Intervall (Tage)', value: inspection.newInspectionIntervall },
+                  { label: 'Intervall Monate', value: inspection.newInspectionIntervall },
                   { label: 'Entwicklungsstadium', value: inspection.developmentalStage || '-' },
                   { label: 'Vitalitaet', value: `${inspection.vitality}/5` },
                 ].map(({ label, value }) => (

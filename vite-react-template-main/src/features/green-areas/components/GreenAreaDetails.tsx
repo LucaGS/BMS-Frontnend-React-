@@ -11,6 +11,7 @@ import GreenAreaPdfDocument, {
   type LastInspectionDetail,
   type TreeInspectionExport,
 } from './GreenAreaPdfDocument';
+import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
 
 type GreenAreaRouteParams = {
   greenAreaId: string;
@@ -53,6 +54,15 @@ const GreenAreaDetails: React.FC = () => {
   const [mapCenter, setMapCenter] = useState<[number, number]>(
     deriveCenterFromState(locationState) ?? DEFAULT_GREEN_AREA_CENTER,
   );
+  const [currentGreenArea, setCurrentGreenArea] = useState<GreenArea | null>(null);
+  const [editAreaMode, setEditAreaMode] = useState(false);
+  const [editAreaSaving, setEditAreaSaving] = useState(false);
+  const [editAreaError, setEditAreaError] = useState<string | null>(null);
+  const [areaDraft, setAreaDraft] = useState<{ name: string; latitude: string; longitude: string }>({
+    name: greenAreaName ?? '',
+    latitude: '',
+    longitude: '',
+  });
 
   const fetchLatestInspections = useCallback(
     async (currentTrees: Tree[]): Promise<Record<number, LastInspectionDetail | null>> => {
@@ -161,6 +171,16 @@ const GreenAreaDetails: React.FC = () => {
   }, [locationState]);
 
   useEffect(() => {
+    if (editAreaMode && currentGreenArea) {
+      setAreaDraft({
+        name: currentGreenArea.name ?? greenAreaName ?? '',
+        latitude: currentGreenArea.latitude != null ? String(currentGreenArea.latitude) : '',
+        longitude: currentGreenArea.longitude != null ? String(currentGreenArea.longitude) : '',
+      });
+    }
+  }, [editAreaMode, currentGreenArea, greenAreaName]);
+
+  useEffect(() => {
     const centerFromState = deriveCenterFromState(locationState);
     if (centerFromState || !greenAreaId) {
       return;
@@ -199,6 +219,12 @@ const GreenAreaDetails: React.FC = () => {
           typeof currentGreenArea.longitude === 'number'
         ) {
           setMapCenter([currentGreenArea.latitude, currentGreenArea.longitude]);
+          setCurrentGreenArea(currentGreenArea);
+          setAreaDraft({
+            name: currentGreenArea.name ?? greenAreaName ?? '',
+            latitude: String(currentGreenArea.latitude),
+            longitude: String(currentGreenArea.longitude),
+          });
         }
       } catch (centerError) {
         if (isCancelled) {
@@ -267,12 +293,149 @@ const GreenAreaDetails: React.FC = () => {
     }
   }, [fetchLatestInspections, greenAreaId, greenAreaName, inspectionLookup, mapCenter, trees]);
 
+  const parseNumber = (value: string) => {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const handleUpdateGreenArea = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!greenAreaId) return;
+    setEditAreaSaving(true);
+    setEditAreaError(null);
+    try {
+      const payload = {
+        name: areaDraft.name.trim(),
+        longitude: parseNumber(areaDraft.longitude),
+        latitude: parseNumber(areaDraft.latitude),
+      };
+      const response = await fetch(`${API_BASE_URL}/api/GreenAreas/${greenAreaId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        throw new Error('Aktualisierung fehlgeschlagen');
+      }
+      const updated = (await response.json()) as GreenArea;
+      setCurrentGreenArea(updated);
+      setAreaDraft({
+        name: updated.name,
+        latitude: String(updated.latitude ?? ''),
+        longitude: String(updated.longitude ?? ''),
+      });
+      if (typeof updated.latitude === 'number' && typeof updated.longitude === 'number') {
+        setMapCenter([updated.latitude, updated.longitude]);
+      }
+      setEditAreaMode(false);
+    } catch (updateError) {
+      console.error('Error updating green area:', updateError);
+      setEditAreaError('Gruenflaeche konnte nicht aktualisiert werden.');
+    } finally {
+      setEditAreaSaving(false);
+    }
+  };
+
+  const handleDeleteGreenArea = async () => {
+    if (!greenAreaId) return;
+    const confirmed = window.confirm('Diese Gruenflaeche wirklich loeschen? Alle zugehoerigen Baeume koennten betroffen sein.');
+    if (!confirmed) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/GreenAreas/${greenAreaId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Delete failed');
+      }
+      navigate('/green-areas');
+    } catch (deleteError) {
+      console.error('Error deleting green area:', deleteError);
+      setEditAreaError('Gruenflaeche konnte nicht geloescht werden.');
+    }
+  };
+
   return (
     <div className="card shadow-sm border-0">
       <div className="card-body p-4">
-        <h1 className="h4 mb-5">
-          {greenAreaId} | {greenAreaName}
-        </h1>
+        <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+          <h1 className="h4 mb-0">
+            {greenAreaId} | {currentGreenArea?.name ?? greenAreaName}
+          </h1>
+          <div className="d-flex gap-2 flex-wrap">
+            <button
+              type="button"
+              className="btn btn-outline-primary btn-sm"
+              onClick={() => setEditAreaMode((prev) => !prev)}
+            >
+              {editAreaMode ? 'Abbrechen' : 'Gruenflaeche bearbeiten'}
+            </button>
+            <button type="button" className="btn btn-outline-danger btn-sm" onClick={handleDeleteGreenArea}>
+              Loeschen
+            </button>
+          </div>
+        </div>
+
+        {editAreaMode && (
+          <div className="border rounded-3 p-3 bg-light mb-4">
+            <form className="row g-3" onSubmit={handleUpdateGreenArea}>
+              <div className="col-12 col-md-4">
+                <label className="form-label small">Name</label>
+                <input
+                  className="form-control form-control-sm"
+                  value={areaDraft.name}
+                  onChange={(e) => setAreaDraft((prev) => ({ ...prev, name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="col-12 col-md-4">
+                <label className="form-label small">Breitengrad</label>
+                <input
+                  className="form-control form-control-sm"
+                  type="number"
+                  step="any"
+                  value={areaDraft.latitude}
+                  onChange={(e) => setAreaDraft((prev) => ({ ...prev, latitude: e.target.value }))}
+                />
+              </div>
+              <div className="col-12 col-md-4">
+                <label className="form-label small">Laengengrad</label>
+                <input
+                  className="form-control form-control-sm"
+                  type="number"
+                  step="any"
+                  value={areaDraft.longitude}
+                  onChange={(e) => setAreaDraft((prev) => ({ ...prev, longitude: e.target.value }))}
+                />
+              </div>
+              {editAreaError && (
+                <div className="col-12">
+                  <div className="alert alert-danger py-2 mb-0" role="alert">
+                    {editAreaError}
+                  </div>
+                </div>
+              )}
+              <div className="col-12 d-flex gap-2">
+                <button type="submit" className="btn btn-primary btn-sm" disabled={editAreaSaving}>
+                  {editAreaSaving ? 'Speichere...' : 'Speichern'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={() => setEditAreaMode(false)}
+                  disabled={editAreaSaving}
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         <div className="mt-4 d-flex flex-wrap align-items-center gap-2">
           <button
@@ -342,6 +505,10 @@ const GreenAreaDetails: React.FC = () => {
               const lastInspectionLabel = inspection
                 ? `${new Date(inspection.performedAt).toLocaleDateString()} (${inspection.isSafeForTraffic ? 'OK' : 'Nicht OK'})`
                 : 'Keine Kontrolle';
+              const nextInspectionStatus = getNextInspectionStatus(tree.nextInspection);
+              const nextInspectionLabel = nextInspectionStatus.hasValue
+                ? nextInspectionStatus.relativeLabel ?? nextInspectionStatus.shortLabel
+                : 'Keine naechste Kontrolle';
               return (
                 <div className="col" key={tree.id}>
                   <button
@@ -351,9 +518,17 @@ const GreenAreaDetails: React.FC = () => {
                   >
                     <div className="card h-100 shadow-sm border-0">
                       <div className="card-body">
-                        <div className="d-flex align-items-center justify-content-between mb-2">
+                        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
                           <span className="badge rounded-pill bg-success-subtle text-success-emphasis">
                             Nr. {tree.number ?? tree.id}
+                          </span>
+                          <span
+                            className={`badge ${
+                              nextInspectionStatus.isOverdue ? 'bg-danger text-white' : 'text-bg-light border'
+                            }`}
+                            title={nextInspectionStatus.label}
+                          >
+                            {nextInspectionLabel}
                           </span>
                           <span className="badge text-bg-light border">{lastInspectionLabel}</span>
                         </div>

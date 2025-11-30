@@ -7,6 +7,7 @@ export const mapTreeFromApi = (tree: ApiTree): Tree => ({
   number: tree.number,
   species: tree.species ?? null,
   lastInspectionId: tree.lastInspectionId ?? null,
+  nextInspection: tree.nextInspection ?? null,
   longitude: tree.longitude ?? null,
   latitude: tree.latitude ?? null,
   treeSizeMeters: tree.treeSizeMeters ?? null,

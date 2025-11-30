@@ -49,7 +49,7 @@ const RoutedTreeDetails: React.FC = () => {
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/Tree/GetAll`, {
+        const response = await fetch(`${API_BASE_URL}/api/Trees/GetAll`, {
           headers: {
             Authorization: `bearer ${localStorage.getItem('token') || ''}`,
           },

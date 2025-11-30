@@ -395,7 +395,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
 
           <InspectionSection
             sectionKey="crown"
-            title="Kronenpruefung"
+            title="Kronen"
             badge="Krone"
             description="Schnell erfassbare Maengel in der Krone ueber markante Checkboxen."
             notesId="crownNotes"
@@ -411,13 +411,13 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
 
           <InspectionSection
             sectionKey="trunk"
-            title="Stamminspektion"
+            title="Stamm"
             badge="Stamm"
             description="Alle Beobachtungen am Stamm markieren und dokumentieren."
             notesId="trunkNotes"
             notesLabel="Notizen Stamm"
-            notesPlaceholder="z. B. Wundverschluss, Risse, Harzfluss ..."
-            state={trunkInspection}
+              notesPlaceholder="z. B. Wundverschluss, Risse, Harzfluss ..."
+              state={trunkInspection}
             setState={setTrunkInspection}
             items={trunkCheckboxes}
             isOpen={openSections.trunk}
