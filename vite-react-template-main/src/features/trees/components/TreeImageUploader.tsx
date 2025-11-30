@@ -75,6 +75,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<TreeImage[]>([]);
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
@@ -123,6 +124,20 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
   useEffect(() => {
     fetchImages();
   }, [fetchImages]);
+
+  useEffect(() => {
+    if (uploadedImages.length === 0) {
+      setSelectedImageId(null);
+      return;
+    }
+
+    setSelectedImageId((currentSelected) => {
+      if (currentSelected && uploadedImages.some((image) => image.id === currentSelected)) {
+        return currentSelected;
+      }
+      return uploadedImages[uploadedImages.length - 1].id;
+    });
+  }, [uploadedImages]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -236,6 +251,13 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
     }
   };
 
+  const activeImage = selectedImageId
+    ? uploadedImages.find((image) => image.id === selectedImageId) ?? null
+    : null;
+  const activeIndex = activeImage ? uploadedImages.findIndex((image) => image.id === activeImage.id) : -1;
+  const canGoPrev = activeIndex > 0;
+  const canGoNext = activeIndex >= 0 && activeIndex < uploadedImages.length - 1;
+
   return (
     <section className="mt-4">
       <div className="d-flex justify-content-between align-items-center mb-2">
@@ -311,24 +333,77 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
           <p className="text-muted small mb-0">Noch keine Bilder vorhanden.</p>
         )}
         {uploadedImages.length > 0 && (
-          <div className="row g-3">
-            {uploadedImages.map((image) => (
-              <div key={image.id} className="col-12 col-sm-6">
-                <div className="ratio ratio-4x3 rounded border overflow-hidden bg-white position-relative">
-                  <img src={image.url} alt="Baumbild" style={{ objectFit: 'cover' }} />
-                  <div className="position-absolute top-0 end-0 m-2 d-flex gap-2">
+          <div className="p-3 border rounded-4 bg-white shadow-sm">
+            <div className="ratio ratio-4x3 rounded-4 overflow-hidden position-relative bg-secondary bg-opacity-10 mb-2">
+              {activeImage ? (
+                <img src={activeImage.url} alt="Ausgewaehltes Baumbild" className="w-100 h-100" style={{ objectFit: 'cover' }} />
+              ) : (
+                <div className="d-flex align-items-center justify-content-center h-100 text-muted small">Bild wird geladen...</div>
+              )}
+              {activeImage && (
+                <div
+                  className="position-absolute bottom-0 start-0 end-0 p-3 d-flex justify-content-between align-items-center"
+                  style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.65) 100%)' }}
+                >
+                  <div className="text-white small fw-semibold">
+                    Bild {activeIndex + 1} von {uploadedImages.length}
+                  </div>
+                  <div className="d-flex gap-2">
                     <button
                       type="button"
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => handleDelete(image)}
-                      disabled={isLoadingImages || !image.canDelete}
+                      className="btn btn-light btn-sm"
+                      onClick={() => setSelectedImageId(canGoPrev ? uploadedImages[activeIndex - 1].id : activeImage.id)}
+                      disabled={!canGoPrev}
+                    >
+                      Zurueck
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-light btn-sm"
+                      onClick={() => setSelectedImageId(canGoNext ? uploadedImages[activeIndex + 1].id : activeImage.id)}
+                      disabled={!canGoNext}
+                    >
+                      Weiter
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleDelete(activeImage)}
+                      disabled={isLoadingImages || !activeImage.canDelete}
                     >
                       Loeschen
                     </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              )}
+            </div>
+            {uploadedImages.length > 1 && (
+              <>
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="text-muted small">Weitere Bilder anklicken, um sie anzusehen</span>
+                  <span className="badge bg-light text-dark">{uploadedImages.length}</span>
+                </div>
+                <div className="d-flex gap-2 overflow-auto pb-1">
+                  {uploadedImages.map((image) => {
+                    const isActive = image.id === activeImage?.id;
+                    return (
+                      <button
+                        type="button"
+                        key={image.id}
+                        onClick={() => setSelectedImageId(image.id)}
+                        className={`p-1 rounded-3 border ${isActive ? 'border-primary shadow-sm' : 'border-0'} bg-transparent`}
+                        style={{ minWidth: '104px', maxWidth: '128px' }}
+                        aria-label="Baumbild auswaehlen"
+                      >
+                        <div className={`ratio ratio-4x3 rounded-2 overflow-hidden ${isActive ? 'bg-primary bg-opacity-10' : 'bg-light'}`}>
+                          <img src={image.url} alt="Vorschau Baumbild" className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

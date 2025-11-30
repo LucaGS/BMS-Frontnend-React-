@@ -7,13 +7,216 @@ import type {
 } from '@/features/inspections/forms/inspectionFormConfig';
 import type { Inspection } from '@/features/inspections';
 import type { Tree } from '@/features/trees/types';
+import type { ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
 import { DEFAULT_MAP_CENTER, MAX_MAP_ZOOM, ensureLeafletAssets, hasValidCoordinates, type LeafletWindow } from '@/shared/maps/leafletUtils';
 import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
+
+const PdfStyles: React.FC = () => (
+  <style>
+    {`
+      .ga-print {
+        font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        color: #0f172a;
+        background: #f8fafc;
+        line-height: 1.45;
+        max-width: 100%;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .ga-print h1, .ga-print h2, .ga-print h3, .ga-print h4, .ga-print h5, .ga-print h6 {
+        letter-spacing: -0.01em;
+        color: #0f172a;
+      }
+      .ga-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        padding: 18px;
+      }
+      .ga-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .ga-table th,
+      .ga-table td {
+        border: 1px solid #e2e8f0;
+        padding: 8px 10px;
+        vertical-align: top;
+      }
+      .ga-table th {
+        background: #f8fafc;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .ga-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: #0f172a;
+        border: 1px solid #e2e8f0;
+        font-weight: 600;
+        font-size: 12px;
+      }
+      .ga-pill--success {
+        background: #ecfdf3;
+        color: #166534;
+        border-color: #bbf7d0;
+      }
+      .ga-pill--danger {
+        background: #fef2f2;
+        color: #991b1b;
+        border-color: #fecdd3;
+      }
+      .ga-pill--neutral {
+        background: #eef2ff;
+        color: #3730a3;
+        border-color: #c7d2fe;
+      }
+      .ga-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+      }
+      .ga-meta-item {
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+      }
+      .ga-meta-label {
+        font-size: 11px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 4px;
+      }
+      .ga-meta-value {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 13px;
+      }
+      .ga-section-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: #0f172a;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 6px;
+      }
+      .ga-muted {
+        color: #64748b;
+        font-size: 12px;
+      }
+      .ga-print-card {
+        page-break-inside: avoid;
+        margin-bottom: 18px;
+      }
+      .ga-map-shell {
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #f8fafc;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .ga-tree-marker__bubble {
+        min-width: 26px;
+        height: 26px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: #0ea341;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.35);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      @media print {
+        .ga-map-shell {
+          height: 120mm !important;
+          max-height: 120mm !important;
+          width: 100%;
+          box-shadow: none;
+        }
+      }
+      .ga-tree-marker__bubble--fallback {
+        background: #15803d;
+      }
+      .ga-tree-marker {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+      }
+      .ga-tree-marker__label {
+        background: #0ea341;
+        color: #fff;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 700;
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.35);
+        line-height: 1.1;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .ga-tree-marker__dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        background: #0ea341;
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.35);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      img, canvas {
+        max-width: 100%;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 12mm;
+      }
+      @media print {
+        body {
+          background: #ffffff !important;
+        }
+        body * {
+          visibility: hidden !important;
+        }
+        .ga-print,
+        .ga-print * {
+          visibility: visible !important;
+        }
+        .ga-print {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          padding: 0;
+          margin: 0;
+          background: #ffffff;
+        }
+      }
+    `}
+  </style>
+);
 
 export type LastInspectionDetail = Inspection & {
   crownInspection?: Partial<CrownInspectionState> | null;
   trunkInspection?: Partial<TrunkInspectionState> | null;
   stemBaseInspection?: Partial<StemBaseInspectionState> | null;
+  arboriculturalMeasures?: ArboriculturalMeasure[] | null;
 };
 
 export type TreeInspectionExport = {
@@ -64,9 +267,10 @@ type TreeMapInlineProps = {
   latitude?: number | null;
   longitude?: number | null;
   height?: number;
+  label?: string | number;
 };
 
-const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, height = 260 }) => {
+const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, height = 260, label }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any | null>(null);
   const markerRef = useRef<any | null>(null);
@@ -105,9 +309,17 @@ const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, heig
           mapRef.current.setView(center, hasCoords ? 17 : mapRef.current.getZoom() ?? 6);
         }
 
+        if (mapRef.current && typeof mapRef.current.invalidateSize === 'function') {
+          requestAnimationFrame(() => mapRef.current?.invalidateSize());
+        }
+
         if (hasCoords) {
           if (!markerRef.current) {
-            markerRef.current = L.marker(center).addTo(mapRef.current);
+            const icon = L.divIcon({
+              className: '',
+              html: `<div class="ga-tree-marker"><div class="ga-tree-marker__label">${label ?? '-'}</div><div class="ga-tree-marker__dot"></div></div>`,
+            });
+            markerRef.current = L.marker(center, { icon }).addTo(mapRef.current);
           } else {
             markerRef.current.setLatLng(center);
           }
@@ -146,7 +358,7 @@ const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, heig
   }, []);
 
   return (
-    <div className="position-relative border rounded" style={{ height, overflow: 'hidden' }}>
+    <div className="position-relative border rounded ga-map-shell" style={{ height, width: '100%', overflow: 'hidden' }}>
       <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
       {!isReady && (
         <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75">
@@ -167,6 +379,125 @@ const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, heig
   );
 };
 
+type AllTreesMapProps = {
+  trees: TreeInspectionExport[];
+  height?: number;
+};
+
+const AllTreesMap: React.FC<AllTreesMapProps> = ({ trees, height = 360 }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<any | null>(null);
+  const markersRef = useRef<any[]>([]);
+  const [isReady, setIsReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+
+  const positions = trees
+    .map((entry) => ({
+      id: entry.tree.id,
+      number: entry.tree.number ?? entry.tree.id,
+      lat: entry.tree.latitude,
+      lng: entry.tree.longitude,
+    }))
+    .filter((pos) => hasValidCoordinates(pos.lat, pos.lng, { allowZero: false }));
+
+  useEffect(() => {
+    let isMounted = true;
+
+    ensureLeafletAssets()
+      .then(() => {
+        if (!isMounted || !containerRef.current) {
+          return;
+        }
+        const leafletWindow = window as LeafletWindow;
+        const L = leafletWindow.L;
+        if (!L) {
+          return;
+        }
+
+        if (!mapRef.current) {
+          mapRef.current = L.map(containerRef.current, {
+            maxZoom: MAX_MAP_ZOOM,
+            minZoom: 3,
+            zoomControl: false,
+            attributionControl: false,
+          }).setView(DEFAULT_MAP_CENTER, 6);
+
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap-Mitwirkende',
+            maxZoom: MAX_MAP_ZOOM,
+          }).addTo(mapRef.current);
+        }
+
+        // Clear existing markers
+        markersRef.current.forEach((marker) => marker.remove());
+        markersRef.current = [];
+
+        if (positions.length > 0) {
+          const bounds = L.latLngBounds([]);
+          positions.forEach((pos) => {
+            const icon = L.divIcon({
+              className: '',
+              html: `<div class="ga-tree-marker"><div class="ga-tree-marker__label">${pos.number}</div><div class="ga-tree-marker__dot"></div></div>`,
+            });
+            const marker = L.marker([pos.lat as number, pos.lng as number], { icon }).addTo(mapRef.current);
+            markersRef.current.push(marker);
+            bounds.extend(marker.getLatLng());
+          });
+          mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+        }
+
+        if (mapRef.current && typeof mapRef.current.invalidateSize === 'function') {
+          requestAnimationFrame(() => mapRef.current?.invalidateSize());
+        }
+
+        setIsReady(true);
+        setMapError(null);
+      })
+      .catch((err) => {
+        console.error('Leaflet map failed to load (all trees map)', err);
+        if (isMounted) {
+          setMapError('Karte konnte nicht geladen werden.');
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [positions]);
+
+  useEffect(() => () => {
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current = [];
+    if (mapRef.current && typeof mapRef.current.remove === 'function') {
+      mapRef.current.remove();
+    }
+    mapRef.current = null;
+  }, []);
+
+  const hasAnyCoords = positions.length > 0;
+
+  return (
+    <div className="ga-map-shell position-relative" style={{ height, width: '100%' }}>
+      <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
+      {!isReady && (
+        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75">
+          <span className="small text-muted">Karte wird geladen...</span>
+        </div>
+      )}
+      {!hasAnyCoords && isReady && (
+        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+          <span className="ga-pill ga-pill--neutral">Keine Koordinaten vorhanden</span>
+        </div>
+      )}
+      {mapError && (
+        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75">
+          <span className="text-danger small">{mapError}</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }) => {
   const { tree, inspection, mapImage } = entry;
   const hasCoords = hasValidCoordinates(tree.latitude, tree.longitude, { allowZero: false });
@@ -174,15 +505,27 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
     ? `${formatCoordinate(tree.latitude)}, ${formatCoordinate(tree.longitude)}`
     : 'Keine Koordinaten';
   const nextInspectionStatus = getNextInspectionStatus(tree.nextInspection);
+  const trafficSafetyExpectationLabel =
+    typeof tree.trafficSafetyExpectation === 'string' && tree.trafficSafetyExpectation.trim().length > 0
+      ? tree.trafficSafetyExpectation
+      : 'None';
+  const measuresLabel =
+    inspection?.arboriculturalMeasures && inspection.arboriculturalMeasures.length > 0
+      ? inspection.arboriculturalMeasures
+          .map((measure) => (measure.description ? `${measure.measureName} (${measure.description})` : measure.measureName))
+          .join(', ')
+      : inspection?.arboriculturalMeasureIds && inspection.arboriculturalMeasureIds.length > 0
+        ? `IDs: ${inspection.arboriculturalMeasureIds.join(', ')}`
+        : 'Keine Massnahmen erfasst';
 
   const inspectionFields: Array<[string, string]> | null = inspection
     ? [
-        ['Kontroll-ID', String(inspection.id)],
         ['Datum', formatDateTime(inspection.performedAt)],
         ['Verkehrssicherheit', inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher'],
-        ['Intervall (Tage)', formatNumber(inspection.newInspectionIntervall)],
+        ['Intervall (Monate)', formatNumber(inspection.newInspectionIntervall)],
         ['Entwicklungsstadium', inspection.developmentalStage || '-'],
         ['Vitalitaet', formatNumber(inspection.vitality)],
+        ['Pflegemassnahmen', measuresLabel],
       ]
     : null;
 
@@ -208,36 +551,79 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
       : [];
 
   return (
-    <div className="ga-print-card border rounded-3 p-3 mb-3">
-      <h3 className="h6 mb-3">
-        Baum {tree.number ?? tree.id} - {tree.species || 'Unbekannte Art'}
-      </h3>
+    <div className="ga-print-card ga-card mb-4">
+      <div className="d-flex justify-content-between align-items-start gap-3 mb-2">
+        <div>
+          <div className="ga-section-title">Baumprofil</div>
+          <h3 className="h6 mb-1">
+            Baum {tree.number ?? tree.id} · {tree.species || 'Unbekannte Art'}
+          </h3>
+          <div className="ga-muted">ID {tree.id} | Gruenflaeche {tree.greenAreaId}</div>
+        </div>
+        <div className="d-flex flex-column align-items-end gap-2">
+          <span
+            className={`ga-pill ${
+              inspection ? (inspection.isSafeForTraffic ? 'ga-pill--success' : 'ga-pill--danger') : 'ga-pill--neutral'
+            }`}
+          >
+            {inspection ? (inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher') : 'Keine Kontrolle'}
+          </span>
+          <span className="ga-pill">Sicherheitserwartung: {trafficSafetyExpectationLabel}</span>
+        </div>
+      </div>
 
-      <table className="table table-sm align-middle mb-3">
+      <div className="ga-meta-grid mb-3">
+        <div className="ga-meta-item">
+          <div className="ga-meta-label">Baumnummer</div>
+          <div className="ga-meta-value">{formatNumber(tree.number)}</div>
+        </div>
+        <div className="ga-meta-item">
+          <div className="ga-meta-label">Koordinaten</div>
+          <div className="ga-meta-value">{coordsLabel}</div>
+        </div>
+        <div className="ga-meta-item">
+          <div className="ga-meta-label">Baumhoehe (m)</div>
+          <div className="ga-meta-value">{formatNumber(tree.treeSizeMeters)}</div>
+        </div>
+        <div className="ga-meta-item">
+          <div className="ga-meta-label">Kronendurchmesser (m)</div>
+          <div className="ga-meta-value">{formatNumber(tree.crownDiameterMeters)}</div>
+        </div>
+        <div className="ga-meta-item">
+          <div className="ga-meta-label">Letzte Kontrolle</div>
+          <div className="ga-meta-value">
+            {inspection ? formatDateTime(inspection.performedAt) : 'Keine Kontrolle'}
+          </div>
+        </div>
+        <div className="ga-meta-item">
+          <div className="ga-meta-label">Naechste Kontrolle</div>
+          <div className="ga-meta-value">
+            {nextInspectionStatus.hasValue ? (
+              <>
+                {nextInspectionStatus.label}
+                {nextInspectionStatus.relativeLabel ? ` (${nextInspectionStatus.relativeLabel})` : ''}
+                {nextInspectionStatus.isOverdue ? ' · Faellig' : ''}
+              </>
+            ) : (
+              'Keine geplant'
+            )}
+          </div>
+        </div>
+        <div className="ga-meta-item">
+        </div>
+        <div className="ga-meta-item">
+          <div className="ga-meta-label">Letzte Kontrolle ID</div>
+          <div className="ga-meta-value">{tree.lastInspectionId ?? '-'}</div>
+        </div>
+      </div>
+
+      <table className="ga-table mb-3">
         <tbody>
           <tr>
-            <th className="w-25">Baum-ID</th>
-            <td className="w-25">{tree.id}</td>
-            <th className="w-25">Art</th>
-            <td className="w-25">{tree.species || 'Unbekannte Art'}</td>
-          </tr>
-          <tr>
-            <th>Baumnummer</th>
-            <td>{formatNumber(tree.number)}</td>
-            <th>Koordinaten</th>
-            <td>{coordsLabel}</td>
-          </tr>
-          <tr>
-            <th>Baumhoehe (m)</th>
-            <td>{formatNumber(tree.treeSizeMeters)}</td>
-            <th>Kronendurchmesser (m)</th>
-            <td>{formatNumber(tree.crownDiameterMeters)}</td>
-          </tr>
-          <tr>
-            <th>Anzahl Staemme</th>
-            <td>{formatNumber(tree.numberOfTrunks)}</td>
-            <th>Stammdurchmesser 1</th>
-            <td>{formatNumber(tree.trunkDiameter1)}</td>
+            <th className="w-25">Stammdaten</th>
+            <td className="w-25">Anzahl Staemme: {formatNumber(tree.numberOfTrunks)}</td>
+            <th className="w-25">Stammdurchmesser 1</th>
+            <td className="w-25">{formatNumber(tree.trunkDiameter1)}</td>
           </tr>
           <tr>
             <th>Stammdurchmesser 2</th>
@@ -246,58 +632,39 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
             <td>{formatNumber(tree.trunkDiameter3)}</td>
           </tr>
           <tr>
-            <th>Letzte Kontrolle</th>
-            <td colSpan={3}>
-              {inspection ? (
-                <>
-                  {formatDateTime(inspection.performedAt)}{' '}
-                  <span className={`badge ms-1 ${inspection.isSafeForTraffic ? 'bg-success' : 'bg-danger'}`}>
-                    {inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher'}
-                  </span>
-                </>
-              ) : (
-                'Keine Kontrolle'
-              )}
-            </td>
-          </tr>
-          <tr>
-            <th>Naechste Kontrolle</th>
-            <td colSpan={3}>
-              {nextInspectionStatus.hasValue ? (
-                <>
-                  {nextInspectionStatus.label}
-                  {nextInspectionStatus.relativeLabel ? ` (${nextInspectionStatus.relativeLabel})` : ''}{' '}
-                  {nextInspectionStatus.isOverdue && <span className="badge bg-danger ms-1">Faellig</span>}
-                </>
-              ) : (
-                'Keine geplant'
-              )}
-            </td>
+            <th>Naechste Kontrolle (Rohwert)</th>
+            <td colSpan={3}>{tree.nextInspection ?? 'Keine geplant'}</td>
           </tr>
         </tbody>
       </table>
 
       {hasCoords ? (
         <div className="mb-3">
-          <div className="text-muted small mb-1">Karte</div>
-          <TreeMapInline latitude={tree.latitude ?? undefined} longitude={tree.longitude ?? undefined} />
+          <div className="ga-section-title">Karte</div>
+          <TreeMapInline
+            latitude={tree.latitude ?? undefined}
+            longitude={tree.longitude ?? undefined}
+            label={tree.number ?? tree.id}
+          />
         </div>
       ) : mapImage ? (
         <div className="mb-3">
-          <div className="text-muted small mb-1">Karte</div>
-          <img
-            src={mapImage}
-            alt="Karte"
-            className="w-100 rounded-3 border"
-            style={{ maxHeight: 260, objectFit: 'cover' }}
-          />
+          <div className="ga-section-title">Karte</div>
+          <div className="ga-map-shell position-relative" style={{ height: 240, width: '100%' }}>
+            <img
+              src={mapImage}
+              alt="Karte"
+              className="w-100 h-100"
+              style={{ objectFit: 'cover' }}
+            />
+          </div>
         </div>
       ) : null}
 
       {inspectionFields ? (
         <>
-          <div className="fw-semibold mb-2">Kontrolldaten</div>
-          <table className="table table-sm align-middle mb-3">
+          <div className="ga-section-title">Kontrolldaten</div>
+          <table className="ga-table mb-3">
             <tbody>
               {inspectionFields.map(([label, value]) => (
                 <tr key={label}>
@@ -312,8 +679,8 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
             </tbody>
           </table>
 
-          <div className="fw-semibold mb-2">Notizen & Markierungen</div>
-          <table className="table table-sm align-middle">
+          <div className="ga-section-title">Notizen & Markierungen</div>
+          <table className="ga-table">
             <thead>
               <tr>
                 <th>Bereich</th>
@@ -348,39 +715,64 @@ const GreenAreaPdfDocument: React.FC<GreenAreaPdfDocumentProps> = ({
   greenAreaName,
   trees,
   mapCenterLabel,
-}) => (
-  <div className="ga-print">
-    <div className="mb-3">
-      <div className="text-muted small">Gruenflaeche</div>
-      <h2 className="h5 mb-0">
-        {greenAreaId} {greenAreaName ? `| ${greenAreaName}` : ''}
-      </h2>
-    </div>
-
-    <div className="border rounded-3 p-3 mb-3">
-      <div className="fw-semibold mb-2">Uebersicht</div>
-      <div className="row g-2 small">
-        <div className="col-6">
-          <div className="border rounded-3 p-2 h-100">
-            <div className="text-muted small">Anzahl Baeume</div>
-            <div className="fw-semibold">{trees.length}</div>
+}) => {
+  const generatedAt = new Date().toLocaleString('de-DE');
+  return (
+    <div className="ga-print">
+      <PdfStyles />
+      <div className="ga-card mb-3">
+        <div className="d-flex justify-content-between align-items-start gap-3">
+          <div>
+            <div className="ga-meta-label">Gruenflaeche</div>
+            <h2 className="h5 mb-1">
+              {greenAreaId} {greenAreaName ? `| ${greenAreaName}` : ''}
+            </h2>
+            <div className="ga-muted">Exportiert am {generatedAt}</div>
+          </div>
+          <div className="d-flex flex-column align-items-end gap-2">
+            <span className="ga-pill">Baeume: {trees.length}</span>
+            {mapCenterLabel ? <span className="ga-pill ga-pill--neutral">Kartenmittelpunkt: {mapCenterLabel}</span> : null}
           </div>
         </div>
-        {mapCenterLabel ? (
-          <div className="col-6">
-            <div className="border rounded-3 p-2 h-100">
-              <div className="text-muted small">Kartenmittelpunkt</div>
-              <div className="fw-semibold">{mapCenterLabel}</div>
-            </div>
-          </div>
-        ) : null}
       </div>
-    </div>
 
-    {trees.map((entry) => (
-      <TreeInspectionCard key={entry.tree.id} entry={entry} />
-    ))}
-  </div>
-);
+      <div className="ga-card mb-4">
+        <div className="ga-section-title">Uebersicht</div>
+        <div className="ga-meta-grid">
+          <div className="ga-meta-item">
+            <div className="ga-meta-label">Anzahl Baeume</div>
+            <div className="ga-meta-value">{trees.length}</div>
+          </div>
+          {mapCenterLabel ? (
+            <div className="ga-meta-item">
+              <div className="ga-meta-label">Kartenmittelpunkt</div>
+              <div className="ga-meta-value">{mapCenterLabel}</div>
+            </div>
+          ) : null}
+          <div className="ga-meta-item">
+            <div className="ga-meta-label">Export-ID</div>
+            <div className="ga-meta-value">{greenAreaId ?? '-'}</div>
+          </div>
+          <div className="ga-meta-item">
+            <div className="ga-meta-label">Angezeigter Name</div>
+            <div className="ga-meta-value">{greenAreaName ?? 'Unbenannt'}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="ga-card mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <div className="ga-section-title mb-0">Karte: Baeume in dieser Flaeche</div>
+          <span className="ga-muted">Marker mit Baumnummer</span>
+        </div>
+        <AllTreesMap trees={trees} />
+      </div>
+
+      {trees.map((entry) => (
+        <TreeInspectionCard key={entry.tree.id} entry={entry} />
+      ))}
+    </div>
+  );
+};
 
 export default GreenAreaPdfDocument;

@@ -21,6 +21,7 @@ type TreeFormState = {
   trunkDiameter1: string;
   trunkDiameter2: string;
   trunkDiameter3: string;
+  trafficSafetyExpectation: string;
 };
 
 const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeCreated }) => {
@@ -36,8 +37,10 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
     trunkDiameter1: '',
     trunkDiameter2: '',
     trunkDiameter3: '',
+    trafficSafetyExpectation: '',
   });
   const [diameterError, setDiameterError] = useState<string | null>(null);
+  const [trafficSafetyError, setTrafficSafetyError] = useState<string | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   useEffect(() => {
@@ -105,11 +108,22 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    let hasError = false;
+    if (!draftTree.trafficSafetyExpectation) {
+      setTrafficSafetyError('Bitte Sicherheitserwartung Verkehr auswaehlen.');
+      hasError = true;
+    } else {
+      setTrafficSafetyError(null);
+    }
     if (!hasAnyTrunkDiameterValue(draftTree)) {
       setDiameterError('Mindestens ein Stammdurchmesser muss groesser als 0 sein.');
+      hasError = true;
+    } else {
+      setDiameterError(null);
+    }
+    if (hasError) {
       return;
     }
-    setDiameterError(null);
     const payload = mapTreeToApiPayload({
       greenAreaId,
       number: parseInteger(draftTree.number),
@@ -122,6 +136,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       trunkDiameter1: parseNonNegativeNumber(draftTree.trunkDiameter1),
       trunkDiameter2: parseNonNegativeNumber(draftTree.trunkDiameter2),
       trunkDiameter3: parseNonNegativeNumber(draftTree.trunkDiameter3),
+      trafficSafetyExpectation: draftTree.trafficSafetyExpectation,
     });
 
     try {
@@ -158,8 +173,10 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
         trunkDiameter1: '',
         trunkDiameter2: '',
         trunkDiameter3: '',
+        trafficSafetyExpectation: '',
       });
       setDiameterError(null);
+      setTrafficSafetyError(null);
       setShowLocationPicker(false);
     } catch (error) {
       console.error('Error creating tree:', error);
@@ -335,6 +352,33 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           required
           min={1}
         />
+      </div>
+      <div className="mb-3">
+        <label htmlFor="trafficSafetyExpectation" className="form-label">
+          Sicherheitserwartung Verkehr
+        </label>
+        <select
+          id="trafficSafetyExpectation"
+          className={`form-select ${trafficSafetyError ? 'is-invalid' : ''}`}
+          value={draftTree.trafficSafetyExpectation}
+          onChange={(event) => {
+            const nextValue = event.target.value;
+            setDraftTree((current) => ({ ...current, trafficSafetyExpectation: nextValue }));
+            if (nextValue) {
+              setTrafficSafetyError(null);
+            }
+          }}
+          required
+        >
+          <option value="Keine">Keine</option>
+          <option value="Höher">Höher</option>
+          <option value="Niedriger">Niedriger</option>
+        </select>
+        {trafficSafetyError ? (
+          <div className="invalid-feedback d-block">{trafficSafetyError}</div>
+        ) : (
+          <div className="text-muted small">Bitte waehlen Sie die Sicherheitserwartung fuer den Verkehr.</div>
+        )}
       </div>
       <div className="mb-3">
         <div className="d-flex justify-content-between align-items-baseline mb-1">

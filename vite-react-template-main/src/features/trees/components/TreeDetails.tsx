@@ -146,16 +146,17 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                         <div className="fs-5 fw-semibold mb-0">
                           {tree.species || 'Unbekannte Art'}
                         </div>
-                        <div className="text-muted small">Nr. {tree.number}</div>
-                      </div>
+                      <div className="text-muted small">Nr. {tree.number}</div>
                     </div>
-                    <div className="row row-cols-1 row-cols-sm-2 g-2">
-                      {[
-                        { label: 'Breitengrad', value: tree.latitude },
-                        { label: 'Laengengrad', value: tree.longitude },
-                        { label: 'Letzte Kontrolle', value: tree.lastInspectionId ?? 'Keine' },
-                        { label: 'Baumhoehe (m)', value: tree.treeSizeMeters ?? '-' },
-                        { label: 'Kronendurchmesser (m)', value: tree.crownDiameterMeters ?? '-' },
+                  </div>
+                  <div className="row row-cols-1 row-cols-sm-2 g-2">
+                    {[
+                      { label: 'Sicherheitserwartung Verkehr', value: tree.trafficSafetyExpectation || 'None' },
+                      { label: 'Breitengrad', value: tree.latitude },
+                      { label: 'Laengengrad', value: tree.longitude },
+                      { label: 'Letzte Kontrolle', value: tree.lastInspectionId ?? 'Keine' },
+                      { label: 'Baumhoehe (m)', value: tree.treeSizeMeters ?? '-' },
+                      { label: 'Kronendurchmesser (m)', value: tree.crownDiameterMeters ?? '-' },
                         { label: 'Anzahl Staemme', value: tree.numberOfTrunks ?? '-' },
                         { label: 'Stammdurchmesser 1', value: tree.trunkDiameter1 ?? '-' },
                         { label: 'Stammdurchmesser 2', value: tree.trunkDiameter2 ?? '-' },

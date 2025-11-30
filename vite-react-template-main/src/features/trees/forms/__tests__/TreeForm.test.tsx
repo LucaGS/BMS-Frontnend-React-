@@ -22,6 +22,7 @@ describe('TreeForm', () => {
     fireEvent.change(screen.getByLabelText(/baumhoehe/i), { target: { value: '5' } });
     fireEvent.change(screen.getByLabelText(/kronendurchmesser/i), { target: { value: '3' } });
     fireEvent.change(screen.getByLabelText(/anzahl staemme/i), { target: { value: '1' } });
+    await userEvent.selectOptions(screen.getByLabelText(/sicherheitserwartung/i), 'Higher');
   };
 
   it('submits tree data and notifies parent on success', async () => {
@@ -38,6 +39,7 @@ describe('TreeForm', () => {
       trunkDiameter1: 12.5,
       trunkDiameter2: 0,
       trunkDiameter3: 0,
+      trafficSafetyExpectation: 'Higher',
     };
 
     fetchMock.mockResolvedValueOnce(
@@ -70,6 +72,7 @@ describe('TreeForm', () => {
         trunkDiameter1: 12.5,
         trunkDiameter2: 0,
         trunkDiameter3: 0,
+        trafficSafetyExpectation: 'Higher',
       })
     );
     expect(onTreeCreated).toHaveBeenCalledWith(expect.objectContaining({ id: createdTree.id }));

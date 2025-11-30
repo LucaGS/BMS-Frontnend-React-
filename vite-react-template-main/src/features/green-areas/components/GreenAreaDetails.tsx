@@ -4,6 +4,7 @@ import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapInspectionFromApi } from '@/features/inspections';
 import { mapTreesFromApi, type Tree } from '@/features/trees/types';
 import TreeForm from '@/features/trees/forms/TreeForm';
+import TreeLocationPicker from '@/features/trees/components/TreeLocationPicker';
 import GreenAreaMap from '../maps/GreenAreaMap';
 import type { GreenArea } from '@/features/green-areas/types';
 import { buildTreeMapPreviewDataUrl } from '@/shared/maps/mapPreview';
@@ -12,6 +13,7 @@ import GreenAreaPdfDocument, {
   type TreeInspectionExport,
 } from './GreenAreaPdfDocument';
 import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
+import { mapMeasuresFromApi, type ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
 
 type GreenAreaRouteParams = {
   greenAreaId: string;
@@ -58,6 +60,7 @@ const GreenAreaDetails: React.FC = () => {
   const [editAreaMode, setEditAreaMode] = useState(false);
   const [editAreaSaving, setEditAreaSaving] = useState(false);
   const [editAreaError, setEditAreaError] = useState<string | null>(null);
+  const [showAreaLocationPicker, setShowAreaLocationPicker] = useState(false);
   const [areaDraft, setAreaDraft] = useState<{ name: string; latitude: string; longitude: string }>({
     name: greenAreaName ?? '',
     latitude: '',
@@ -95,6 +98,9 @@ const GreenAreaDetails: React.FC = () => {
               crownInspection: data.crownInspection ?? data.crown ?? null,
               trunkInspection: data.trunkInspection ?? data.trunk ?? null,
               stemBaseInspection: data.stemBaseInspection ?? data.stemBase ?? data.root ?? null,
+              arboriculturalMeasures: Array.isArray((data as any).arboriculturalMeasures)
+                ? mapMeasuresFromApi((data as any).arboriculturalMeasures)
+                : null,
             };
             return { treeId: tree.id, inspection: detailed };
           } catch (inspectionError) {
@@ -111,6 +117,23 @@ const GreenAreaDetails: React.FC = () => {
     },
     [],
   );
+
+  const fetchMeasuresLookup = useCallback(async (): Promise<Record<number, ArboriculturalMeasure>> => {
+    const response = await fetch(`${API_BASE_URL}/api/ArboriculturalMeasures/GetAll`, {
+      headers: {
+        Authorization: `bearer ${localStorage.getItem('token') || ''}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to load measures for export.');
+    }
+    const data = await response.json();
+    const measures = mapMeasuresFromApi(data);
+    return measures.reduce<Record<number, ArboriculturalMeasure>>((lookup, measure) => {
+      lookup[measure.id] = measure;
+      return lookup;
+    }, {});
+  }, []);
 
   const fetchTrees = useCallback(async () => {
     if (!greenAreaId) {
@@ -271,12 +294,33 @@ const GreenAreaDetails: React.FC = () => {
 
     setIsExporting(true);
     try {
-      const latestInspections = await fetchLatestInspections(trees);
+      const [latestInspections, measuresLookup] = await Promise.all([
+        fetchLatestInspections(trees),
+        fetchMeasuresLookup().catch((measureError) => {
+          console.error('Error fetching measures for export:', measureError);
+          return {};
+        }),
+      ]);
       setInspectionLookup(latestInspections);
 
       const entries: TreeInspectionExport[] = trees.map((tree) => ({
         tree,
-        inspection: latestInspections[tree.id] ?? inspectionLookup[tree.id] ?? null,
+        inspection: (() => {
+          const baseInspection = latestInspections[tree.id] ?? inspectionLookup[tree.id] ?? null;
+          if (!baseInspection) {
+            return null;
+          }
+          if (baseInspection.arboriculturalMeasures && baseInspection.arboriculturalMeasures.length > 0) {
+            return baseInspection;
+          }
+          const resolvedMeasures =
+            baseInspection.arboriculturalMeasureIds && baseInspection.arboriculturalMeasureIds.length > 0
+              ? baseInspection.arboriculturalMeasureIds
+                  .map((id) => measuresLookup[id])
+                  .filter(Boolean) as ArboriculturalMeasure[]
+              : null;
+          return { ...baseInspection, arboriculturalMeasures: resolvedMeasures };
+        })(),
         mapImage: buildTreeMapPreviewDataUrl(tree, mapCenter),
       }));
 
@@ -291,7 +335,7 @@ const GreenAreaDetails: React.FC = () => {
     } finally {
       setIsExporting(false);
     }
-  }, [fetchLatestInspections, greenAreaId, greenAreaName, inspectionLookup, mapCenter, trees]);
+  }, [fetchLatestInspections, fetchMeasuresLookup, greenAreaId, greenAreaName, inspectionLookup, mapCenter, trees]);
 
   const parseNumber = (value: string) => {
     const parsed = Number.parseFloat(value);
@@ -412,6 +456,46 @@ const GreenAreaDetails: React.FC = () => {
                   value={areaDraft.longitude}
                   onChange={(e) => setAreaDraft((prev) => ({ ...prev, longitude: e.target.value }))}
                 />
+              </div>
+              <div className="col-12">
+                <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-2">
+                  <div>
+                    <span className="form-label d-block mb-1 small fw-semibold">Koordinaten ueber Karte waehlen</span>
+                    <small className="text-muted">
+                      Optional: Marker verschieben oder auf die Karte klicken, um Breitengrad und Laengengrad zu setzen.
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm align-self-md-start"
+                    onClick={() => setShowAreaLocationPicker((current) => !current)}
+                  >
+                    {showAreaLocationPicker ? 'Karte ausblenden' : 'Karte anzeigen'}
+                  </button>
+                </div>
+                {showAreaLocationPicker && (
+                  <TreeLocationPicker
+                    value={{
+                      latitude: parseNumber(areaDraft.latitude),
+                      longitude: parseNumber(areaDraft.longitude),
+                    }}
+                    defaultCenter={mapCenter}
+                    onChange={({ latitude, longitude }) =>
+                      setAreaDraft((prev) => ({
+                        ...prev,
+                        latitude: String(latitude),
+                        longitude: String(longitude),
+                      }))
+                    }
+                    onClear={() =>
+                      setAreaDraft((prev) => ({
+                        ...prev,
+                        latitude: '',
+                        longitude: '',
+                      }))
+                    }
+                  />
+                )}
               </div>
               {editAreaError && (
                 <div className="col-12">

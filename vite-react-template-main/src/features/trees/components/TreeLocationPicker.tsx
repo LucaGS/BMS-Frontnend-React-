@@ -367,6 +367,7 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
           Beste gefundene Position: {bestFix.lat.toFixed(6)}, {bestFix.lng.toFixed(6)}{' '}
           {bestFix.accuracy != null ? `(~${Math.round(bestFix.accuracy)} m)` : ''}. Uebernehmen, um die Felder zu fuellen.
           <div className="small text-muted">Tipp: Praezise Ortung aktivieren (GPS + WLAN + 5G) und etwas warten, bis mehrere Fixes eingetroffen sind.</div>
+          <div className="small text-muted">Funktioniert nur auf Mobilen Endgeräten genau genug</div>
         </div>
       )}
     </div>

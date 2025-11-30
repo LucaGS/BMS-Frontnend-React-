@@ -16,6 +16,7 @@ export const mapTreeFromApi = (tree: ApiTree): Tree => ({
   trunkDiameter1: tree.trunkDiameter1 ?? null,
   trunkDiameter2: tree.trunkDiameter2 ?? null,
   trunkDiameter3: tree.trunkDiameter3 ?? null,
+  trafficSafetyExpectation: tree.trafficSafetyExpectation ?? null,
 });
 
 export const mapTreesFromApi = (trees: ApiTree[]): Tree[] => trees.map(mapTreeFromApi);
@@ -32,4 +33,5 @@ export const mapTreeToApiPayload = (tree: NewTree): ApiCreateTree => ({
   trunkDiameter1: tree.trunkDiameter1,
   trunkDiameter2: tree.trunkDiameter2,
   trunkDiameter3: tree.trunkDiameter3,
+  trafficSafetyExpectation: tree.trafficSafetyExpectation,
 });
