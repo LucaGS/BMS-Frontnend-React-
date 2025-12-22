@@ -382,9 +382,16 @@ const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, heig
 type AllTreesMapProps = {
   trees: TreeInspectionExport[];
   height?: number;
+  initialZoom?: number;
+  fitBoundsMaxZoom?: number;
 };
 
-const AllTreesMap: React.FC<AllTreesMapProps> = ({ trees, height = 360 }) => {
+const AllTreesMap: React.FC<AllTreesMapProps> = ({
+  trees,
+  height = 360,
+  initialZoom = 6,
+  fitBoundsMaxZoom = 12,
+}) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any | null>(null);
   const markersRef = useRef<any[]>([]);
@@ -420,7 +427,7 @@ const AllTreesMap: React.FC<AllTreesMapProps> = ({ trees, height = 360 }) => {
             minZoom: 3,
             zoomControl: false,
             attributionControl: false,
-          }).setView(DEFAULT_MAP_CENTER, 6);
+          }).setView(DEFAULT_MAP_CENTER, initialZoom);
 
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap-Mitwirkende',
@@ -443,7 +450,10 @@ const AllTreesMap: React.FC<AllTreesMapProps> = ({ trees, height = 360 }) => {
             markersRef.current.push(marker);
             bounds.extend(marker.getLatLng());
           });
-          mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+          mapRef.current.fitBounds(bounds, {
+            padding: [40, 40],
+            maxZoom: Math.min(fitBoundsMaxZoom, MAX_MAP_ZOOM),
+          });
         }
 
         if (mapRef.current && typeof mapRef.current.invalidateSize === 'function') {
@@ -463,7 +473,7 @@ const AllTreesMap: React.FC<AllTreesMapProps> = ({ trees, height = 360 }) => {
     return () => {
       isMounted = false;
     };
-  }, [positions]);
+  }, [fitBoundsMaxZoom, initialZoom, positions]);
 
   useEffect(() => () => {
     markersRef.current.forEach((marker) => marker.remove());
@@ -494,6 +504,43 @@ const AllTreesMap: React.FC<AllTreesMapProps> = ({ trees, height = 360 }) => {
           <span className="text-danger small">{mapError}</span>
         </div>
       )}
+    </div>
+  );
+};
+
+export const GreenAreaMapPrint: React.FC<{
+  greenAreaId?: string;
+  greenAreaName?: string;
+  trees: TreeInspectionExport[];
+  mapCenterLabel?: string;
+}> = ({ greenAreaId, greenAreaName, trees, mapCenterLabel }) => {
+  const generatedAt = new Date().toLocaleString('de-DE');
+  return (
+    <div className="ga-print">
+      <PdfStyles />
+      <div className="ga-card mb-3">
+        <div className="d-flex justify-content-between align-items-start gap-3">
+          <div>
+            <div className="ga-meta-label">Gruenflaeche</div>
+            <h2 className="h5 mb-1">
+              {greenAreaId} {greenAreaName ? `| ${greenAreaName}` : ''}
+            </h2>
+            <div className="ga-muted">Exportiert am {generatedAt}</div>
+          </div>
+          <div className="d-flex flex-column align-items-end gap-2">
+            <span className="ga-pill">Baeume: {trees.length}</span>
+            {mapCenterLabel ? <span className="ga-pill ga-pill--neutral">Mittelpunkt: {mapCenterLabel}</span> : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="ga-card mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <div className="ga-section-title mb-0">Karte der Baeume</div>
+          <span className="ga-muted small">Uebersichtlicher Zoom fuer die gesamte Flaeche</span>
+        </div>
+        <AllTreesMap trees={trees} height={420} fitBoundsMaxZoom={14} initialZoom={10} />
+      </div>
     </div>
   );
 };

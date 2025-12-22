@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { pdf } from '@react-pdf/renderer';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapInspectionFromApi } from '@/features/inspections';
 import { mapTreesFromApi, type Tree } from '@/features/trees/types';
@@ -7,11 +8,12 @@ import TreeForm from '@/features/trees/forms/TreeForm';
 import TreeLocationPicker from '@/features/trees/components/TreeLocationPicker';
 import GreenAreaMap from '../maps/GreenAreaMap';
 import type { GreenArea } from '@/features/green-areas/types';
-import { buildTreeMapPreviewDataUrl } from '@/shared/maps/mapPreview';
-import GreenAreaPdfDocument, {
+import {
+  GreenAreaMapPrint,
   type LastInspectionDetail,
   type TreeInspectionExport,
 } from './GreenAreaPdfDocument';
+import GreenAreaDataPdfDocument from './GreenAreaDataPdfDocument';
 import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
 import { mapMeasuresFromApi, type ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
 
@@ -47,9 +49,10 @@ const GreenAreaDetails: React.FC = () => {
   const [inspectionLookup, setInspectionLookup] = useState<Record<number, LastInspectionDetail | null>>({});
   const [showTreeForm, setShowTreeForm] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [showPdf, setShowPdf] = useState(false);
-  const [pdfData, setPdfData] = useState<{
+  const [isGeneratingMapPrint, setIsGeneratingMapPrint] = useState(false);
+  const [isGeneratingDataPdf, setIsGeneratingDataPdf] = useState(false);
+  const [showMapPrint, setShowMapPrint] = useState(false);
+  const [mapPrintData, setMapPrintData] = useState<{
     entries: TreeInspectionExport[];
     centerLabel: string;
   } | null>(null);
@@ -282,7 +285,46 @@ const GreenAreaDetails: React.FC = () => {
     navigate(`/trees/${tree.id}`, { state: { tree } });
   };
 
-  const handleOpenPdf = useCallback(async () => {
+  const buildExportEntries = useCallback(async (): Promise<TreeInspectionExport[]> => {
+    const [latestInspections, measuresLookup] = await Promise.all([
+      fetchLatestInspections(trees),
+      fetchMeasuresLookup().catch((measureError) => {
+        console.error('Error fetching measures for export:', measureError);
+        return {} as Record<number, ArboriculturalMeasure>;
+      }),
+    ]);
+    setInspectionLookup(latestInspections);
+
+    const resolvedMeasuresLookup: Record<number, ArboriculturalMeasure> = measuresLookup ?? {};
+
+    return trees.map((tree) => {
+      const baseInspection = latestInspections[tree.id] ?? inspectionLookup[tree.id] ?? null;
+      if (!baseInspection) {
+        return {
+          tree,
+          inspection: null,
+          mapImage: null,
+        };
+      }
+
+      const resolvedMeasures =
+        baseInspection.arboriculturalMeasures && baseInspection.arboriculturalMeasures.length > 0
+          ? baseInspection.arboriculturalMeasures
+          : baseInspection.arboriculturalMeasureIds && baseInspection.arboriculturalMeasureIds.length > 0
+            ? baseInspection.arboriculturalMeasureIds
+                .map((id) => resolvedMeasuresLookup[id])
+                .filter(Boolean) as ArboriculturalMeasure[]
+            : null;
+
+      return {
+        tree,
+        inspection: { ...baseInspection, arboriculturalMeasures: resolvedMeasures ?? null },
+        mapImage: null,
+      };
+    });
+  }, [fetchLatestInspections, fetchMeasuresLookup, inspectionLookup, trees]);
+
+  const handleOpenMapPrint = useCallback(async () => {
     if (!greenAreaId) {
       setError('Keine Gruenflaeche ausgewaehlt.');
       return;
@@ -292,51 +334,61 @@ const GreenAreaDetails: React.FC = () => {
       return;
     }
 
-    setIsExporting(true);
+    setIsGeneratingMapPrint(true);
     try {
-      const [latestInspections, measuresLookup] = await Promise.all([
-        fetchLatestInspections(trees),
-        fetchMeasuresLookup().catch((measureError) => {
-          console.error('Error fetching measures for export:', measureError);
-          return {} as Record<number, ArboriculturalMeasure>;
-        }),
-      ]);
-      setInspectionLookup(latestInspections);
-
-      const entries: TreeInspectionExport[] = trees.map((tree) => ({
-        tree,
-        inspection: (() => {
-          const baseInspection = latestInspections[tree.id] ?? inspectionLookup[tree.id] ?? null;
-          if (!baseInspection) {
-            return null;
-          }
-          if (baseInspection.arboriculturalMeasures && baseInspection.arboriculturalMeasures.length > 0) {
-            return baseInspection;
-          }
-          const safeLookup: Record<number, ArboriculturalMeasure> = measuresLookup ?? {};
-          const resolvedMeasures =
-            baseInspection.arboriculturalMeasureIds && baseInspection.arboriculturalMeasureIds.length > 0
-              ? baseInspection.arboriculturalMeasureIds
-                  .map((id) => safeLookup[id])
-                  .filter(Boolean) as ArboriculturalMeasure[]
-              : null;
-          return { ...baseInspection, arboriculturalMeasures: resolvedMeasures };
-        })(),
-        mapImage: buildTreeMapPreviewDataUrl(tree, mapCenter),
-      }));
-
-      setPdfData({
+      const entries = await buildExportEntries();
+      setMapPrintData({
         entries,
         centerLabel: `${formatCoordinate(mapCenter[0])}, ${formatCoordinate(mapCenter[1])}`,
       });
-      setShowPdf(true);
+      setShowMapPrint(true);
+    } catch (exportError) {
+      console.error('Error preparing map print:', exportError);
+      setError('Druckansicht konnte nicht vorbereitet werden.');
+    } finally {
+      setIsGeneratingMapPrint(false);
+    }
+  }, [buildExportEntries, greenAreaId, mapCenter, trees]);
+
+  const handleDownloadDataPdf = useCallback(async () => {
+    if (!greenAreaId) {
+      setError('Keine Gruenflaeche ausgewaehlt.');
+      return;
+    }
+    if (trees.length === 0) {
+      setError('Keine Baeume zum Export vorhanden.');
+      return;
+    }
+
+    setIsGeneratingDataPdf(true);
+    try {
+      const entries = await buildExportEntries();
+      const centerLabel = `${formatCoordinate(mapCenter[0])}, ${formatCoordinate(mapCenter[1])}`;
+
+      const blob = await pdf(
+        <GreenAreaDataPdfDocument
+          greenAreaId={greenAreaId}
+          greenAreaName={greenAreaName}
+          trees={entries}
+          exportedAt={new Date()}
+          centerLabel={centerLabel}
+        />,
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const safeName = (greenAreaName ?? 'GreenArea').replace(/[^a-z0-9_-]+/gi, '_') || 'GreenArea';
+      link.href = url;
+      link.download = `GreenArea_${greenAreaId}_${safeName}_trees.pdf`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 500);
     } catch (exportError) {
       console.error('Error exporting green area PDF:', exportError);
       setError('PDF-Export fehlgeschlagen. Bitte erneut versuchen.');
     } finally {
-      setIsExporting(false);
+      setIsGeneratingDataPdf(false);
     }
-  }, [fetchLatestInspections, fetchMeasuresLookup, greenAreaId, greenAreaName, inspectionLookup, mapCenter, trees]);
+  }, [buildExportEntries, greenAreaId, greenAreaName, mapCenter, trees]);
 
   const parseNumber = (value: string) => {
     const parsed = Number.parseFloat(value);
@@ -540,10 +592,18 @@ const GreenAreaDetails: React.FC = () => {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={handleOpenPdf}
-            disabled={isExporting || trees.length === 0}
+            onClick={handleOpenMapPrint}
+            disabled={isGeneratingMapPrint || trees.length === 0}
           >
-            {isExporting ? 'Erstelle PDF...' : 'PDF anzeigen (Baeume + letzte Kontrolle)'}
+            {isGeneratingMapPrint ? 'Bereite Karte vor...' : 'Druckansicht (Karte)'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-primary"
+            onClick={handleDownloadDataPdf}
+            disabled={isGeneratingDataPdf || trees.length === 0}
+          >
+            {isGeneratingDataPdf ? 'Exportiere PDF...' : 'PDF Export (Baumdaten)'}
           </button>
           <button
             type="button"
@@ -630,28 +690,29 @@ const GreenAreaDetails: React.FC = () => {
           </div>
         )}
 
-        {showPdf && pdfData && (
+        {showMapPrint && mapPrintData && (
           <div className="mt-4">
             <div className="alert alert-info">
-              <div className="fw-semibold">Druckansicht</div>
+              <div className="fw-semibold">Druckansicht (Karte)</div>
               <div className="small mb-2">
-                Bitte Browser-Druck (z.B. STRG+P) nutzen und als PDF speichern. So werden Karten korrekt uebernommen.
+                Nur die Gruenflaeche mit allen Baeumen in einem kleineren Zoom-Level. Browser-Druck (z.B. STRG+P) nutzen
+                und als PDF speichern.
               </div>
               <div className="d-flex gap-2">
                 <button type="button" className="btn btn-sm btn-primary" onClick={() => window.print()}>
                   Drucken / als PDF speichern
                 </button>
-                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setShowPdf(false)}>
+                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setShowMapPrint(false)}>
                   Vorschau schliessen
                 </button>
               </div>
             </div>
             <div className="border rounded p-3 bg-white">
-              <GreenAreaPdfDocument
+              <GreenAreaMapPrint
                 greenAreaId={greenAreaId}
                 greenAreaName={greenAreaName}
-                trees={pdfData.entries}
-                mapCenterLabel={pdfData.centerLabel}
+                trees={mapPrintData.entries}
+                mapCenterLabel={mapPrintData.centerLabel}
               />
             </div>
           </div>
