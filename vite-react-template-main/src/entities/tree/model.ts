@@ -5,13 +5,16 @@ export interface ApiTree {
   number: number;
   species?: string | null;
   lastInspectionId?: number | null;
+  nextInspection?: string | null;
   longitude?: number | null;
   latitude?: number | null;
   treeSizeMeters?: number | null;
   crownDiameterMeters?: number | null;
-  crownAttachmentHeightMeters?: number | null;
   numberOfTrunks?: number | null;
-  trunkInclination?: number | null;
+  trunkDiameter1?: number | null;
+  trunkDiameter2?: number | null;
+  trunkDiameter3?: number | null;
+  trafficSafetyExpectation?: string | null;
 }
 
 export interface Tree {
@@ -21,13 +24,16 @@ export interface Tree {
   number: number;
   species?: string | null;
   lastInspectionId?: number | null;
+  nextInspection?: string | null;
   longitude?: number | null;
   latitude?: number | null;
   treeSizeMeters?: number | null;
   crownDiameterMeters?: number | null;
-  crownAttachmentHeightMeters?: number | null;
   numberOfTrunks?: number | null;
-  trunkInclination?: number | null;
+  trunkDiameter1?: number | null;
+  trunkDiameter2?: number | null;
+  trunkDiameter3?: number | null;
+  trafficSafetyExpectation?: string | null;
 }
 
 export interface ApiCreateTree {
@@ -38,9 +44,11 @@ export interface ApiCreateTree {
   latitude: number;
   treeSizeMeters: number;
   crownDiameterMeters: number;
-  crownAttachmentHeightMeters: number;
   numberOfTrunks: number;
-  trunkInclination: number;
+  trunkDiameter1: number;
+  trunkDiameter2: number;
+  trunkDiameter3: number;
+  trafficSafetyExpectation: string;
 }
 
 export interface NewTree extends ApiCreateTree {}

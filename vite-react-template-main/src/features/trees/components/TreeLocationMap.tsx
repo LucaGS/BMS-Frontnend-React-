@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_MAP_CENTER,
   DEFAULT_MAP_ZOOM,
@@ -11,11 +11,12 @@ import {
 type TreeLocationMapProps = {
   latitude?: number | null;
   longitude?: number | null;
+  treeNumber?: number | null;
 };
 
 const VIEW_ZOOM_WHEN_FOCUSED = 18;
 
-const TreeLocationMap: React.FC<TreeLocationMapProps> = ({ latitude, longitude }) => {
+const TreeLocationMap: React.FC<TreeLocationMapProps> = ({ latitude, longitude, treeNumber }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any | null>(null);
   const markerRef = useRef<any | null>(null);
@@ -27,6 +28,24 @@ const TreeLocationMap: React.FC<TreeLocationMapProps> = ({ latitude, longitude }
     () => (hasCoords ? [latitude as number, longitude as number] : DEFAULT_MAP_CENTER),
     [hasCoords, latitude, longitude],
   );
+
+  const bindMarkerLabel = useCallback((marker: any) => {
+    if (!marker || typeof marker.bindTooltip !== 'function') {
+      return;
+    }
+    const numberLabel = typeof treeNumber === 'number' ? treeNumber : '-';
+    if (typeof marker.unbindTooltip === 'function') {
+      marker.unbindTooltip();
+    }
+    marker
+      .bindTooltip(`Nr. ${numberLabel}`, {
+        direction: 'top',
+        permanent: true,
+        opacity: 1,
+        className: 'tree-number-tooltip',
+      })
+      .openTooltip();
+  }, [treeNumber]);
 
   useEffect(() => {
     let isMounted = true;
@@ -68,6 +87,7 @@ const TreeLocationMap: React.FC<TreeLocationMapProps> = ({ latitude, longitude }
           } else {
             markerRef.current.setLatLng(resolvedCenter);
           }
+          bindMarkerLabel(markerRef.current);
         } else if (markerRef.current) {
           markerRef.current.remove();
           markerRef.current = null;
@@ -86,7 +106,7 @@ const TreeLocationMap: React.FC<TreeLocationMapProps> = ({ latitude, longitude }
     return () => {
       isMounted = false;
     };
-  }, [hasCoords, resolvedCenter]);
+  }, [bindMarkerLabel, hasCoords, resolvedCenter]);
 
   useEffect(() => {
     return () => {

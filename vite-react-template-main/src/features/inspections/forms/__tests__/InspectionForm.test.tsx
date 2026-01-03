@@ -21,12 +21,9 @@ describe('InspectionForm', () => {
     });
     await userEvent.clear(screen.getByLabelText(/kontrollintervall/i));
     await userEvent.type(screen.getByLabelText(/kontrollintervall/i), '18');
-    await userEvent.type(screen.getByLabelText(/entwicklungsstadium/i), 'Jungbaum');
+    await userEvent.selectOptions(screen.getByLabelText(/entwicklungsstadium/i), 'Reifungsphase');
     await userEvent.type(screen.getByLabelText(/beschreibung/i), 'Keine Maengel');
     fireEvent.change(screen.getByLabelText(/vitalitaet/i), { target: { value: 4 } });
-    fireEvent.change(screen.getByLabelText(/schaedigungsgrad/i), { target: { value: 5 } });
-    fireEvent.change(screen.getByLabelText(/standfestigkeit/i), { target: { value: 2 } });
-    fireEvent.change(screen.getByLabelText(/bruchsicherheit/i), { target: { value: 1 } });
     await userEvent.type(screen.getByLabelText(/notizen krone/i), 'Krone ok');
     await userEvent.type(screen.getByLabelText(/notizen stamm/i), 'Stamm ok');
     await userEvent.type(screen.getByLabelText(/notizen stammfuss/i), 'Stammfuss ok');
@@ -47,10 +44,7 @@ describe('InspectionForm', () => {
       performedAt: '2024-05-01T12:00',
       isSafeForTraffic: false,
       newInspectionIntervall: 18,
-      developmentalStage: 'Jungbaum',
-      damageLevel: 5,
-      standStability: 2,
-      breakageSafety: 1,
+      developmentalStage: 'Reifungsphase',
       vitality: 4,
       description: 'Keine Maengel',
       crownInspection: expect.objectContaining({

@@ -8,6 +8,7 @@ const markerFactory = () => {
     remove: vi.fn(),
     addTo: vi.fn(() => marker),
     bindTooltip: vi.fn(),
+    bindPopup: vi.fn(() => marker),
   };
   return marker;
 };
