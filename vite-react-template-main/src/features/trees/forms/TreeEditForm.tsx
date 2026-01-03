@@ -287,9 +287,9 @@ const TreeEditForm: React.FC<TreeEditFormProps> = ({ tree, defaultCenter, onUpda
               }}
               required
             >
-              <option value="">None</option>
-              <option value="Higher">Higher</option>
-              <option value="Lower">Lower</option>
+              <option value="">Keine</option>
+              <option value="Higher">Höher</option>
+              <option value="Lower">Niedriger</option>
             </select>
             {trafficSafetyError ? (
               <div className="invalid-feedback d-block">{trafficSafetyError}</div>

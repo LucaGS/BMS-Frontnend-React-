@@ -42,10 +42,77 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
   const [diameterError, setDiameterError] = useState<string | null>(null);
   const [trafficSafetyError, setTrafficSafetyError] = useState<string | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [isPrefillingLastTree, setIsPrefillingLastTree] = useState(false);
+  const [lastTreePrefilled, setLastTreePrefilled] = useState(false);
+  const [lastTreePrefillError, setLastTreePrefillError] = useState<string | null>(null);
 
   useEffect(() => {
     setDraftTree((current) => ({ ...current, greenAreaId }));
   }, [greenAreaId]);
+
+  useEffect(() => {
+    let isActive = true;
+    const fetchLastTree = async () => {
+      setIsPrefillingLastTree(true);
+      setLastTreePrefillError(null);
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/Trees/GetLastCreatedTree`, {
+          headers: {
+            Authorization: `bearer ${localStorage.getItem('token') || ''}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Failed to load last tree');
+        }
+        const data = await response.json();
+        if (!isActive || !data) {
+          return;
+        }
+        const lastTree = mapTreeFromApi(data);
+        setDraftTree((current) => {
+          const next = { ...current };
+          const assignIfEmpty = <K extends Exclude<keyof TreeFormState, 'greenAreaId'>>(
+            key: K,
+            value: string | null,
+          ) => {
+            if (current[key] === '' && value !== null) {
+              next[key] = value as TreeFormState[K];
+            }
+          };
+          assignIfEmpty('number', lastTree.number != null ? String(lastTree.number) : null);
+          assignIfEmpty('species', lastTree.species ?? '');
+          assignIfEmpty('latitude', lastTree.latitude != null ? String(lastTree.latitude) : null);
+          assignIfEmpty('longitude', lastTree.longitude != null ? String(lastTree.longitude) : null);
+          assignIfEmpty('treeSizeMeters', lastTree.treeSizeMeters != null ? String(lastTree.treeSizeMeters) : null);
+          assignIfEmpty(
+            'crownDiameterMeters',
+            lastTree.crownDiameterMeters != null ? String(lastTree.crownDiameterMeters) : null,
+          );
+          assignIfEmpty('numberOfTrunks', lastTree.numberOfTrunks != null ? String(lastTree.numberOfTrunks) : null);
+          assignIfEmpty('trunkDiameter1', lastTree.trunkDiameter1 != null ? String(lastTree.trunkDiameter1) : null);
+          assignIfEmpty('trunkDiameter2', lastTree.trunkDiameter2 != null ? String(lastTree.trunkDiameter2) : null);
+          assignIfEmpty('trunkDiameter3', lastTree.trunkDiameter3 != null ? String(lastTree.trunkDiameter3) : null);
+          assignIfEmpty('trafficSafetyExpectation', lastTree.trafficSafetyExpectation ?? '');
+          return next;
+        });
+        setLastTreePrefilled(true);
+      } catch (error) {
+        console.error('Error loading last created tree:', error);
+        if (isActive) {
+          setLastTreePrefillError('Letzter Baum konnte nicht geladen werden.');
+        }
+      } finally {
+        if (isActive) {
+          setIsPrefillingLastTree(false);
+        }
+      }
+    };
+
+    fetchLastTree();
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!defaultCenter) {
@@ -202,6 +269,15 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
 
   return (
     <form onSubmit={handleSubmit}>
+      {isPrefillingLastTree ? (
+        <div className="text-muted small mb-2">Letzten Baum laden...</div>
+      ) : null}
+      {lastTreePrefillError ? (
+        <div className="text-danger small mb-2">{lastTreePrefillError}</div>
+      ) : null}
+      {lastTreePrefilled && !lastTreePrefillError ? (
+        <div className="text-success small mb-2">Daten des zuletzt erstellten Baums wurden vorbelegt.</div>
+      ) : null}
       <div className="mb-3">
         <label htmlFor="species" className="form-label">
           Art
