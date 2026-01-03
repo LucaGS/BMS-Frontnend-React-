@@ -513,7 +513,7 @@ export const GreenAreaMapPrint: React.FC<{
   greenAreaName?: string;
   trees: TreeInspectionExport[];
   mapCenterLabel?: string;
-}> = ({ greenAreaId, greenAreaName, trees, mapCenterLabel }) => {
+}> = ({greenAreaName, trees, mapCenterLabel }) => {
   const generatedAt = new Date().toLocaleString('de-DE');
   return (
     <div className="ga-print">
@@ -521,15 +521,15 @@ export const GreenAreaMapPrint: React.FC<{
       <div className="ga-card mb-3">
         <div className="d-flex justify-content-between align-items-start gap-3">
           <div>
-            <div className="ga-meta-label">Gruenflaeche</div>
+            <div className="ga-meta-label">Grünfläche</div>
             <h2 className="h5 mb-1">
-              {greenAreaId} {greenAreaName ? `| ${greenAreaName}` : ''}
+             {greenAreaName ? `| ${greenAreaName}` : ''}
             </h2>
             <div className="ga-muted">Exportiert am {generatedAt}</div>
           </div>
           <div className="d-flex flex-column align-items-end gap-2">
             <span className="ga-pill">Baeume: {trees.length}</span>
-            {mapCenterLabel ? <span className="ga-pill ga-pill--neutral">Mittelpunkt: {mapCenterLabel}</span> : null}
+            {mapCenterLabel ? <span className="ga-pill ga-pill--neutral">Standort Koordinaten {mapCenterLabel}</span> : null}
           </div>
         </div>
       </div>
@@ -537,7 +537,7 @@ export const GreenAreaMapPrint: React.FC<{
       <div className="ga-card mb-4">
         <div className="d-flex justify-content-between align-items-center mb-2">
           <div className="ga-section-title mb-0">Karte der Baeume</div>
-          <span className="ga-muted small">Uebersichtlicher Zoom fuer die gesamte Flaeche</span>
+          <span className="ga-muted small">Übersichtlicher Zoom fuer die gesamte Flaeche</span>
         </div>
         <AllTreesMap trees={trees} height={420} fitBoundsMaxZoom={14} initialZoom={10} />
       </div>
@@ -668,7 +668,7 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
         <tbody>
           <tr>
             <th className="w-25">Stammdaten</th>
-            <td className="w-25">Anzahl Staemme: {formatNumber(tree.numberOfTrunks)}</td>
+            <td className="w-25">Anzahl Stämme: {formatNumber(tree.numberOfTrunks)}</td>
             <th className="w-25">Stammdurchmesser 1</th>
             <td className="w-25">{formatNumber(tree.trunkDiameter1)}</td>
           </tr>
