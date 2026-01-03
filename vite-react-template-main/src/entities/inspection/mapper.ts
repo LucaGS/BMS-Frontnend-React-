@@ -1,4 +1,4 @@
-import type { ApiInspection, Inspection } from './model';
+import { normalizeVitality, type ApiInspection, type Inspection } from './model';
 
 export const mapInspectionFromApi = (inspection: ApiInspection): Inspection => ({
   id: inspection.id,
@@ -11,7 +11,7 @@ export const mapInspectionFromApi = (inspection: ApiInspection): Inspection => (
   userId: inspection.userId ?? null,
   newInspectionIntervall: inspection.newInspectionIntervall ?? 0,
   developmentalStage: inspection.developmentalStage ?? '',
-  vitality: inspection.vitality ?? 0,
+  vitality: normalizeVitality(inspection.vitality),
   description: inspection.description ?? '',
   arboriculturalMeasureIds:
     (inspection as any).arboriculturalMeasureIds && Array.isArray((inspection as any).arboriculturalMeasureIds)

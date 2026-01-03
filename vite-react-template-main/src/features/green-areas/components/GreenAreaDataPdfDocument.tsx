@@ -4,6 +4,7 @@ import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
 import { hasValidCoordinates } from '@/shared/maps/leafletUtils';
 import type { Tree } from '@/features/trees/types';
 import type { LastInspectionDetail, TreeInspectionExport } from './GreenAreaPdfDocument';
+import { normalizeVitality } from '@/entities/inspection';
 
 type GreenAreaDataPdfDocumentProps = {
   greenAreaId?: string;
@@ -51,6 +52,16 @@ const styles = StyleSheet.create({
 
 const formatNumber = (value?: number | null, fallback = '-') =>
   typeof value === 'number' && !Number.isNaN(value) ? String(value) : fallback;
+
+const formatVitality = (value?: string | number | null) => {
+  if (typeof value === 'string') {
+    return value.trim() || '-';
+  }
+  if (typeof value === 'number' && !Number.isNaN(value)) {
+    return normalizeVitality(value);
+  }
+  return '-';
+};
 
 const formatCoordinate = (value?: number | null) =>
   typeof value === 'number' && !Number.isNaN(value) ? value.toFixed(5) : 'n/v';
@@ -234,7 +245,7 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
                     </View>
                     <View style={styles.metaItem}>
                       <Text style={styles.metaLabel}>Vitalitaet</Text>
-                      <Text style={styles.metaValue}>{formatNumber(inspection.vitality)}</Text>
+                      <Text style={styles.metaValue}>{formatVitality(inspection.vitality)}</Text>
                     </View>
                   </View>
                   <View style={{ marginBottom: 6 }}>

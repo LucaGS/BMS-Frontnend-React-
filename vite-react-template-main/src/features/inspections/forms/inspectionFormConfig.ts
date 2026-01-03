@@ -1,3 +1,5 @@
+import { DEFAULT_VITALITY_OPTION, type VitalityOption } from '@/entities/inspection';
+
 type StringKeys<T> = Extract<keyof T, string>;
 type DescriptionKey<T> = T extends Record<string, unknown> ? `${StringKeys<T>}Description` : never;
 type ToggleableKey<T> = Exclude<keyof T, 'notes' | DescriptionKey<T>>;
@@ -281,7 +283,7 @@ export type FormFields = {
   isSafeForTraffic: boolean;
   newInspectionIntervall: number;
   developmentalStage: string;
-  vitality: number;
+  vitality: VitalityOption;
   description: string;
 };
 
@@ -419,7 +421,6 @@ const getDefaultPerformedAt = () => {
   return now.toISOString().slice(0, 16);
 };
 
-export const DEFAULT_RATING = 0;
 export const DEFAULT_INSPECTION_INTERVAL = 12;
 export const DEVELOPMENTAL_STAGE_OPTIONS = ['Jugendphase', 'Reifungsphase', 'Alterungsphase'] as const;
 
@@ -428,7 +429,7 @@ export const createInitialFormFields = (): FormFields => ({
   isSafeForTraffic: true,
   newInspectionIntervall: DEFAULT_INSPECTION_INTERVAL,
   developmentalStage: DEVELOPMENTAL_STAGE_OPTIONS[0],
-  vitality: DEFAULT_RATING,
+  vitality: DEFAULT_VITALITY_OPTION,
   description: '',
 });
 

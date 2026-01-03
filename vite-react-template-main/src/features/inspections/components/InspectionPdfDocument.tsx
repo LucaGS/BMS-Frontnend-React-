@@ -11,6 +11,7 @@ import {
 } from '@/features/inspections/forms/inspectionFormConfig';
 import type { Tree } from '@/features/trees/types';
 import { hasValidCoordinates } from '@/shared/maps/leafletUtils';
+import { normalizeVitality } from '@/entities/inspection';
 
 export type InspectionDetail = Inspection & {
   crownInspection?: Partial<CrownInspectionState> | null;
@@ -76,8 +77,15 @@ const getActiveMarkings = <T extends Record<string, unknown>>(
 const formatNumber = (value?: number | null, fallback = '-') =>
   typeof value === 'number' && !Number.isNaN(value) ? String(value) : fallback;
 
-const formatRating = (value?: number | null) =>
-  typeof value === 'number' && !Number.isNaN(value) ? `${value}/5` : '-';
+const formatVitality = (value?: string | number | null) => {
+  if (typeof value === 'string') {
+    return value.trim() || '-';
+  }
+  if (typeof value === 'number' && !Number.isNaN(value)) {
+    return normalizeVitality(value);
+  }
+  return '-';
+};
 
 const formatCoordinate = (value?: number | null) =>
   typeof value === 'number' && !Number.isNaN(value) ? value.toFixed(5) : 'n/v';
@@ -102,7 +110,7 @@ const InspectionPdfDocument: React.FC<InspectionPdfDocumentProps> = ({
     ['Verkehrssicherheit', inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher'],
     ['Intervall (Tage)', formatNumber(inspection.newInspectionIntervall)],
     ['Entwicklungsstadium', inspection.developmentalStage || '-'],
-    ['Vitalitaet', formatRating(inspection.vitality)],
+    ['Vitalitaet', formatVitality(inspection.vitality)],
   ];
 
   const coordinateLabel = tree

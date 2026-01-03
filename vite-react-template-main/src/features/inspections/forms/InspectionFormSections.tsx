@@ -9,44 +9,6 @@ const checkboxInputStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-type ScoreSliderProps = {
-  id: string;
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-  disabled: boolean;
-  colClassName?: string;
-};
-
-export function ScoreSlider({
-  id,
-  label,
-  value,
-  onChange,
-  disabled,
-  colClassName = 'col-md-4',
-}: ScoreSliderProps) {
-  return (
-    <div className={colClassName}>
-      <label htmlFor={id} className="form-label d-flex justify-content-between align-items-center">
-        <span>{label}</span>
-        <span className="badge bg-secondary">{value}/5</span>
-      </label>
-      <input
-        type="range"
-        className="form-range"
-        min={0}
-        max={5}
-        step={1}
-        id={id}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        disabled={disabled}
-      />
-    </div>
-  );
-}
-
 type CheckboxGridProps<T extends { notes: string }> = {
   sectionId: string;
   items: ToggleField<T>[];

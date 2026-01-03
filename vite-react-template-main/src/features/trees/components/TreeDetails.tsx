@@ -88,9 +88,9 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
     setShowInspectionForm(false);
   };
 
-  const renderScorePill = (label: string, value: number) => (
+  const renderVitalityPill = (label: string, value: Inspection['vitality']) => (
     <span className="badge rounded-pill bg-light border text-dark">
-      {label}: {value}/5
+      {label}: {value}
     </span>
   );
 
@@ -258,8 +258,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                                         Entwicklungsphase: {inspection.developmentalStage || '-'}
                                       </div>
                                       <div className="text-muted small">
-                                        Intervall: {inspection.newInspectionIntervall} Tage | Vitalitaet:{' '}
-                                        {inspection.vitality}/5
+                                        Intervall: {inspection.newInspectionIntervall} Tage | Vitalitaet: {inspection.vitality}
                                       </div>
                                     </div>
                                     <span
@@ -269,7 +268,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                                     </span>
                                   </div>
                                   <div className="d-flex flex-wrap gap-2 mt-2">
-                                    {renderScorePill('Vitalitaet', inspection.vitality)}
+                                    {renderVitalityPill('Vitalitaet', inspection.vitality)}
                                   </div>
 
                                   {inspection.description && (

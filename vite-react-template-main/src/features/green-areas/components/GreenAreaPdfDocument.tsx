@@ -10,6 +10,7 @@ import type { Tree } from '@/features/trees/types';
 import type { ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
 import { DEFAULT_MAP_CENTER, MAX_MAP_ZOOM, ensureLeafletAssets, hasValidCoordinates, type LeafletWindow } from '@/shared/maps/leafletUtils';
 import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
+import { normalizeVitality } from '@/entities/inspection';
 
 const PdfStyles: React.FC = () => (
   <style>
@@ -234,6 +235,16 @@ type GreenAreaPdfDocumentProps = {
 
 const formatNumber = (value?: number | null, suffix = '') =>
   typeof value === 'number' && !Number.isNaN(value) ? `${value}${suffix}` : '-';
+
+const formatVitality = (value?: string | number | null) => {
+  if (typeof value === 'string') {
+    return value.trim() || '-';
+  }
+  if (typeof value === 'number' && !Number.isNaN(value)) {
+    return normalizeVitality(value);
+  }
+  return '-';
+};
 
 const formatCoordinate = (value?: number | null) =>
   typeof value === 'number' && !Number.isNaN(value) ? value.toFixed(5) : 'n/v';
@@ -571,7 +582,7 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
         ['Verkehrssicherheit', inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher'],
         ['Intervall (Monate)', formatNumber(inspection.newInspectionIntervall)],
         ['Entwicklungsstadium', inspection.developmentalStage || '-'],
-        ['Vitalitaet', formatNumber(inspection.vitality)],
+        ['Vitalitaet', formatVitality(inspection.vitality)],
         ['Pflegemassnahmen', measuresLabel],
       ]
     : null;

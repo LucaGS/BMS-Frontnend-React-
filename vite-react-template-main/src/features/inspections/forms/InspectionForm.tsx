@@ -15,9 +15,10 @@ import {
   stemBaseCheckboxes,
   trunkCheckboxes,
 } from './inspectionFormConfig';
-import { InspectionSection, ScoreSlider } from './InspectionFormSections';
+import { InspectionSection } from './InspectionFormSections';
 import type { ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
 import { mapMeasuresFromApi } from '@/entities/arboriculturalMeasure';
+import { VITALITY_OPTIONS } from '@/entities/inspection';
 
 type InspectionFormProps = {
   treeId: number;
@@ -212,14 +213,25 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
             </select>
           </div>
 
-          <ScoreSlider
-            id="vitality"
-            label="Vitalitaet (0-5)"
-            value={vitality}
-            onChange={(value) => updateFormField('vitality', value)}
-            disabled={isSubmitting}
-            colClassName="col-md-6"
-          />
+          <div className="col-md-6">
+            <label htmlFor="vitality" className="form-label">
+              Vitalitaet
+            </label>
+            <select
+              className="form-select"
+              id="vitality"
+              value={vitality}
+              onChange={(event) => updateFormField('vitality', event.target.value as FormFields['vitality'])}
+              disabled={isSubmitting}
+            >
+              {VITALITY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <small className="text-muted">Vitalitaet anhand von fuenf Stufen waehlen.</small>
+          </div>
 
           <div className="col-12">
             <div className="border rounded-3 p-3 bg-light">
@@ -452,7 +464,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
           {!error && !isSubmitting && (
             <div className="col-12">
               <small className="text-muted">
-                Bewerten Sie Stabilitaet und Schaedigungsgrad ueber die Regler und speichern Sie die Kontrolle.
+                Vitalitaet und Befunde auswaehlen und anschliessend die Kontrolle speichern.
               </small>
             </div>
           )}

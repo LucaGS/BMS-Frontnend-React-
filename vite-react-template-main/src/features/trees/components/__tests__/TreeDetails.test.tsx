@@ -2,6 +2,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithRouter, screen, waitFor } from '@/test/test-utils';
 import type { Tree } from '@/features/trees/types';
+import { normalizeVitality } from '@/entities/inspection';
 
 const inspectionFormSpy = vi.fn();
 const imageUploaderSpy = vi.fn();
@@ -52,6 +53,8 @@ describe('TreeDetails', () => {
   });
 
   it('loads inspections and renders details for a tree', async () => {
+    const vitalityLabelStrong = normalizeVitality(4);
+    const vitalityLabelWeak = normalizeVitality(2);
     const inspections = [
       {
         id: 1,
@@ -88,8 +91,8 @@ describe('TreeDetails', () => {
     expect(await screen.findAllByText(/verkehrssicher/i)).not.toHaveLength(0);
     expect(screen.getByText(/jungbaum/i)).toBeInTheDocument();
     expect(screen.getByText(/intervall: 12 tage/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/vitalitaet: 4\/5/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/vitalitaet: 2\/5/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(`Vitalitaet: ${vitalityLabelStrong}`, 'i')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(`Vitalitaet: ${vitalityLabelWeak}`, 'i')).length).toBeGreaterThan(0);
     expect(screen.getByText(/stammdurchmesser 1/i)).toBeInTheDocument();
     expect(imageUploaderSpy).toHaveBeenCalledWith(expect.objectContaining({ treeId: tree.id }));
   });

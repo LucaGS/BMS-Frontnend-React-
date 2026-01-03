@@ -2,6 +2,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@/test/test-utils';
 import InspectionForm from '../InspectionForm';
+import { VITALITY_OPTIONS } from '@/entities/inspection';
 
 const fetchMock = vi.spyOn(global, 'fetch');
 
@@ -23,7 +24,7 @@ describe('InspectionForm', () => {
     await userEvent.type(screen.getByLabelText(/kontrollintervall/i), '18');
     await userEvent.selectOptions(screen.getByLabelText(/entwicklungsstadium/i), 'Reifungsphase');
     await userEvent.type(screen.getByLabelText(/beschreibung/i), 'Keine Maengel');
-    fireEvent.change(screen.getByLabelText(/vitalitaet/i), { target: { value: 4 } });
+    fireEvent.change(screen.getByLabelText(/vitalitaet/i), { target: { value: VITALITY_OPTIONS[3] } });
     await userEvent.type(screen.getByLabelText(/notizen krone/i), 'Krone ok');
     await userEvent.type(screen.getByLabelText(/notizen stamm/i), 'Stamm ok');
     await userEvent.type(screen.getByLabelText(/notizen stammfuss/i), 'Stammfuss ok');
@@ -45,7 +46,7 @@ describe('InspectionForm', () => {
       isSafeForTraffic: false,
       newInspectionIntervall: 18,
       developmentalStage: 'Reifungsphase',
-      vitality: 4,
+      vitality: VITALITY_OPTIONS[3],
       description: 'Keine Maengel',
       crownInspection: expect.objectContaining({
         notes: 'Krone ok',
