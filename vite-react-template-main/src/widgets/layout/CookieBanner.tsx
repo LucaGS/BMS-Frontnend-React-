@@ -35,7 +35,7 @@ const CookieBanner: React.FC = () => {
           <div>
             <div className="fw-semibold">Cookies</div>
             <div className="small text-light">
-              Wir verwenden nur essentielle Cookies, um die Anwendung funktionsfaehig zu halten.
+              Wir verwenden nur essentielle Cookies, um die Anwendung funktionsfähig zu halten.
               Mit Klick auf &quot;Akzeptieren&quot; stimmen Sie dem zu.
             </div>
           </div>

@@ -48,7 +48,7 @@ describe('TreeDetails', () => {
   it('renders placeholder when no tree is selected', () => {
     renderWithRouter(<TreeDetails tree={null} />);
     expect(
-      screen.getByText(/kein baum ausgewaehlt/i)
+      screen.getByText(/kein baum ausgewählt/i)
     ).toBeInTheDocument();
   });
 
@@ -64,7 +64,7 @@ describe('TreeDetails', () => {
         newInspectionIntervall: 12,
         developmentalStage: 'Jungbaum',
         vitality: 4,
-        description: 'Keine Maengel sichtbar.',
+        description: 'Keine Mängel sichtbar.',
       },
       {
         id: 2,
@@ -74,7 +74,7 @@ describe('TreeDetails', () => {
         newInspectionIntervall: 24,
         developmentalStage: 'Altbaum',
         vitality: 2,
-        description: 'Rueckschnitt empfohlen.',
+        description: 'Rückschnitt empfohlen.',
       },
     ];
     fetchMock.mockResolvedValueOnce(
@@ -91,8 +91,8 @@ describe('TreeDetails', () => {
     expect(await screen.findAllByText(/verkehrssicher/i)).not.toHaveLength(0);
     expect(screen.getByText(/jungbaum/i)).toBeInTheDocument();
     expect(screen.getByText(/intervall: 12 tage/i)).toBeInTheDocument();
-    expect(screen.getAllByText(new RegExp(`Vitalitaet: ${vitalityLabelStrong}`, 'i')).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(new RegExp(`Vitalitaet: ${vitalityLabelWeak}`, 'i')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(`Vitalität: ${vitalityLabelStrong}`, 'i')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(`Vitalität: ${vitalityLabelWeak}`, 'i')).length).toBeGreaterThan(0);
     expect(screen.getByText(/stammdurchmesser 1/i)).toBeInTheDocument();
     expect(imageUploaderSpy).toHaveBeenCalledWith(expect.objectContaining({ treeId: tree.id }));
   });
@@ -112,7 +112,7 @@ describe('TreeDetails', () => {
 
     renderWithRouter(<TreeDetails tree={tree} />);
 
-    const toggleButton = await screen.findByRole('button', { name: /kontrolle hinzufuegen/i });
+    const toggleButton = await screen.findByRole('button', { name: /kontrolle hinzufügen/i });
     expect(screen.queryByTestId('inspection-form-mock')).not.toBeInTheDocument();
 
     await userEvent.click(toggleButton);

@@ -32,7 +32,6 @@ describe('LoginPage', () => {
     await userEvent.type(screen.getByLabelText(/benutzername/i), 'demo');
     await userEvent.type(screen.getByLabelText(/passwort/i), 'password');
     await userEvent.click(screen.getByRole('button', { name: /einloggen/i }));
-
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/api/Auth/Login'),
@@ -80,7 +79,7 @@ describe('SignupPage', () => {
     await userEvent.type(screen.getByLabelText(/benutzername/i), 'demo');
     await userEvent.type(screen.getByLabelText(/^e-mail-adresse/i), 'demo@example.com');
     await userEvent.type(screen.getByLabelText(/^passwort$/i), 'password');
-    await userEvent.type(screen.getByLabelText(/passwort bestaetigen/i), 'password');
+    await userEvent.type(screen.getByLabelText(/passwort bestätigen/i), 'password');
     await userEvent.click(screen.getByRole('button', { name: /konto erstellen/i }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
@@ -94,10 +93,10 @@ describe('SignupPage', () => {
     await userEvent.type(screen.getByLabelText(/^benutzername/i), 'demo');
     await userEvent.type(screen.getByLabelText(/^e-mail-adresse/i), 'demo@example.com');
     await userEvent.type(screen.getByLabelText(/^passwort$/i), 'password');
-    await userEvent.type(screen.getByLabelText(/passwort bestaetigen/i), 'other');
+    await userEvent.type(screen.getByLabelText(/passwort bestätigen/i), 'other');
     await userEvent.click(screen.getByRole('button', { name: /konto erstellen/i }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/passwoerter stimmen nicht/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/passwörter stimmen nicht/i);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
+import { formatCoordinatePairDisplay } from '@/shared/lib/coordinateFormatting';
+import AppModal from '@/shared/components/AppModal';
 import type { GreenArea } from '@/features/green-areas/types';
 import GreenAreaForm from '../forms/GreenAreaForm';
 
@@ -27,9 +29,13 @@ const GreenAreaList: React.FC = () => {
   const navigate = useNavigate();
   const [showGreenAreaForm, setShowGreenAreaForm] = useState(false);
   const [greenAreas, setGreenAreas] = useState<GreenArea[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadGreenAreas().then(setGreenAreas);
+    setIsLoading(true);
+    loadGreenAreas()
+      .then(setGreenAreas)
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (
@@ -38,31 +44,43 @@ const GreenAreaList: React.FC = () => {
         <div className="card-body p-4">
           <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
             <div>
-              <h1 className="h4 mb-1">Gruenflaechen</h1>
+              <div className="text-uppercase text-muted small fw-semibold mb-1">Grünflächen</div>
+              <h1 className="h4 mb-1">Grünflächen</h1>
               <p className="text-muted mb-0">
-                Ueberblick ueber alle verwalteten Gruenflaechen in Ihrem Bestand.
+                Überblick über alle verwalteten Grünflächen in Ihrem Bestand.
               </p>
             </div>
-            <button
-              type="button"
-              className="btn btn-success"
-              onClick={() => setShowGreenAreaForm((prev) => !prev)}
-            >
-              {showGreenAreaForm ? 'Formular verbergen' : 'Gruenflaeche hinzufuegen'}
-            </button>
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              <span className="badge text-bg-light border px-3 py-2">
+                {greenAreas.length} {greenAreas.length === 1 ? 'Fläche' : 'Flächen'}
+              </span>
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={() => setShowGreenAreaForm((prev) => !prev)}
+              >
+                {showGreenAreaForm ? 'Formular verbergen' : 'Grünfläche hinzufügen'}
+              </button>
+            </div>
           </div>
 
           {showGreenAreaForm && (
-            <div className="bg-light border rounded p-3 mb-4">
-              <GreenAreaForm greenAreas={greenAreas} onChange={setGreenAreas} />
-            </div>
+            <AppModal title="Grünfläche hinzufügen" onClose={() => setShowGreenAreaForm(false)}>
+              <GreenAreaForm
+                greenAreas={greenAreas}
+                onChange={setGreenAreas}
+                onSubmitted={() => setShowGreenAreaForm(false)}
+              />
+            </AppModal>
           )}
 
-          {greenAreas.length === 0 && (
-            <div className="text-center text-muted py-4">Keine Gruenflaechen vorhanden.</div>
+          {isLoading && <div className="text-center text-muted py-4">Grünflächen werden geladen...</div>}
+
+          {!isLoading && greenAreas.length === 0 && (
+            <div className="text-center text-muted py-4">Keine Grünflächen vorhanden.</div>
           )}
 
-          {greenAreas.length > 0 && (
+          {!isLoading && greenAreas.length > 0 && (
             <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
               {greenAreas.map((greenArea) => (
                 <div className="col" key={greenArea.id}>
@@ -82,11 +100,12 @@ const GreenAreaList: React.FC = () => {
                       <div className="card-body">
                         <div className="d-flex justify-content-between align-items-center mb-2">
                           <span className="text-muted small">
-                            {greenArea.latitude.toFixed(3)}, {greenArea.longitude.toFixed(3)}
+                            {formatCoordinatePairDisplay(greenArea.latitude, greenArea.longitude)}
                           </span>
+                            <span className="badge text-bg-light border">Öffnen</span>
                         </div>
                         <h2 className="h6 fw-semibold mb-1">{greenArea.name}</h2>
-                        <p className="text-muted small mb-0">Tippen, um Details und Karte zu oeffnen.</p>
+                        <p className="text-muted small mb-0">Tippen, um Details und Karte zu öffnen.</p>
                       </div>
                     </div>
                   </button>

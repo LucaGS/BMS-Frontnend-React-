@@ -117,11 +117,11 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
       }
 
       onInspectionCreated?.();
-      alert('Kontrolle erfolgreich hinzugefuegt');
+      alert('Kontrolle erfolgreich hinzugefügt');
       resetForm();
     } catch (error) {
       console.error('Error creating inspection:', error);
-      setError('Fehler beim Hinzufuegen der Kontrolle.');
+      setError('Fehler beim Hinzufügen der Kontrolle.');
     } finally {
       setIsSubmitting(false);
     }
@@ -153,7 +153,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
               disabled={isSubmitting}
               required
             />
-            <small className="text-muted">Wann wurde die Kontrolle durchgefuehrt?</small>
+            <small className="text-muted">Wann wurde die Kontrolle durchgeführt?</small>
           </div>
 
           <div className="col-md-3">
@@ -170,7 +170,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
               onChange={(event) => updateFormField('newInspectionIntervall', Number(event.target.value) || 0)}
               disabled={isSubmitting}
             />
-            <small className="text-muted">Naechste Kontrolle empfohlen in ... Tagen.</small>
+            <small className="text-muted">Nächste Kontrolle empfohlen in ... Tagen.</small>
           </div>
 
           <div className="col-md-3">
@@ -215,7 +215,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
 
           <div className="col-md-6">
             <label htmlFor="vitality" className="form-label">
-              Vitalitaet
+              Vitalität
             </label>
             <select
               className="form-select"
@@ -230,7 +230,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
                 </option>
               ))}
             </select>
-            <small className="text-muted">Vitalitaet anhand von fuenf Stufen waehlen.</small>
+            <small className="text-muted">Vitalität anhand von fünf Stufen wählen.</small>
           </div>
 
           <div className="col-12">
@@ -238,7 +238,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <div>
                   <div className="fw-semibold">Baumpflegerische Massnahmen</div>
-                  <small className="text-muted">Mehrere Massnahmen waehlen oder neue erfassen.</small>
+                  <small className="text-muted">Mehrere Maßnahmen wählen oder neue erfassen.</small>
                 </div>
                 <button
                   type="button"
@@ -398,7 +398,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
               className="form-control"
               id="description"
               rows={3}
-              placeholder="Anmerkungen zu Schaeden, empfohlenen Massnahmen oder Standortmerkmalen"
+              placeholder="Anmerkungen zu Schäden, empfohlenen Maßnahmen oder Standortmerkmalen"
               value={description}
               onChange={(event) => updateFormField('description', event.target.value)}
               disabled={isSubmitting}
@@ -409,7 +409,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
             sectionKey="crown"
             title="Kronen"
             badge="Krone"
-            description="Schnell erfassbare Maengel in der Krone ueber markante Checkboxen."
+            description="Schnell erfassbare Mängel in der Krone über markante Checkboxen."
             notesId="crownNotes"
             notesLabel="Notizen Krone"
             notesPlaceholder="z. B. Totholz in oberer Krone, Sicherung vorhanden ..."
@@ -444,7 +444,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
             description="Befunde am Stammfuss oder im Wurzelanlauf gezielt abhaken."
             notesId="stemBaseNotes"
             notesLabel="Notizen Stammfuss"
-            notesPlaceholder="z. B. Freilegung, Wurzelraeme, Faeule ..."
+            notesPlaceholder="z. B. Freilegung, Wurzelräume, Fäule ..."
             state={stemBaseInspection}
             setState={setStemBaseInspection}
             items={stemBaseCheckboxes}
@@ -464,7 +464,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
           {!error && !isSubmitting && (
             <div className="col-12">
               <small className="text-muted">
-                Vitalitaet und Befunde auswaehlen und anschliessend die Kontrolle speichern.
+                Vitalität und Befunde auswählen und anschließend die Kontrolle speichern.
               </small>
             </div>
           )}

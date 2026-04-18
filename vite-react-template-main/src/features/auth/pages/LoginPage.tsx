@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from '@/shared/config/appConfig';
+import { storeToken } from '@/shared/lib/auth';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -20,16 +21,16 @@ const LoginPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Login fehlgeschlagen. Bitte Zugangsdaten pruefen.');
+        throw new Error('Login fehlgeschlagen. Bitte Zugangsdaten prüfen.');
       }
 
       const data = await response.json();
 
       if (data.token) {
-        localStorage.setItem('token', data.token);
+        storeToken(data.token);
         setSuccess(true);
       } else {
-        throw new Error('Login erfolgreich, aber Rueckmeldung fehlt.');
+        throw new Error('Login erfolgreich, aber Rückmeldung fehlt.');
       }
     } catch (submitError) {
       console.error('Error during login:', submitError);
@@ -39,11 +40,12 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="container py-5">
+    <div className="container py-5 auth-shell">
       <div className="row justify-content-center">
         <div className="col-md-6 col-lg-5">
-          <div className="card shadow-sm border-0">
+          <div className="card border-0 auth-card">
             <div className="card-body p-4 p-lg-5">
+              <div className="auth-kicker text-center mb-2">Sicher anmelden</div>
               <h2 className="h3 mb-4 text-center">Login</h2>
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
@@ -87,7 +89,7 @@ const LoginPage: React.FC = () => {
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-success w-100">
+                <button type="submit" className="btn btn-success w-100 btn-lg">
                   Einloggen
                 </button>
               </form>

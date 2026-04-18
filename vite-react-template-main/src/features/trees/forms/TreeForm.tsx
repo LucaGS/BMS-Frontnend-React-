@@ -177,13 +177,13 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
     event.preventDefault();
     let hasError = false;
     if (!draftTree.trafficSafetyExpectation) {
-      setTrafficSafetyError('Bitte Sicherheitserwartung Verkehr auswaehlen.');
+      setTrafficSafetyError('Bitte Sicherheitserwartung Verkehr auswählen.');
       hasError = true;
     } else {
       setTrafficSafetyError(null);
     }
     if (!hasAnyTrunkDiameterValue(draftTree)) {
-      setDiameterError('Mindestens ein Stammdurchmesser muss groesser als 0 sein.');
+      setDiameterError('Mindestens ein Stammdurchmesser muss größer als 0 sein.');
       hasError = true;
     } else {
       setDiameterError(null);
@@ -227,7 +227,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
         createdTree = undefined;
       }
       onTreeCreated(createdTree);
-      alert('Baum erfolgreich hinzugefuegt');
+      alert('Baum erfolgreich hinzugefügt');
       setDraftTree({
         greenAreaId,
         number: '',
@@ -247,7 +247,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       setShowLocationPicker(false);
     } catch (error) {
       console.error('Error creating tree:', error);
-      alert('Fehler beim Hinzufuegen des Baumes');
+      alert('Fehler beim Hinzufügen des Baumes');
     }
   };
 
@@ -328,7 +328,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       </div>
       <div className="mb-3">
         <label htmlFor="longitude" className="form-label">
-          Laengengrad
+          Längengrad
         </label>
         <input
           type="number"
@@ -348,9 +348,9 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       <div className="mb-3">
         <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
           <div>
-            <span className="form-label d-block mb-1">Koordinaten ueber Karte bestimmen</span>
+            <span className="form-label d-block mb-1">Koordinaten über Karte bestimmen</span>
             <small className="text-muted">
-              Optional: Die Koordinaten koennen weiterhin manuell eingegeben werden.
+              Optional: Die Koordinaten können weiterhin manuell eingegeben werden.
             </small>
           </div>
           <button
@@ -372,7 +372,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       </div>
       <div className="mb-3">
         <label htmlFor="treeSizeMeters" className="form-label">
-          Baumhoehe (m)
+          Baumhöhe (m)
         </label>
         <input
           type="number"
@@ -412,7 +412,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       </div>
       <div className="mb-3">
         <label htmlFor="numberOfTrunks" className="form-label">
-          Anzahl Staemme
+          Anzahl Stämme
         </label>
         <input
           type="number"
@@ -453,7 +453,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
         {trafficSafetyError ? (
           <div className="invalid-feedback d-block">{trafficSafetyError}</div>
         ) : (
-          <div className="text-muted small">Bitte waehlen Sie die Sicherheitserwartung fuer den Verkehr.</div>
+          <div className="text-muted small">Bitte wählen Sie die Sicherheitserwartung für den Verkehr.</div>
         )}
       </div>
       <div className="mb-3">
@@ -514,12 +514,12 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           </div>
         ) : (
           <div className="text-muted small mt-2">
-            Optional; mindestens ein Stammdurchmesser muss groesser als 0 sein.
+            Optional; mindestens ein Stammdurchmesser muss größer als 0 sein.
           </div>
         )}
       </div>
       <button type="submit" className="btn btn-primary">
-        Baum hinzufuegen
+        Baum hinzufügen
       </button>
     </form>
   );

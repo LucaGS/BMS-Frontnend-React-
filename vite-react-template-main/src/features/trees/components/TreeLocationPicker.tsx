@@ -214,12 +214,12 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
 
   const handleLocateMe = () => {
     if (!navigator.geolocation) {
-      setLocationError('Geolocation wird von diesem Browser nicht unterstuetzt.');
+      setLocationError('Geolocation wird von diesem Browser nicht unterstützt.');
       return;
     }
     setIsLocating(true);
     setLocationError(
-      'Pruefe, ob Praezise Ortung/GPS an ist (WLAN/5G einschalten). Wir nehmen mehrere Messungen und waehlen die beste.',
+      'Prüfe, ob Präzise Ortung/GPS an ist (WLAN/5G einschalten). Wir nehmen mehrere Messungen und wählen die beste.',
     );
     setBestAccuracy(null);
     bestAccuracyRef.current = null;
@@ -286,7 +286,7 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
       setIsLocating(false);
       stopGeoWatch();
       if (!userLocation) {
-        setLocationError('Keine praezise Position gefunden. Bitte erneut versuchen oder manuell waehlen.');
+        setLocationError('Keine präzise Position gefunden. Bitte erneut versuchen oder manuell wählen.');
       } else if (bestAccuracyRef.current != null && bestAccuracyRef.current > DESIRED_ACCURACY_METERS * 2) {
         setLocationError(
           `Position ist ungenau (~${Math.round(bestAccuracyRef.current)} m). Bitte erneut versuchen oder manuell setzen.`,
@@ -307,7 +307,7 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
     <div className="my-3">
       <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-2">
         <span className="small text-muted">
-          Klicken Sie auf die Karte, um die Koordinaten zu uebernehmen. Die Felder werden automatisch ausgefuellt.
+          Klicken Sie auf die Karte, um die Koordinaten zu übernehmen. Die Felder werden automatisch ausgefüllt.
         </span>
         <div className="d-flex align-items-center gap-2">
           <span className="badge bg-light text-dark border">
@@ -324,7 +324,7 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
             onClick={handleUseBestFix}
             disabled={!bestFix}
           >
-            Beste Position uebernehmen
+            Beste Position übernehmen
           </button>
           <button
             type="button"
@@ -332,7 +332,7 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
             onClick={handleClear}
             disabled={!hasSelection}
           >
-            Auswahl loeschen
+            Auswahl löschen
           </button>
         </div>
       </div>
@@ -365,8 +365,8 @@ const TreeLocationPicker: React.FC<TreeLocationPickerProps> = ({
       {bestFix && !hasSelection && (
         <div className="alert alert-info mt-2 mb-0 py-2">
           Beste gefundene Position: {bestFix.lat.toFixed(6)}, {bestFix.lng.toFixed(6)}{' '}
-          {bestFix.accuracy != null ? `(~${Math.round(bestFix.accuracy)} m)` : ''}. Uebernehmen, um die Felder zu fuellen.
-          <div className="small text-muted">Tipp: Praezise Ortung aktivieren (GPS + WLAN + 5G) und etwas warten, bis mehrere Fixes eingetroffen sind.</div>
+          {bestFix.accuracy != null ? `(~${Math.round(bestFix.accuracy)} m)` : ''}. Übernehmen, um die Felder zu füllen.
+          <div className="small text-muted">Tipp: Präzise Ortung aktivieren (GPS + WLAN + 5G) und etwas warten, bis mehrere Fixes eingetroffen sind.</div>
           <div className="small text-muted">Funktioniert nur auf Mobilen Endgeräten genau genug</div>
         </div>
       )}

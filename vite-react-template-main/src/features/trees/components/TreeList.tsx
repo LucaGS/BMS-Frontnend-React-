@@ -44,7 +44,7 @@ const TreeList: React.FC = () => {
         setGreenAreas(Array.isArray(greenAreasData) ? greenAreasData : []);
       } catch (fetchError) {
         console.error('Error fetching trees:', fetchError);
-        setError('Baeume konnten nicht geladen werden.');
+        setError('Bäume konnten nicht geladen werden.');
       } finally {
         setIsLoading(false);
       }
@@ -70,7 +70,7 @@ const TreeList: React.FC = () => {
 
   const renderContent = () => {
     if (isLoading) {
-      return <p className="text-muted mb-0">Baeume werden geladen...</p>;
+      return <p className="text-muted mb-0">Bäume werden geladen...</p>;
     }
 
     if (error) {
@@ -82,11 +82,11 @@ const TreeList: React.FC = () => {
     }
 
     if (trees.length === 0) {
-      return <p className="text-muted mb-0">Noch keine Baeume vorhanden.</p>;
+      return <p className="text-muted mb-0">Noch keine Bäume vorhanden.</p>;
     }
 
     if (filteredTrees.length === 0) {
-      return <p className="text-muted mb-0">Keine Treffer fuer die aktuelle Suche/Filter.</p>;
+      return <p className="text-muted mb-0">Keine Treffer für die aktuelle Suche/Filter.</p>;
     }
 
     return (
@@ -95,7 +95,7 @@ const TreeList: React.FC = () => {
           const nextInspectionStatus = getNextInspectionStatus(tree.nextInspection);
           const nextInspectionLabel = nextInspectionStatus.hasValue
             ? nextInspectionStatus.relativeLabel ?? nextInspectionStatus.shortLabel
-            : 'Keine naechste Kontrolle';
+            : 'Keine nächste Kontrolle';
 
           return (
             <div className="col" key={tree.id}>
@@ -145,12 +145,12 @@ const TreeList: React.FC = () => {
         <div className="card-body p-4">
           <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
             <div>
-              <div className="text-uppercase text-muted small fw-semibold">Baeume</div>
+              <div className="text-uppercase text-muted small fw-semibold">Bäume</div>
               <h1 className="h4 mb-0">Baumliste</h1>
-              <p className="text-muted mb-0">Waehlen Sie einen Baum, um Details und Kontrollen zu oeffnen.</p>
+              <p className="text-muted mb-0">Wählen Sie einen Baum, um Details und Kontrollen zu öffnen.</p>
             </div>
             <div className="badge text-bg-light">
-              {filteredTrees.length}/{trees.length} {trees.length === 1 ? 'Baum' : 'Baeume'}
+              {filteredTrees.length}/{trees.length} {trees.length === 1 ? 'Baum' : 'Bäume'}
             </div>
           </div>
 
@@ -170,7 +170,7 @@ const TreeList: React.FC = () => {
                 value={selectedGreenAreaId}
                 onChange={(event) => setSelectedGreenAreaId(event.target.value)}
               >
-                <option value="all">Alle Gruenflaechen</option>
+                <option value="all">Alle Grünflächen</option>
                 {greenAreas.map((area) => (
                   <option key={area.id} value={area.id}>
                     {area.name}
@@ -178,7 +178,28 @@ const TreeList: React.FC = () => {
                 ))}
               </select>
             </div>
+            <div className="col-12 col-md-4 d-flex align-items-stretch">
+              <button
+                type="button"
+                className="btn btn-outline-secondary w-100"
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedGreenAreaId('all');
+                }}
+                disabled={searchTerm.length === 0 && selectedGreenAreaId === 'all'}
+              >
+                Filter zurücksetzen
+              </button>
+            </div>
           </div>
+
+          {(searchTerm.length > 0 || selectedGreenAreaId !== 'all') && (
+            <div className="d-flex flex-wrap gap-2 align-items-center mb-3">
+              <span className="text-muted small">Aktive Eingrenzung:</span>
+              {searchTerm.length > 0 && <span className="badge text-bg-light border">Suche: {searchTerm}</span>}
+              {selectedGreenAreaId !== 'all' && <span className="badge text-bg-light border">Grünfläche ausgewählt</span>}
+            </div>
+          )}
 
           {renderContent()}
         </div>

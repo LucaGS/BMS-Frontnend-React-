@@ -1,8 +1,8 @@
 export const VITALITY_OPTIONS = [
   '1 - Ohne Schadensmerkmale',
-  '2 - Schwach geschaedigt, kraenkelnd',
-  '3 - Mittelstark geschaedigt, krank',
-  '4 - Stark geschaedigt, sehr krank',
+  '2 - Schwach geschädigt, kränkelnd',
+  '3 - Mittelstark geschädigt, krank',
+  '4 - Stark geschädigt, sehr krank',
   '5 - Abgestorben',
 ] as const;
 

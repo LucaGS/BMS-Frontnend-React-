@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from '@/shared/config/appConfig';
+import { storeToken } from '@/shared/lib/auth';
 
 interface SignupFormData {
   username: string;
@@ -30,12 +31,12 @@ const SignupPage: React.FC = () => {
     setSuccess('');
 
     if (!formData.username || !formData.email || !formData.password) {
-      setError('Bitte alle Felder ausfuellen.');
+      setError('Bitte alle Felder ausfüllen.');
       return;
     }
 
     if (formData.password !== correctPasswordCheck) {
-      setError('Die Passwoerter stimmen nicht ueberein.');
+      setError('Die Passwörter stimmen nicht überein.');
       return;
     }
 
@@ -55,7 +56,7 @@ const SignupPage: React.FC = () => {
       const data = await response.json();
 
       if (data.token) {
-        localStorage.setItem('token', data.token);
+        storeToken(data.token);
       }
 
       setSuccess('Registrierung erfolgreich!');
@@ -72,11 +73,12 @@ const SignupPage: React.FC = () => {
   };
 
   return (
-    <div className="container py-5">
+    <div className="container py-5 auth-shell">
       <div className="row justify-content-center">
         <div className="col-md-7 col-lg-5">
-          <div className="card shadow-sm border-0">
+          <div className="card border-0 auth-card">
             <div className="card-body p-4 p-lg-5">
+              <div className="auth-kicker text-center mb-2">Neues Konto</div>
               <h2 className="h3 text-center mb-4">Registrieren</h2>
               <form onSubmit={handleSubmit} noValidate>
                 <div className="mb-3">
@@ -123,7 +125,7 @@ const SignupPage: React.FC = () => {
                 </div>
                 <div className="mb-4">
                   <label htmlFor="signupPasswordConfirm" className="form-label">
-                    Passwort bestaetigen
+                    Passwort bestätigen
                   </label>
                   <input
                     type="password"
@@ -135,7 +137,7 @@ const SignupPage: React.FC = () => {
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-success w-100">
+                <button type="submit" className="btn btn-success w-100 btn-lg">
                   Konto erstellen
                 </button>
               </form>

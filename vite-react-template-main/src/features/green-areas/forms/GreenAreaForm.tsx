@@ -13,9 +13,10 @@ interface GreenAreaDto {
 interface GreenAreaFormProps {
   greenAreas: GreenArea[];
   onChange: (next: GreenArea[]) => void;
+  onSubmitted?: () => void;
 }
 
-const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange }) => {
+const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange, onSubmitted }) => {
   const [name, setName] = useState('');
   const [latitude, setLatitude] = useState<number | ''>('');
   const [longitude, setLongitude] = useState<number | ''>('');
@@ -62,9 +63,10 @@ const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange }) =
       setLatitude('');
       setLongitude('');
       setShowLocationPicker(false);
+      onSubmitted?.();
     } catch (submitError) {
       console.error('Error adding green area:', submitError);
-      setError('Fehler beim Hinzufuegen der Gruenflaeche.');
+      setError('Fehler beim Hinzufügen der Grünfläche.');
     }
   };
 
@@ -72,7 +74,7 @@ const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange }) =
     <form onSubmit={handleAdd} className="row g-3 align-items-end">
       <div className="col-sm-8">
         <label htmlFor="newGreenArea" className="form-label">
-          Name der Gruenflaeche
+          Name der Grünfläche
         </label>
         <input
           id="newGreenArea"
@@ -96,14 +98,14 @@ const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange }) =
           id="longitude"
           type="number"
           className="form-control mt-2"
-          placeholder="Laengengrad"
+          placeholder="Längengrad"
           value={longitude}
           onChange={(e) => setLongitude(e.target.value === '' ? '' : parseFloat(e.target.value))}
           step="any"
         />
         <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mt-2">
           <div>
-            <span className="form-label d-block mb-1 small fw-semibold">Koordinaten ueber Karte waehlen</span>
+            <span className="form-label d-block mb-1 small fw-semibold">Koordinaten über Karte wählen</span>
             <small className="text-muted">Optional: Marker bewegen oder Karte klicken, um Koordinaten zu setzen.</small>
           </div>
           <button
@@ -136,7 +138,7 @@ const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange }) =
       </div>
       <div className="col-sm-4 d-grid">
         <button type="submit" className="btn btn-success">
-          Hinzufuegen
+          Hinzufügen
         </button>
       </div>
       {error && (

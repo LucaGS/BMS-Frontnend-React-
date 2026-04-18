@@ -15,7 +15,7 @@ describe('GreenAreaForm', () => {
     const existing = [{ id: 1, name: 'Park', longitude: 1, latitude: 2 }];
 
     fetchMock.mockResolvedValueOnce(
-      new Response(JSON.stringify({ id: 2, name: 'Neue Flaeche', longitude: 3, latitude: 4 }), {
+      new Response(JSON.stringify({ id: 2, name: 'Neue Fläche', longitude: 3, latitude: 4 }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
@@ -23,22 +23,22 @@ describe('GreenAreaForm', () => {
 
     render(<GreenAreaForm greenAreas={existing as any} onChange={onChange} />);
 
-    await userEvent.type(screen.getByLabelText(/name der gruenflaeche/i), 'Neue Flaeche');
+    await userEvent.type(screen.getByLabelText(/name der grünfläche/i), 'Neue Fläche');
     await userEvent.type(screen.getByPlaceholderText(/breitengrad/i), '3');
     await userEvent.type(screen.getByPlaceholderText(/ngengrad/i), '4');
-    await userEvent.click(screen.getByRole('button', { name: /hinzufuegen/i }));
+    await userEvent.click(screen.getByRole('button', { name: /hinzufügen/i }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(onChange).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.objectContaining({ id: 2, name: 'Neue Flaeche' })])
+      expect.arrayContaining([expect.objectContaining({ id: 2, name: 'Neue Fläche' })])
     );
   });
 
   it('shows a validation error when name is missing', async () => {
     render(<GreenAreaForm greenAreas={[]} onChange={vi.fn()} />);
 
-    await userEvent.type(screen.getByLabelText(/name der gruenflaeche/i), ' ');
-    await userEvent.click(screen.getByRole('button', { name: /hinzufuegen/i }));
+    await userEvent.type(screen.getByLabelText(/name der grünfläche/i), ' ');
+    await userEvent.click(screen.getByRole('button', { name: /hinzufügen/i }));
 
     expect(await screen.findByText(/bitte einen namen eintragen/i)).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();

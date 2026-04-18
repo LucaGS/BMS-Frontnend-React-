@@ -7,6 +7,9 @@ import InspectionForm from '@/features/inspections/forms/InspectionForm';
 import TreeLocationMap from './TreeLocationMap';
 import TreeImageUploader from './TreeImageUploader';
 import TreeEditForm from '@/features/trees/forms/TreeEditForm';
+import { formatCoordinateDisplay } from '@/shared/lib/coordinateFormatting';
+import { formatDateDisplay } from '@/shared/lib/dateFormatting';
+import AppModal from '@/shared/components/AppModal';
 
 type TreeDetailsProps = {
   tree?: Tree | null;
@@ -44,7 +47,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
       setInspectionsError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/Inspections/ByTreeId/${activeTree!.id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/Inspections/ByTreeId/${activeTree.id}`, {
           headers: {
             Authorization: `bearer ${localStorage.getItem('token') || ''}`,
           },
@@ -107,11 +110,26 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
     return (
       onBack && (
         <button type="button" className="btn btn-outline-primary" onClick={onBack}>
-          Zurueck
+          Zurück
         </button>
       )
     );
   };
+
+  const treeFacts = activeTree
+    ? [
+        { label: 'Sicherheitserwartung Verkehr', value: activeTree.trafficSafetyExpectation || 'None' },
+        { label: 'Breitengrad', value: formatCoordinateDisplay(activeTree.latitude) },
+        { label: 'Längengrad', value: formatCoordinateDisplay(activeTree.longitude) },
+        { label: 'Letzte Kontrolle', value: activeTree.lastInspectionId ?? 'Keine' },
+        { label: 'Baumhöhe (m)', value: activeTree.treeSizeMeters ?? '-' },
+        { label: 'Kronendurchmesser (m)', value: activeTree.crownDiameterMeters ?? '-' },
+        { label: 'Anzahl Stämme', value: activeTree.numberOfTrunks ?? '-' },
+        { label: 'Stammdurchmesser 1', value: activeTree.trunkDiameter1 ?? '-' },
+        { label: 'Stammdurchmesser 2', value: activeTree.trunkDiameter2 ?? '-' },
+        { label: 'Stammdurchmesser 3', value: activeTree.trunkDiameter3 ?? '-' },
+      ]
+    : [];
 
   return (
     <section>
@@ -123,7 +141,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                 <Link to="/">Start</Link>
               </li>
               <li className="breadcrumb-item">
-                <Link to="/trees">Baeume</Link>
+                <Link to="/trees">Bäume</Link>
               </li>
               <li className="breadcrumb-item active" aria-current="page">
                 {tree ? `Baum ${tree.number ?? tree.id}` : 'Baumdetails'}
@@ -137,13 +155,13 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
 
           {!activeTree && (
             <p className="text-muted mb-0">
-              Kein Baum ausgewaehlt. Bitte waehlen Sie einen Baum aus der Liste.
+              Kein Baum ausgewählt. Bitte wählen Sie einen Baum aus der Liste.
             </p>
           )}
 
           {activeTree && (
             <>
-              <p className="text-muted mb-3">Details zum ausgewaehlten Baum.</p>
+              <p className="text-muted mb-3">Details zum ausgewählten Baum.</p>
               <div className="row g-4 align-items-start">
                 <div className="col-lg-5 col-xl-4">
                   <div className="bg-light border rounded-3 p-3 h-100">
@@ -153,29 +171,20 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                         <div className="fs-5 fw-semibold mb-0">
                           {activeTree.species || 'Unbekannte Art'}
                         </div>
-                      <div className="text-muted small">Nr. {activeTree.number}</div>
+                        <div className="text-muted small">Nr. {activeTree.number}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="row row-cols-1 row-cols-sm-2 g-2">
-                    {[
-                      { label: 'Sicherheitserwartung Verkehr', value: activeTree.trafficSafetyExpectation || 'None' },
-                      { label: 'Breitengrad', value: activeTree.latitude },
-                      { label: 'Laengengrad', value: activeTree.longitude },
-                      { label: 'Letzte Kontrolle', value: activeTree.lastInspectionId ?? 'Keine' },
-                      { label: 'Baumhoehe (m)', value: activeTree.treeSizeMeters ?? '-' },
-                      { label: 'Kronendurchmesser (m)', value: activeTree.crownDiameterMeters ?? '-' },
-                        { label: 'Anzahl Staemme', value: activeTree.numberOfTrunks ?? '-' },
-                        { label: 'Stammdurchmesser 1', value: activeTree.trunkDiameter1 ?? '-' },
-                        { label: 'Stammdurchmesser 2', value: activeTree.trunkDiameter2 ?? '-' },
-                        { label: 'Stammdurchmesser 3', value: activeTree.trunkDiameter3 ?? '-' },
-                      ].map(({ label, value }) => (
-                        <div className="col" key={label}>
-                          <div className="border rounded-3 px-3 py-2 h-100 bg-white">
-                            <div className="text-muted small">{label}</div>
-                            <div className="fw-semibold">{value}</div>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="table-responsive">
+                      <table className="table table-sm align-middle mb-0 tree-facts-table">
+                        <tbody>
+                          {treeFacts.map(({ label, value }) => (
+                            <tr key={label}>
+                              <th scope="row">{label}</th>
+                              <td>{value}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
@@ -198,19 +207,21 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                 </button>
               </div>
               {showTreeEditForm && (
-                <TreeEditForm
-                  tree={activeTree}
-                  defaultCenter={[activeTree.latitude ?? 0, activeTree.longitude ?? 0]}
-                  onUpdated={(updated) => {
-                    if (updated) {
-                      setActiveTree(updated);
-                    }
-                    setShowTreeEditForm(false);
-                  }}
-                />
+                <AppModal title="Baum bearbeiten" onClose={() => setShowTreeEditForm(false)} size="wide">
+                  <TreeEditForm
+                    tree={activeTree}
+                    defaultCenter={[activeTree.latitude ?? 0, activeTree.longitude ?? 0]}
+                    onUpdated={(updated) => {
+                      if (updated) {
+                        setActiveTree(updated);
+                      }
+                      setShowTreeEditForm(false);
+                    }}
+                  />
+                </AppModal>
               )}
               <TreeImageUploader treeId={activeTree.id} />
-              <div className="d-flex justify-content-between align-items-center mt-4 mb-2">
+              <div className="quick-actions d-flex justify-content-between align-items-center mt-4 mb-2 flex-wrap gap-2">
                 <h2 className="h5 mb-0">Kontrollen</h2>
                 <button
                   type="button"
@@ -218,11 +229,13 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                   onClick={() => setShowInspectionForm((current) => !current)}
                   disabled={inspectionsLoading}
                 >
-                  {showInspectionForm ? 'Formular verbergen' : 'Kontrolle hinzufuegen'}
+                  {showInspectionForm ? 'Formular verbergen' : 'Kontrolle hinzufügen'}
                 </button>
               </div>
               {showInspectionForm && (
-                <InspectionForm treeId={activeTree.id} onInspectionCreated={handleInspectionCreated} />
+                <AppModal title="Kontrolle hinzufügen" onClose={() => setShowInspectionForm(false)} size="wide">
+                  <InspectionForm treeId={activeTree.id} onInspectionCreated={handleInspectionCreated} />
+                </AppModal>
               )}
               {inspectionsLoading && (
                 <p className="text-muted mt-3 mb-0">Kontrollen werden geladen...</p>
@@ -237,10 +250,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                   {inspections.length > 0 ? (
                     <div className="row row-cols-1 row-cols-md-2 g-3 mt-1">
                       {inspections.map((inspection) => {
-                        const date = new Date(inspection.performedAt);
-                        const formattedDate = Number.isNaN(date.valueOf())
-                          ? inspection.performedAt
-                          : date.toLocaleString();
+                        const formattedDate = formatDateDisplay(inspection.performedAt, inspection.performedAt);
 
                         return (
                           <div className="col" key={inspection.id}>
@@ -258,7 +268,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                                         Entwicklungsphase: {inspection.developmentalStage || '-'}
                                       </div>
                                       <div className="text-muted small">
-                                        Intervall: {inspection.newInspectionIntervall} Tage | Vitalitaet: {inspection.vitality}
+                                        Intervall: {inspection.newInspectionIntervall} Tage | Vitalität: {inspection.vitality}
                                       </div>
                                     </div>
                                     <span
@@ -268,7 +278,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
                                     </span>
                                   </div>
                                   <div className="d-flex flex-wrap gap-2 mt-2">
-                                    {renderVitalityPill('Vitalitaet', inspection.vitality)}
+                                    {renderVitalityPill('Vitalität', inspection.vitality)}
                                   </div>
 
                                   {inspection.description && (

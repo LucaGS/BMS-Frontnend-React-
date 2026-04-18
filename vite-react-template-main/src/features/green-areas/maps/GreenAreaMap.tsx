@@ -8,6 +8,7 @@ import {
   type LeafletWindow,
   MAX_MAP_ZOOM,
 } from '@/shared/maps/leafletUtils';
+import { formatCoordinatePairDisplay } from '@/shared/lib/coordinateFormatting';
 
 interface GreenAreaMapProps {
   trees: Tree[];
@@ -123,9 +124,7 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
         permanent: true,
         className: "tree-number-tooltip",
       });
-      marker.bindPopup(
-        `<strong>${tree.species ?? "Baum"}</strong><br/>${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`
-      );
+      marker.bindPopup(`<strong>${tree.species ?? "Baum"}</strong><br/>${formatCoordinatePairDisplay(coords[0], coords[1])}`);
       treeMarkerRefs.current.push(marker);
     });
 
@@ -227,11 +226,11 @@ const GreenAreaMap: React.FC<GreenAreaMapProps> = ({
           onClick={clearTemporaryMarkers}
           disabled={temporaryMarkers.length === 0}
         >
-          Temporaere Markierungen loeschen
+          Temporäre Markierungen löschen
         </button>
         {temporaryMarkers.length > 0 && (
           <span className="text-muted small">
-            {temporaryMarkers.length} temporaere Markierung{temporaryMarkers.length > 1 ? "en" : ""} gesetzt
+            {temporaryMarkers.length} temporäre Markierung{temporaryMarkers.length > 1 ? 'en' : ''} gesetzt
           </span>
         )}
       </div>

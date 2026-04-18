@@ -83,13 +83,13 @@ const TreeEditForm: React.FC<TreeEditFormProps> = ({ tree, defaultCenter, onUpda
 
     let hasError = false;
     if (!draftTree.trafficSafetyExpectation) {
-      setTrafficSafetyError('Bitte Sicherheitserwartung Verkehr auswaehlen.');
+      setTrafficSafetyError('Bitte Sicherheitserwartung Verkehr auswählen.');
       hasError = true;
     } else {
       setTrafficSafetyError(null);
     }
     if (!hasAnyTrunkDiameterValue(draftTree)) {
-      setDiameterError('Mindestens ein Stammdurchmesser muss groesser als 0 sein.');
+      setDiameterError('Mindestens ein Stammdurchmesser muss größer als 0 sein.');
       hasError = true;
     } else {
       setDiameterError(null);
@@ -183,7 +183,7 @@ const TreeEditForm: React.FC<TreeEditFormProps> = ({ tree, defaultCenter, onUpda
           </div>
           <div className="col-md-6">
             <label htmlFor="editLongitude" className="form-label">
-              Laengengrad
+              Längengrad
             </label>
             <input
               id="editLongitude"
@@ -199,7 +199,7 @@ const TreeEditForm: React.FC<TreeEditFormProps> = ({ tree, defaultCenter, onUpda
           <div className="col-12">
             <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
               <div>
-                <span className="form-label d-block mb-1 small fw-semibold">Koordinaten ueber Karte bestimmen</span>
+                <span className="form-label d-block mb-1 small fw-semibold">Koordinaten über Karte bestimmen</span>
                 <small className="text-muted">Marker ziehen oder in Karte klicken, um Koordinaten zu setzen.</small>
               </div>
             </div>
@@ -225,7 +225,7 @@ const TreeEditForm: React.FC<TreeEditFormProps> = ({ tree, defaultCenter, onUpda
 
           <div className="col-md-6">
             <label htmlFor="editTreeSizeMeters" className="form-label">
-              Baumhoehe (m)
+              Baumhöhe (m)
             </label>
             <input
               id="editTreeSizeMeters"
@@ -258,7 +258,7 @@ const TreeEditForm: React.FC<TreeEditFormProps> = ({ tree, defaultCenter, onUpda
 
           <div className="col-md-6">
             <label htmlFor="editNumberOfTrunks" className="form-label">
-              Anzahl Staemme
+              Anzahl Stämme
             </label>
             <input
               id="editNumberOfTrunks"
@@ -294,7 +294,7 @@ const TreeEditForm: React.FC<TreeEditFormProps> = ({ tree, defaultCenter, onUpda
             {trafficSafetyError ? (
               <div className="invalid-feedback d-block">{trafficSafetyError}</div>
             ) : (
-              <div className="text-muted small">Bitte waehlen Sie die Sicherheitserwartung fuer den Verkehr.</div>
+              <div className="text-muted small">Bitte wählen Sie die Sicherheitserwartung für den Verkehr.</div>
             )}
           </div>
 
@@ -360,7 +360,7 @@ const TreeEditForm: React.FC<TreeEditFormProps> = ({ tree, defaultCenter, onUpda
               </div>
             ) : (
               <div className="text-muted small mt-2">
-                Optional; mindestens ein Stammdurchmesser muss groesser als 0 sein.
+                Optional; mindestens ein Stammdurchmesser muss größer als 0 sein.
               </div>
             )}
           </div>

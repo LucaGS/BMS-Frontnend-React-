@@ -153,7 +153,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
     if (!file.type.startsWith('image/')) {
       setSelectedFile(null);
       setPreviewUrl(null);
-      setMessage({ kind: 'error', text: 'Bitte waehlen Sie eine gueltige Bilddatei.' });
+      setMessage({ kind: 'error', text: 'Bitte wählen Sie eine gültige Bilddatei.' });
       return;
     }
 
@@ -184,7 +184,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      setMessage({ kind: 'error', text: 'Bitte waehlen Sie zuerst eine Bilddatei aus.' });
+      setMessage({ kind: 'error', text: 'Bitte wählen Sie zuerst eine Bilddatei aus.' });
       return;
     }
 
@@ -226,10 +226,10 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
 
   const handleDelete = async (image: TreeImage) => {
     if (!image.canDelete) {
-      setMessage({ kind: 'error', text: 'Dieses Bild kann nicht geloescht werden (keine ID vorhanden).' });
+      setMessage({ kind: 'error', text: 'Dieses Bild kann nicht gelöscht werden (keine ID vorhanden).' });
       return;
     }
-    const confirmed = window.confirm('Dieses Bild wirklich loeschen?');
+    const confirmed = window.confirm('Dieses Bild wirklich löschen?');
     if (!confirmed) {
       return;
     }
@@ -244,10 +244,10 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
         throw new Error('Delete failed');
       }
       await fetchImages();
-      setMessage({ kind: 'success', text: 'Bild wurde geloescht.' });
+      setMessage({ kind: 'success', text: 'Bild wurde gelöscht.' });
     } catch (error) {
       console.error('Error deleting tree image:', error);
-      setMessage({ kind: 'error', text: 'Bild konnte nicht geloescht werden.' });
+      setMessage({ kind: 'error', text: 'Bild konnte nicht gelöscht werden.' });
     }
   };
 
@@ -312,7 +312,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
           >
-            Bild aus Dateien waehlen
+            Bild aus Dateien wählen
           </button>
         )}
         {message && (
@@ -336,7 +336,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
           <div className="p-3 border rounded-4 bg-white shadow-sm">
             <div className="ratio ratio-4x3 rounded-4 overflow-hidden position-relative bg-secondary bg-opacity-10 mb-2">
               {activeImage ? (
-                <img src={activeImage.url} alt="Ausgewaehltes Baumbild" className="w-100 h-100" style={{ objectFit: 'cover' }} />
+                <img src={activeImage.url} alt="Ausgewähltes Baumbild" className="w-100 h-100" style={{ objectFit: 'cover' }} />
               ) : (
                 <div className="d-flex align-items-center justify-content-center h-100 text-muted small">Bild wird geladen...</div>
               )}
@@ -355,7 +355,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
                       onClick={() => setSelectedImageId(canGoPrev ? uploadedImages[activeIndex - 1].id : activeImage.id)}
                       disabled={!canGoPrev}
                     >
-                      Zurueck
+                      Zurück
                     </button>
                     <button
                       type="button"
@@ -371,7 +371,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
                       onClick={() => handleDelete(activeImage)}
                       disabled={isLoadingImages || !activeImage.canDelete}
                     >
-                      Loeschen
+                      Löschen
                     </button>
                   </div>
                 </div>
@@ -393,7 +393,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
                         onClick={() => setSelectedImageId(image.id)}
                         className={`p-1 rounded-3 border ${isActive ? 'border-primary shadow-sm' : 'border-0'} bg-transparent`}
                         style={{ minWidth: '104px', maxWidth: '128px' }}
-                        aria-label="Baumbild auswaehlen"
+                        aria-label="Baumbild auswählen"
                       >
                         <div className={`ratio ratio-4x3 rounded-2 overflow-hidden ${isActive ? 'bg-primary bg-opacity-10' : 'bg-light'}`}>
                           <img src={image.url} alt="Vorschau Baumbild" className="w-100 h-100" style={{ objectFit: 'cover' }} />

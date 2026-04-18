@@ -18,11 +18,11 @@ describe('TreeForm', () => {
 
   const fillRequiredFields = async () => {
     fireEvent.change(screen.getByLabelText(/breitengrad/i), { target: { value: '49.1' } });
-    fireEvent.change(screen.getByLabelText(/laengengrad/i), { target: { value: '8.4' } });
-    fireEvent.change(screen.getByLabelText(/baumhoehe/i), { target: { value: '5' } });
+    fireEvent.change(screen.getByLabelText(/längengrad/i), { target: { value: '8.4' } });
+    fireEvent.change(screen.getByLabelText(/baumhöhe/i), { target: { value: '5' } });
     fireEvent.change(screen.getByLabelText(/kronendurchmesser/i), { target: { value: '3' } });
-    fireEvent.change(screen.getByLabelText(/anzahl staemme/i), { target: { value: '1' } });
-    await userEvent.selectOptions(screen.getByLabelText(/sicherheitserwartung/i), 'Higher');
+    fireEvent.change(screen.getByLabelText(/anzahl stämme/i), { target: { value: '1' } });
+    await userEvent.selectOptions(screen.getByLabelText(/sicherheitserwartung/i), 'Höher');
   };
 
   it('submits tree data and notifies parent on success', async () => {
@@ -39,30 +39,33 @@ describe('TreeForm', () => {
       trunkDiameter1: 12.5,
       trunkDiameter2: 0,
       trunkDiameter3: 0,
-      trafficSafetyExpectation: 'Higher',
+      trafficSafetyExpectation: 'Höher',
     };
 
-    fetchMock.mockResolvedValueOnce(
-      new Response(JSON.stringify(createdTree), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    );
+    fetchMock
+      .mockResolvedValueOnce(new Response('null', { status: 404 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(createdTree), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
 
     const onTreeCreated = vi.fn();
     render(<TreeForm greenAreaId={1} onTreeCreated={onTreeCreated} defaultCenter={[0, 0]} />);
 
-    await userEvent.type(screen.getByLabelText(/art/i), 'Ahorn');
+    await userEvent.type(screen.getByLabelText(/^art$/i), 'Ahorn');
     fireEvent.change(screen.getByLabelText(/nummer/i), { target: { value: '15' } });
     await fillRequiredFields();
     const trunkDiameterInput = screen.getByLabelText(/stammdurchmesser 1/i);
     await userEvent.clear(trunkDiameterInput);
     await userEvent.type(trunkDiameterInput, '12.5');
-    await userEvent.click(screen.getByRole('button', { name: /baum hinzufuegen/i }));
+    await userEvent.click(screen.getByRole('button', { name: /baum hinzufügen/i }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    const [, requestInit] = fetchMock.mock.calls[0];
-    expect(fetchMock).toHaveBeenCalledWith(
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const [, requestInit] = fetchMock.mock.calls[1];
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
       expect.stringContaining('/api/Trees/Create'),
       expect.objectContaining({ method: 'POST' })
     );
@@ -72,14 +75,14 @@ describe('TreeForm', () => {
         trunkDiameter1: 12.5,
         trunkDiameter2: 0,
         trunkDiameter3: 0,
-        trafficSafetyExpectation: 'Higher',
+        trafficSafetyExpectation: 'Höher',
       })
     );
     expect(onTreeCreated).toHaveBeenCalledWith(expect.objectContaining({ id: createdTree.id }));
   });
 
   it('requires at least one trunk diameter greater than zero', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ id: 1 }), { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response('null', { status: 404 }));
 
     render(<TreeForm greenAreaId={1} onTreeCreated={vi.fn()} />);
 
@@ -87,12 +90,12 @@ describe('TreeForm', () => {
     expect(screen.getByLabelText(/stammdurchmesser 2/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/stammdurchmesser 3/i)).toBeInTheDocument();
 
-    await userEvent.type(screen.getByLabelText(/art/i), 'Ahorn');
+    await userEvent.type(screen.getByLabelText(/^art$/i), 'Ahorn');
     fireEvent.change(screen.getByLabelText(/nummer/i), { target: { value: '1' } });
     await fillRequiredFields();
-    await userEvent.click(screen.getByRole('button', { name: /baum hinzufuegen/i }));
+    await userEvent.click(screen.getByRole('button', { name: /baum hinzufügen/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/mindestens ein stammdurchmesser/i);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

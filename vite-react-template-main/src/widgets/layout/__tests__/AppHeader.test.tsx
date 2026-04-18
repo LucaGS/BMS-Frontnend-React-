@@ -1,5 +1,5 @@
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithRouter, screen } from '@/test/test-utils';
 import AppHeader from '../AppHeader';
 
@@ -9,18 +9,19 @@ describe('AppHeader', () => {
   });
 
   it('shows login and signup links when no token is present', () => {
-    renderWithRouter(<AppHeader />);
+    renderWithRouter(<AppHeader authStatus="unauthenticated" onLogout={vi.fn()} />);
 
     expect(screen.getByRole('link', { name: /startseite/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /login/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /registrieren/i })).toBeInTheDocument();
+    expect(screen.getByText(/nicht eingeloggt/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /logout/i })).not.toBeInTheDocument();
   });
 
-  it('shows logout when token exists and clears it on click', async () => {
-    localStorage.setItem('token', 'jwt-token');
+  it('shows logout when authenticated and calls logout on click', async () => {
+    const onLogout = vi.fn();
 
-    renderWithRouter(<AppHeader />);
+    renderWithRouter(<AppHeader authStatus="authenticated" onLogout={onLogout} />);
 
     const logoutButton = await screen.findByRole('button', { name: /logout/i });
     expect(logoutButton).toBeInTheDocument();
@@ -28,8 +29,6 @@ describe('AppHeader', () => {
 
     await userEvent.click(logoutButton);
 
-    expect(localStorage.getItem('token')).toBeNull();
-    expect(await screen.findByRole('link', { name: /login/i })).toBeInTheDocument();
-    expect(screen.queryByText(/eingeloggt/i)).not.toBeInTheDocument();
+    expect(onLogout).toHaveBeenCalled();
   });
 });

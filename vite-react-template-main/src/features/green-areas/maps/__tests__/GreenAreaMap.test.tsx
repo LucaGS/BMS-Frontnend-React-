@@ -64,9 +64,9 @@ describe('GreenAreaMap', () => {
       mapHandlers.click?.({ latlng: { lat: 10, lng: 20 } });
     });
 
-    const clearButton = screen.getByRole('button', { name: /temporaere markierungen loeschen/i });
+    const clearButton = screen.getByRole('button', { name: /temporäre markierungen löschen/i });
     expect(clearButton).toBeEnabled();
-    expect(await screen.findByText(/1\s+temporaere markierung/i)).toBeInTheDocument();
+    expect(await screen.findByText(/1\s+temporäre markierung/i)).toBeInTheDocument();
 
     await userEvent.click(clearButton);
 

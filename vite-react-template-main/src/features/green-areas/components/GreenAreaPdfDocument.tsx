@@ -9,119 +9,199 @@ import type { Inspection } from '@/features/inspections';
 import type { Tree } from '@/features/trees/types';
 import type { ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
 import { DEFAULT_MAP_CENTER, MAX_MAP_ZOOM, ensureLeafletAssets, hasValidCoordinates, type LeafletWindow } from '@/shared/maps/leafletUtils';
-import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
+import { getNextInspectionDaysLabel, getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
 import { normalizeVitality } from '@/entities/inspection';
+import { formatCoordinateDisplay } from '@/shared/lib/coordinateFormatting';
+import { formatDateDisplay } from '@/shared/lib/dateFormatting';
 
 const PdfStyles: React.FC = () => (
   <style>
     {`
       .ga-print {
-        font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-        color: #0f172a;
-        background: #f8fafc;
+        --ga-text: #10203a;
+        --ga-muted: #5d6b82;
+        --ga-border: rgba(255, 255, 255, 0.72);
+        --ga-surface: rgba(255, 255, 255, 0.72);
+        --ga-surface-strong: rgba(255, 255, 255, 0.84);
+        --ga-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+        --ga-shadow-soft: 0 14px 30px rgba(15, 23, 42, 0.08);
+        font-family: 'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', sans-serif;
+        color: var(--ga-text);
+        background:
+          radial-gradient(circle at top left, rgba(135, 206, 235, 0.34), transparent 28%),
+          radial-gradient(circle at top right, rgba(122, 208, 167, 0.24), transparent 22%),
+          linear-gradient(180deg, #f4f8fb 0%, #eef3f8 46%, #e6edf5 100%);
         line-height: 1.45;
         max-width: 100%;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
+      .ga-print::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at 15% 18%, rgba(255, 255, 255, 0.65), transparent 0 23%),
+          radial-gradient(circle at 85% 8%, rgba(255, 255, 255, 0.5), transparent 0 18%);
+      }
       .ga-print h1, .ga-print h2, .ga-print h3, .ga-print h4, .ga-print h5, .ga-print h6 {
-        letter-spacing: -0.01em;
-        color: #0f172a;
+        letter-spacing: -0.02em;
+        color: var(--ga-text);
       }
       .ga-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-        padding: 18px;
+        position: relative;
+        background: var(--ga-surface);
+        border: 1px solid var(--ga-border);
+        border-radius: 28px;
+        box-shadow: var(--ga-shadow-soft);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        padding: 22px;
+        overflow: hidden;
+      }
+      .ga-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      }
+      .ga-hero {
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(238, 243, 248, 0.78)),
+          linear-gradient(135deg, rgba(10, 132, 255, 0.08), rgba(19, 138, 87, 0.08));
+        border-radius: 32px;
+        box-shadow: var(--ga-shadow);
+      }
+      .ga-hero-kicker {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: #0b6bcb;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .ga-hero-title {
+        font-size: 28px;
+        line-height: 1.1;
+        margin: 0 0 6px;
+      }
+      .ga-hero-subtitle {
+        color: var(--ga-muted);
+        font-size: 13px;
+      }
+      .ga-chip-group {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 10px;
       }
       .ga-table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
         font-size: 13px;
+        overflow: hidden;
+        border-radius: 18px;
+        border: 1px solid rgba(214, 223, 235, 0.9);
+        background: rgba(255, 255, 255, 0.78);
       }
       .ga-table th,
       .ga-table td {
-        border: 1px solid #e2e8f0;
-        padding: 8px 10px;
+        border-right: 1px solid rgba(214, 223, 235, 0.9);
+        border-bottom: 1px solid rgba(214, 223, 235, 0.9);
+        padding: 10px 12px;
         vertical-align: top;
       }
+      .ga-table th:last-child,
+      .ga-table td:last-child {
+        border-right: 0;
+      }
+      .ga-table tbody tr:last-child th,
+      .ga-table tbody tr:last-child td {
+        border-bottom: 0;
+      }
       .ga-table th {
-        background: #f8fafc;
+        background: rgba(244, 248, 251, 0.92);
         font-weight: 700;
-        color: #0f172a;
+        color: var(--ga-text);
       }
       .ga-pill {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 6px 10px;
+        padding: 7px 12px;
         border-radius: 999px;
-        background: #f8fafc;
-        color: #0f172a;
-        border: 1px solid #e2e8f0;
+        background: rgba(255, 255, 255, 0.82);
+        color: var(--ga-text);
+        border: 1px solid rgba(255, 255, 255, 0.82);
         font-weight: 600;
         font-size: 12px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 8px 18px rgba(15, 23, 42, 0.06);
       }
       .ga-pill--success {
-        background: #ecfdf3;
+        background: rgba(236, 253, 243, 0.95);
         color: #166534;
-        border-color: #bbf7d0;
+        border-color: rgba(187, 247, 208, 0.95);
       }
       .ga-pill--danger {
-        background: #fef2f2;
+        background: rgba(254, 242, 242, 0.95);
         color: #991b1b;
-        border-color: #fecdd3;
+        border-color: rgba(254, 205, 211, 0.95);
       }
       .ga-pill--neutral {
-        background: #eef2ff;
+        background: rgba(238, 242, 255, 0.95);
         color: #3730a3;
-        border-color: #c7d2fe;
+        border-color: rgba(199, 210, 254, 0.95);
       }
       .ga-meta-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-        gap: 10px;
+        gap: 12px;
       }
       .ga-meta-item {
-        padding: 10px 12px;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        background: #f8fafc;
+        padding: 12px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.78);
+        border-radius: 18px;
+        background: var(--ga-surface-strong);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
       }
       .ga-meta-label {
         font-size: 11px;
-        color: #64748b;
+        color: var(--ga-muted);
         text-transform: uppercase;
-        letter-spacing: 0.06em;
-        margin-bottom: 4px;
+        letter-spacing: 0.08em;
+        margin-bottom: 5px;
       }
       .ga-meta-value {
         font-weight: 700;
-        color: #0f172a;
+        color: var(--ga-text);
         font-size: 13px;
       }
       .ga-section-title {
         font-size: 13px;
         font-weight: 800;
-        color: #0f172a;
+        color: var(--ga-text);
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 6px;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
       }
       .ga-muted {
-        color: #64748b;
+        color: var(--ga-muted);
         font-size: 12px;
       }
       .ga-print-card {
         page-break-inside: avoid;
-        margin-bottom: 18px;
+        margin-bottom: 22px;
       }
       .ga-map-shell {
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.78);
+        border-radius: 24px;
         overflow: hidden;
-        background: #f8fafc;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
         break-inside: avoid;
         page-break-inside: avoid;
       }
@@ -206,7 +286,10 @@ const PdfStyles: React.FC = () => (
           width: 100%;
           padding: 0;
           margin: 0;
-          background: #ffffff;
+          background:
+            radial-gradient(circle at top left, rgba(135, 206, 235, 0.34), transparent 28%),
+            radial-gradient(circle at top right, rgba(122, 208, 167, 0.24), transparent 22%),
+            linear-gradient(180deg, #f4f8fb 0%, #eef3f8 46%, #e6edf5 100%);
         }
       }
     `}
@@ -246,18 +329,11 @@ const formatVitality = (value?: string | number | null) => {
   return '-';
 };
 
-const formatCoordinate = (value?: number | null) =>
-  typeof value === 'number' && !Number.isNaN(value) ? value.toFixed(5) : 'n/v';
-
 const formatDateTime = (value?: string | null) => {
   if (!value) {
     return 'Keine Kontrolle';
   }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.valueOf())) {
-    return value;
-  }
-  return parsed.toLocaleString('de-DE');
+  return formatDateDisplay(value, value);
 };
 
 const getActiveMarkings = <T extends Record<string, unknown>>(
@@ -525,7 +601,7 @@ export const GreenAreaMapPrint: React.FC<{
   trees: TreeInspectionExport[];
   mapCenterLabel?: string;
 }> = ({greenAreaName, trees, mapCenterLabel }) => {
-  const generatedAt = new Date().toLocaleString('de-DE');
+  const generatedAt = formatDateDisplay(new Date());
   return (
     <div className="ga-print">
       <PdfStyles />
@@ -539,7 +615,7 @@ export const GreenAreaMapPrint: React.FC<{
             <div className="ga-muted">Exportiert am {generatedAt}</div>
           </div>
           <div className="d-flex flex-column align-items-end gap-2">
-            <span className="ga-pill">Baeume: {trees.length}</span>
+            <span className="ga-pill">Bäume: {trees.length}</span>
             {mapCenterLabel ? <span className="ga-pill ga-pill--neutral">Standort Koordinaten {mapCenterLabel}</span> : null}
           </div>
         </div>
@@ -547,8 +623,8 @@ export const GreenAreaMapPrint: React.FC<{
 
       <div className="ga-card mb-4">
         <div className="d-flex justify-content-between align-items-center mb-2">
-          <div className="ga-section-title mb-0">Karte der Baeume</div>
-          <span className="ga-muted small">Übersichtlicher Zoom fuer die gesamte Flaeche</span>
+          <div className="ga-section-title mb-0">Karte der Bäume</div>
+          <span className="ga-muted small">Übersichtlicher Zoom für die gesamte Fläche</span>
         </div>
         <AllTreesMap trees={trees} height={420} fitBoundsMaxZoom={14} initialZoom={10} />
       </div>
@@ -560,7 +636,7 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
   const { tree, inspection, mapImage } = entry;
   const hasCoords = hasValidCoordinates(tree.latitude, tree.longitude, { allowZero: false });
   const coordsLabel = hasCoords
-    ? `${formatCoordinate(tree.latitude)}, ${formatCoordinate(tree.longitude)}`
+    ? `${formatCoordinateDisplay(tree.latitude)}, ${formatCoordinateDisplay(tree.longitude)}`
     : 'Keine Koordinaten';
   const nextInspectionStatus = getNextInspectionStatus(tree.nextInspection);
   const trafficSafetyExpectationLabel =
@@ -573,7 +649,7 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
           .map((measure) => (measure.description ? `${measure.measureName} (${measure.description})` : measure.measureName))
           .join(', ')
       : inspection?.arboriculturalMeasureIds && inspection.arboriculturalMeasureIds.length > 0
-        ? `IDs: ${inspection.arboriculturalMeasureIds.join(', ')}`
+        ? 'Massnahmen hinterlegt'
         : 'Keine Massnahmen erfasst';
 
   const inspectionFields: Array<[string, string]> | null = inspection
@@ -582,7 +658,7 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
         ['Verkehrssicherheit', inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher'],
         ['Intervall (Monate)', formatNumber(inspection.newInspectionIntervall)],
         ['Entwicklungsstadium', inspection.developmentalStage || '-'],
-        ['Vitalitaet', formatVitality(inspection.vitality)],
+        ['Vitalität', formatVitality(inspection.vitality)],
         ['Pflegemassnahmen', measuresLabel],
       ]
     : null;
@@ -614,9 +690,8 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
         <div>
           <div className="ga-section-title">Baumprofil</div>
           <h3 className="h6 mb-1">
-            Baum {tree.number ?? tree.id} · {tree.species || 'Unbekannte Art'}
+            Baum {formatNumber(tree.number)} · {tree.species || 'Unbekannte Art'}
           </h3>
-          <div className="ga-muted">ID {tree.id} | Gruenflaeche {tree.greenAreaId}</div>
         </div>
         <div className="d-flex flex-column align-items-end gap-2">
           <span
@@ -640,7 +715,7 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
           <div className="ga-meta-value">{coordsLabel}</div>
         </div>
         <div className="ga-meta-item">
-          <div className="ga-meta-label">Baumhoehe (m)</div>
+          <div className="ga-meta-label">Baumhöhe (m)</div>
           <div className="ga-meta-value">{formatNumber(tree.treeSizeMeters)}</div>
         </div>
         <div className="ga-meta-item">
@@ -654,24 +729,12 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
           </div>
         </div>
         <div className="ga-meta-item">
-          <div className="ga-meta-label">Naechste Kontrolle</div>
+          <div className="ga-meta-label">Nächste Kontrolle</div>
           <div className="ga-meta-value">
-            {nextInspectionStatus.hasValue ? (
-              <>
-                {nextInspectionStatus.label}
-                {nextInspectionStatus.relativeLabel ? ` (${nextInspectionStatus.relativeLabel})` : ''}
-                {nextInspectionStatus.isOverdue ? ' · Faellig' : ''}
-              </>
-            ) : (
-              'Keine geplant'
-            )}
+            {getNextInspectionDaysLabel(nextInspectionStatus)}
           </div>
         </div>
         <div className="ga-meta-item">
-        </div>
-        <div className="ga-meta-item">
-          <div className="ga-meta-label">Letzte Kontrolle ID</div>
-          <div className="ga-meta-value">{tree.lastInspectionId ?? '-'}</div>
         </div>
       </div>
 
@@ -690,8 +753,8 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
             <td>{formatNumber(tree.trunkDiameter3)}</td>
           </tr>
           <tr>
-            <th>Naechste Kontrolle (Rohwert)</th>
-            <td colSpan={3}>{tree.nextInspection ?? 'Keine geplant'}</td>
+            <th>Nächste Kontrolle (Tage)</th>
+            <td colSpan={3}>{getNextInspectionDaysLabel(nextInspectionStatus)}</td>
           </tr>
         </tbody>
       </table>
@@ -754,7 +817,7 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
                   <td>
               {section.markings.length
                 ? section.markings.map(({ label, description }) => (description ? `${label} (${description})` : label)).join(', ')
-                : 'Keine Auffaelligkeiten markiert.'}
+                : 'Keine Auffälligkeiten markiert.'}
                   </td>
                 </tr>
               ))}
@@ -769,58 +832,31 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
 };
 
 const GreenAreaPdfDocument: React.FC<GreenAreaPdfDocumentProps> = ({
-  greenAreaId,
   greenAreaName,
   trees,
   mapCenterLabel,
 }) => {
-  const generatedAt = new Date().toLocaleString('de-DE');
+  const generatedAt = formatDateDisplay(new Date());
   return (
     <div className="ga-print">
       <PdfStyles />
-      <div className="ga-card mb-3">
+      <div className="ga-card ga-hero mb-3">
         <div className="d-flex justify-content-between align-items-start gap-3">
           <div>
-            <div className="ga-meta-label">Gruenflaeche</div>
-            <h2 className="h5 mb-1">
-              {greenAreaId} {greenAreaName ? `| ${greenAreaName}` : ''}
-            </h2>
-            <div className="ga-muted">Exportiert am {generatedAt}</div>
+            <div className="ga-hero-kicker">Grünflächenexport</div>
+            <h2 className="ga-hero-title">{greenAreaName ?? 'Unbenannt'}</h2>
+            <div className="ga-hero-subtitle">Exportiert am {generatedAt}</div>
           </div>
-          <div className="d-flex flex-column align-items-end gap-2">
-            <span className="ga-pill">Baeume: {trees.length}</span>
+          <div className="ga-chip-group">
+            <span className="ga-pill">Bäume: {trees.length}</span>
             {mapCenterLabel ? <span className="ga-pill ga-pill--neutral">Kartenmittelpunkt: {mapCenterLabel}</span> : null}
           </div>
         </div>
       </div>
 
       <div className="ga-card mb-4">
-        <div className="ga-section-title">Uebersicht</div>
-        <div className="ga-meta-grid">
-          <div className="ga-meta-item">
-            <div className="ga-meta-label">Anzahl Baeume</div>
-            <div className="ga-meta-value">{trees.length}</div>
-          </div>
-          {mapCenterLabel ? (
-            <div className="ga-meta-item">
-              <div className="ga-meta-label">Kartenmittelpunkt</div>
-              <div className="ga-meta-value">{mapCenterLabel}</div>
-            </div>
-          ) : null}
-          <div className="ga-meta-item">
-            <div className="ga-meta-label">Export-ID</div>
-            <div className="ga-meta-value">{greenAreaId ?? '-'}</div>
-          </div>
-          <div className="ga-meta-item">
-            <div className="ga-meta-label">Angezeigter Name</div>
-            <div className="ga-meta-value">{greenAreaName ?? 'Unbenannt'}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="ga-card mb-4">
         <div className="d-flex justify-content-between align-items-center mb-2">
-          <div className="ga-section-title mb-0">Karte: Baeume in dieser Flaeche</div>
+          <div className="ga-section-title mb-0">Karte: Bäume in dieser Fläche</div>
           <span className="ga-muted">Marker mit Baumnummer</span>
         </div>
         <AllTreesMap trees={trees} />

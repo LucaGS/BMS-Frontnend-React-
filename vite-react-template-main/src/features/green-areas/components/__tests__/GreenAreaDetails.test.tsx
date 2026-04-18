@@ -70,11 +70,11 @@ describe('GreenAreaDetails', () => {
       path: '/green-areas/:greenAreaId/:greenAreaName',
     });
 
-    const addTreeButton = await screen.findByRole('button', { name: /baum hinzufuegen/i });
+    const addTreeButton = await screen.findByRole('button', { name: /baum hinzufügen/i });
     await userEvent.click(addTreeButton);
     expect(await screen.findByTestId('tree-form-mock')).toBeInTheDocument();
 
-    const mapToggle = screen.getByRole('button', { name: /^karte$/i });
+    const mapToggle = screen.getByRole('button', { name: /karte anzeigen/i });
     await userEvent.click(mapToggle);
     expect(await screen.findByTestId('green-area-map-mock')).toBeInTheDocument();
   });

@@ -16,6 +16,9 @@ import {
 import GreenAreaDataPdfDocument from './GreenAreaDataPdfDocument';
 import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
 import { mapMeasuresFromApi, type ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
+import { formatCoordinateDisplay } from '@/shared/lib/coordinateFormatting';
+import { formatDateDisplay } from '../../../shared/lib/dateFormatting';
+import AppModal from '@/shared/components/AppModal';
 
 type GreenAreaRouteParams = {
   greenAreaId: string;
@@ -35,9 +38,6 @@ const deriveCenterFromState = (state?: GreenAreaLocationState): [number, number]
   }
   return null;
 };
-
-const formatCoordinate = (value?: number | null) =>
-  typeof value === 'number' && !Number.isNaN(value) ? value.toFixed(5) : 'n/v';
 
 const GreenAreaDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -140,7 +140,7 @@ const GreenAreaDetails: React.FC = () => {
 
   const fetchTrees = useCallback(async () => {
     if (!greenAreaId) {
-      setError('Keine Gruenflaeche ausgewaehlt.');
+      setError('Keine Grünfläche ausgewählt.');
       return;
     }
     try {
@@ -157,7 +157,7 @@ const GreenAreaDetails: React.FC = () => {
       setError(null);
     } catch (fetchError) {
       console.error('Error fetching trees:', fetchError);
-      setError(fetchError instanceof Error ? fetchError.message : 'Unbekannter Fehler beim Laden der Baeume.');
+      setError(fetchError instanceof Error ? fetchError.message : 'Unbekannter Fehler beim Laden der Bäume.');
     }
   }, [greenAreaId]);
 
@@ -259,7 +259,7 @@ const GreenAreaDetails: React.FC = () => {
         console.error('Error fetching green area coordinates:', centerError);
         setError(
           (existing) =>
-            existing ?? 'Koordinaten der ausgewaehlten Gruenflaeche konnten nicht geladen werden.',
+            existing ?? 'Koordinaten der ausgewählten Grünfläche konnten nicht geladen werden.',
         );
       }
     };
@@ -275,10 +275,12 @@ const GreenAreaDetails: React.FC = () => {
     if (createdTree) {
       setTrees((prev) => [...prev, createdTree]);
       setError(null);
+      setShowTreeForm(false);
       return;
     }
 
     fetchTrees();
+    setShowTreeForm(false);
   };
 
   const handleOpenTree = (tree: Tree) => {
@@ -326,11 +328,11 @@ const GreenAreaDetails: React.FC = () => {
 
   const handleOpenMapPrint = useCallback(async () => {
     if (!greenAreaId) {
-      setError('Keine Gruenflaeche ausgewaehlt.');
+      setError('Keine Grünfläche ausgewählt.');
       return;
     }
     if (trees.length === 0) {
-      setError('Keine Baeume zum Export vorhanden.');
+      setError('Keine Bäume zum Export vorhanden.');
       return;
     }
 
@@ -339,7 +341,7 @@ const GreenAreaDetails: React.FC = () => {
       const entries = await buildExportEntries();
       setMapPrintData({
         entries,
-        centerLabel: `${formatCoordinate(mapCenter[0])}, ${formatCoordinate(mapCenter[1])}`,
+        centerLabel: `${formatCoordinateDisplay(mapCenter[0])}, ${formatCoordinateDisplay(mapCenter[1])}`,
       });
       setShowMapPrint(true);
     } catch (exportError) {
@@ -352,18 +354,18 @@ const GreenAreaDetails: React.FC = () => {
 
   const handleDownloadDataPdf = useCallback(async () => {
     if (!greenAreaId) {
-      setError('Keine Gruenflaeche ausgewaehlt.');
+      setError('Keine Grünfläche ausgewählt.');
       return;
     }
     if (trees.length === 0) {
-      setError('Keine Baeume zum Export vorhanden.');
+      setError('Keine Bäume zum Export vorhanden.');
       return;
     }
 
     setIsGeneratingDataPdf(true);
     try {
       const entries = await buildExportEntries();
-      const centerLabel = `${formatCoordinate(mapCenter[0])}, ${formatCoordinate(mapCenter[1])}`;
+      const centerLabel = `${formatCoordinateDisplay(mapCenter[0])}, ${formatCoordinateDisplay(mapCenter[1])}`;
 
       const blob = await pdf(
         <GreenAreaDataPdfDocument
@@ -430,7 +432,7 @@ const GreenAreaDetails: React.FC = () => {
       setEditAreaMode(false);
     } catch (updateError) {
       console.error('Error updating green area:', updateError);
-      setEditAreaError('Gruenflaeche konnte nicht aktualisiert werden.');
+      setEditAreaError('Grünfläche konnte nicht aktualisiert werden.');
     } finally {
       setEditAreaSaving(false);
     }
@@ -438,7 +440,7 @@ const GreenAreaDetails: React.FC = () => {
 
   const handleDeleteGreenArea = async () => {
     if (!greenAreaId) return;
-    const confirmed = window.confirm('Diese Gruenflaeche wirklich loeschen? Alle zugehoerigen Baeume koennten betroffen sein.');
+    const confirmed = window.confirm('Diese Grünfläche wirklich löschen? Alle zugehörigen Bäume könnten betroffen sein.');
     if (!confirmed) return;
     try {
       const response = await fetch(`${API_BASE_URL}/api/GreenAreas/${greenAreaId}`, {
@@ -453,7 +455,7 @@ const GreenAreaDetails: React.FC = () => {
       navigate('/green-areas');
     } catch (deleteError) {
       console.error('Error deleting green area:', deleteError);
-      setEditAreaError('Gruenflaeche konnte nicht geloescht werden.');
+      setEditAreaError('Grünfläche konnte nicht gelöscht werden.');
     }
   };
 
@@ -461,25 +463,29 @@ const GreenAreaDetails: React.FC = () => {
     <div className="card shadow-sm border-0">
       <div className="card-body p-4">
         <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-          <h1 className="h4 mb-0">
-            {greenAreaId} | {currentGreenArea?.name ?? greenAreaName}
-          </h1>
+          <div>
+            <div className="text-uppercase text-muted small fw-semibold mb-1">Grünfläche</div>
+            <h1 className="h4 mb-0">
+              {greenAreaId} | {currentGreenArea?.name ?? greenAreaName}
+            </h1>
+          </div>
           <div className="d-flex gap-2 flex-wrap">
             <button
               type="button"
               className="btn btn-outline-primary btn-sm"
               onClick={() => setEditAreaMode((prev) => !prev)}
             >
-              {editAreaMode ? 'Abbrechen' : 'Gruenflaeche bearbeiten'}
+              {editAreaMode ? 'Abbrechen' : 'Grünfläche bearbeiten'}
             </button>
             <button type="button" className="btn btn-outline-danger btn-sm" onClick={handleDeleteGreenArea}>
-              Loeschen
+              Löschen
             </button>
           </div>
         </div>
 
         {editAreaMode && (
-          <div className="border rounded-3 p-3 bg-light mb-4">
+          <AppModal title="Grünfläche bearbeiten" onClose={() => setEditAreaMode(false)}>
+            <div className="border rounded-3 p-3 bg-light">
             <form className="row g-3" onSubmit={handleUpdateGreenArea}>
               <div className="col-12 col-md-4">
                 <label className="form-label small">Name</label>
@@ -501,7 +507,7 @@ const GreenAreaDetails: React.FC = () => {
                 />
               </div>
               <div className="col-12 col-md-4">
-                <label className="form-label small">Laengengrad</label>
+                <label className="form-label small">Längengrad</label>
                 <input
                   className="form-control form-control-sm"
                   type="number"
@@ -513,9 +519,9 @@ const GreenAreaDetails: React.FC = () => {
               <div className="col-12">
                 <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-2">
                   <div>
-                    <span className="form-label d-block mb-1 small fw-semibold">Koordinaten ueber Karte waehlen</span>
+                    <span className="form-label d-block mb-1 small fw-semibold">Koordinaten über Karte wählen</span>
                     <small className="text-muted">
-                      Optional: Marker verschieben oder auf die Karte klicken, um Breitengrad und Laengengrad zu setzen.
+                      Optional: Marker verschieben oder auf die Karte klicken, um Breitengrad und Längengrad zu setzen.
                     </small>
                   </div>
                   <button
@@ -571,23 +577,24 @@ const GreenAreaDetails: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
+            </div>
+          </AppModal>
         )}
 
-        <div className="mt-4 d-flex flex-wrap align-items-center gap-2">
+        <div className="quick-actions mt-4 mb-2 d-flex flex-wrap align-items-center gap-2">
           <button
             type="button"
             className="btn btn-success"
             onClick={() => setShowTreeForm((prev) => !prev)}
           >
-            {showTreeForm ? 'Formular verbergen' : 'Baum hinzufuegen'}
+            {showTreeForm ? 'Formular verbergen' : 'Baum hinzufügen'}
           </button>
           <button
             type="button"
             className="btn btn-outline-success"
             onClick={() => navigate('/green-areas')}
           >
-            Zurueck zur Uebersicht
+            Zurück zur Übersicht
           </button>
           <button
             type="button"
@@ -615,13 +622,15 @@ const GreenAreaDetails: React.FC = () => {
         </div>
 
         {showTreeForm && (
-          <div className="bg-light border rounded p-3 my-4">
+          <AppModal title="Baum hinzufügen" onClose={() => setShowTreeForm(false)} size="wide">
+            <div className="bg-light border rounded p-3">
             <TreeForm
               greenAreaId={Number.parseInt(greenAreaId ?? '0', 10)}
               defaultCenter={mapCenter}
               onTreeCreated={handleTreeCreated}
             />
-          </div>
+            </div>
+          </AppModal>
         )}
 
         {showMap && (
@@ -641,19 +650,19 @@ const GreenAreaDetails: React.FC = () => {
           </div>
         )}
 
-        {trees.length === 0 && !error && <p className="text-muted mb-0">Noch keine Baeume in dieser Gruenflaeche.</p>}
+        {trees.length === 0 && !error && <p className="text-muted mb-0">Noch keine Bäume in dieser Grünfläche.</p>}
 
         {trees.length > 0 && (
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mt-3">
             {trees.map((tree) => {
               const inspection = inspectionLookup[tree.id];
               const lastInspectionLabel = inspection
-                ? `${new Date(inspection.performedAt).toLocaleDateString()} (${inspection.isSafeForTraffic ? 'OK' : 'Nicht OK'})`
+                ? `${formatDateDisplay(inspection.performedAt, inspection.performedAt)} (${inspection.isSafeForTraffic ? 'OK' : 'Nicht OK'})`
                 : 'Keine Kontrolle';
               const nextInspectionStatus = getNextInspectionStatus(tree.nextInspection);
               const nextInspectionLabel = nextInspectionStatus.hasValue
                 ? nextInspectionStatus.relativeLabel ?? nextInspectionStatus.shortLabel
-                : 'Keine naechste Kontrolle';
+                : 'Keine nächste Kontrolle';
               return (
                 <div className="col" key={tree.id}>
                   <button
@@ -695,7 +704,7 @@ const GreenAreaDetails: React.FC = () => {
             <div className="alert alert-info">
               <div className="fw-semibold">Druckansicht (Karte)</div>
               <div className="small mb-2">
-                Nur die Gruenflaeche mit allen Baeumen in einem kleineren Zoom-Level. Browser-Druck (z.B. STRG+P) nutzen
+                Nur die Grünfläche mit allen Bäumen in einem kleineren Zoom-Level. Browser-Druck (z.B. STRG+P) nutzen
                 und als PDF speichern.
               </div>
               <div className="d-flex gap-2">

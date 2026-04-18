@@ -31,7 +31,7 @@ describe('TreeImageUploader', () => {
     fireEvent.change(fileInput, { target: { files: [badFile] } });
 
     expect(
-      await screen.findByText(/bitte waehlen sie eine gueltige bilddatei/i)
+      await screen.findByText(/bitte wählen sie eine gültige bilddatei/i)
     ).toBeInTheDocument();
   });
 

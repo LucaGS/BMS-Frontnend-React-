@@ -7,6 +7,7 @@ import {
   ensureLeafletAssets,
   hasValidCoordinates,
 } from '@/shared/maps/leafletUtils';
+import { formatCoordinatePairDisplay } from '@/shared/lib/coordinateFormatting';
 
 type TreeLocationMapProps = {
   latitude?: number | null;
@@ -129,7 +130,7 @@ const TreeLocationMap: React.FC<TreeLocationMapProps> = ({ latitude, longitude, 
           <span className="fw-semibold">Karte</span>
           <span className="badge bg-light text-dark border">
             {hasCoords && typeof latitude === 'number' && typeof longitude === 'number'
-              ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+              ? formatCoordinatePairDisplay(latitude, longitude)
               : 'Keine Koordinaten'}
           </span>
         </div>

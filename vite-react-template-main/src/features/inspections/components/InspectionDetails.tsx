@@ -11,6 +11,7 @@ import {
   stemBaseCheckboxes,
   trunkCheckboxes,
 } from '@/features/inspections/forms/inspectionFormConfig';
+import { formatDateDisplay } from '@/shared/lib/dateFormatting';
 
 type InspectionDetail = Inspection & {
   crownInspection?: Partial<CrownInspectionState>;
@@ -21,11 +22,7 @@ type InspectionDetail = Inspection & {
 type LocationState = { inspection?: Inspection; tree?: Tree | null };
 
 const toDateLabel = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) {
-    return value;
-  }
-  return date.toLocaleString();
+  return formatDateDisplay(value, value);
 };
 
 const InspectionDetails: React.FC = () => {
@@ -133,7 +130,7 @@ const InspectionDetails: React.FC = () => {
             ))}
           </div>
         ) : (
-          <span className="text-muted small">Keine Auffaelligkeiten markiert.</span>
+          <span className="text-muted small">Keine Auffälligkeiten markiert.</span>
         )}
       </div>
     );
@@ -165,7 +162,7 @@ const InspectionDetails: React.FC = () => {
   if (!inspectionId) {
     return (
       <section>
-        <div className="alert alert-warning">Keine Kontrolle ausgewaehlt.</div>
+        <div className="alert alert-warning">Keine Kontrolle ausgewählt.</div>
       </section>
     );
   }
@@ -233,7 +230,7 @@ const InspectionDetails: React.FC = () => {
                 </Link>
               )}
               <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => navigate(-1)}>
-                Zurueck
+                Zurück
               </button>
             </div>
           </div>
@@ -245,7 +242,7 @@ const InspectionDetails: React.FC = () => {
                   { label: 'Datum', value: toDateLabel(inspection.performedAt) },
                   { label: 'Intervall Monate', value: inspection.newInspectionIntervall },
                   { label: 'Entwicklungsstadium', value: inspection.developmentalStage || '-' },
-                  { label: 'Vitalitaet', value: inspection.vitality || '-' },
+                  { label: 'Vitalität', value: inspection.vitality || '-' },
                 ].map(({ label, value }) => (
                   <div className="col-12 col-sm-6 col-lg-4" key={label}>
                     <div className="border rounded-3 px-3 py-2 h-100 bg-light">

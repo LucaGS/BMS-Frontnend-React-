@@ -32,14 +32,14 @@ describe('GreenAreaList', () => {
 
     renderWithRouter(<GreenAreaList />, { route: '/green-areas', path: '/green-areas' });
 
-    const toggleButton = await screen.findByRole('button', { name: /gruenflaeche hinzufuegen/i });
+    const toggleButton = await screen.findByRole('button', { name: /grünfläche hinzufügen/i });
     await userEvent.click(toggleButton);
 
-    expect(screen.getByText(/name der gruenflaeche/i)).toBeInTheDocument();
+    expect(screen.getByText(/name der grünfläche/i)).toBeInTheDocument();
 
     await userEvent.click(toggleButton);
     await waitFor(() =>
-      expect(screen.queryByText(/name der gruenflaeche/i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/name der grünfläche/i)).not.toBeInTheDocument()
     );
   });
 });

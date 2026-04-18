@@ -73,10 +73,10 @@ describe('TreeLocationPicker', () => {
     });
 
     await waitFor(() =>
-      expect(screen.getByText(/49\.12345, 8\.54321/)).toBeInTheDocument()
+      expect(screen.getByText(/49\.123450, 8\.543210/)).toBeInTheDocument()
     );
 
-    const clearButton = screen.getByRole('button', { name: /auswahl loeschen/i });
+    const clearButton = screen.getByRole('button', { name: /auswahl löschen/i });
     await userEvent.click(clearButton);
 
     expect(hasValidCoordinates).toHaveBeenCalled();

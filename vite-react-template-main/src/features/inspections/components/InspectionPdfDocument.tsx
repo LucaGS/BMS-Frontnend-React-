@@ -12,6 +12,8 @@ import {
 import type { Tree } from '@/features/trees/types';
 import { hasValidCoordinates } from '@/shared/maps/leafletUtils';
 import { normalizeVitality } from '@/entities/inspection';
+import { formatCoordinateDisplay } from '@/shared/lib/coordinateFormatting';
+import { formatDateDisplay } from '@/shared/lib/dateFormatting';
 
 export type InspectionDetail = Inspection & {
   crownInspection?: Partial<CrownInspectionState> | null;
@@ -20,44 +22,73 @@ export type InspectionDetail = Inspection & {
 };
 
 const styles = StyleSheet.create({
-  page: { padding: 32, fontSize: 10, fontFamily: 'Helvetica', color: '#111' },
-  header: { marginBottom: 14 },
-  label: { fontSize: 9, color: '#6c757d', marginBottom: 2 },
-  title: { fontSize: 18, marginBottom: 6 },
+  page: { padding: 26, fontSize: 10, fontFamily: 'Helvetica', color: '#10203a', backgroundColor: '#eef3f8' },
+  header: {
+    marginBottom: 16,
+    paddingTop: 18,
+    paddingBottom: 18,
+    paddingHorizontal: 18,
+    borderRadius: 24,
+    backgroundColor: '#f6f9fc',
+    borderWidth: 1,
+    borderColor: '#ffffff',
+  },
+  label: { fontSize: 9, color: '#0b6bcb', marginBottom: 4, letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700 },
+  title: { fontSize: 20, marginBottom: 8, color: '#10203a', fontWeight: 700 },
   badge: {
-    paddingTop: 4,
-    paddingBottom: 4,
-    paddingLeft: 8,
-    paddingRight: 8,
-    borderRadius: 4,
+    paddingTop: 6,
+    paddingBottom: 6,
+    paddingLeft: 10,
+    paddingRight: 10,
+    borderRadius: 999,
     alignSelf: 'flex-start',
-    marginTop: 2,
     borderWidth: 1,
   },
-  badgeSafe: { backgroundColor: '#e7f5ed', borderColor: '#2f9e44' },
-  badgeDanger: { backgroundColor: '#fdebec', borderColor: '#c92a2a' },
+  badgeSafe: { backgroundColor: '#ecfdf3', borderColor: '#bbf7d0' },
+  badgeDanger: { backgroundColor: '#fef2f2', borderColor: '#fecdd3' },
   badgeText: { fontSize: 10 },
-  section: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 6, padding: 12, marginBottom: 12 },
-  sectionTitle: { fontSize: 12, marginBottom: 8 },
+  section: {
+    borderWidth: 1,
+    borderColor: '#ffffff',
+    borderRadius: 22,
+    padding: 14,
+    marginBottom: 12,
+    backgroundColor: '#fdfefe',
+  },
+  sectionTitle: { fontSize: 11, marginBottom: 10, color: '#5d6b82', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700 },
   infoGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4 },
-  infoItem: { width: '50%', paddingRight: 8, marginBottom: 8 },
-  infoLabel: { fontSize: 9, color: '#6c757d', marginBottom: 2 },
-  infoValue: { fontSize: 11, lineHeight: 14 },
-  paragraph: { fontSize: 10, lineHeight: 14, marginBottom: 8 },
-  mapImage: { width: '100%', height: 220, marginTop: 8, borderRadius: 4 },
-  subSection: { marginBottom: 10 },
-  subSectionTitle: { fontSize: 11, marginBottom: 4 },
-  bulletList: { marginLeft: 8, marginTop: 2 },
-  bullet: { fontSize: 10, lineHeight: 14 },
-  muted: { fontSize: 9, color: '#6c757d', marginTop: 4 },
+  infoItem: {
+    width: '48.5%',
+    marginRight: '1.5%',
+    marginBottom: 8,
+    backgroundColor: '#f6f9fc',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e6edf5',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  infoLabel: { fontSize: 8, color: '#5d6b82', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.8 },
+  infoValue: { fontSize: 11, lineHeight: 15, color: '#10203a', fontWeight: 600 },
+  paragraph: { fontSize: 10, lineHeight: 15, marginBottom: 8, color: '#10203a' },
+  mapImage: { width: '100%', height: 220, marginTop: 8, borderRadius: 18 },
+  subSection: {
+    marginBottom: 10,
+    backgroundColor: '#f6f9fc',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e6edf5',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  subSectionTitle: { fontSize: 11, marginBottom: 6, color: '#10203a', fontWeight: 700 },
+  bulletList: { marginLeft: 8, marginTop: 4 },
+  bullet: { fontSize: 10, lineHeight: 15, color: '#10203a' },
+  muted: { fontSize: 9, color: '#5d6b82', marginTop: 4 },
 });
 
 const toDateLabel = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) {
-    return value;
-  }
-  return date.toLocaleString();
+  return formatDateDisplay(value, value);
 };
 
 const getActiveMarkings = <T extends Record<string, unknown>>(
@@ -87,9 +118,6 @@ const formatVitality = (value?: string | number | null) => {
   return '-';
 };
 
-const formatCoordinate = (value?: number | null) =>
-  typeof value === 'number' && !Number.isNaN(value) ? value.toFixed(5) : 'n/v';
-
 type InspectionPdfDocumentProps = {
   inspection: InspectionDetail;
   title: string;
@@ -110,24 +138,23 @@ const InspectionPdfDocument: React.FC<InspectionPdfDocumentProps> = ({
     ['Verkehrssicherheit', inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher'],
     ['Intervall (Tage)', formatNumber(inspection.newInspectionIntervall)],
     ['Entwicklungsstadium', inspection.developmentalStage || '-'],
-    ['Vitalitaet', formatVitality(inspection.vitality)],
+    ['Vitalität', formatVitality(inspection.vitality)],
   ];
 
   const coordinateLabel = tree
     ? hasValidCoordinates(tree.latitude, tree.longitude, { allowZero: false })
-      ? `${formatCoordinate(tree.latitude)}, ${formatCoordinate(tree.longitude)}`
+      ? `${formatCoordinateDisplay(tree.latitude)}, ${formatCoordinateDisplay(tree.longitude)}`
       : 'Keine Koordinaten'
     : null;
 
   const treeFields: Array<[string, string]> = tree
     ? [
-        ['Baum-ID', String(tree.id)],
         ['Baumnummer', formatNumber(tree.number)],
         ['Art', tree.species || 'Unbekannte Art'],
         ['Koordinaten', coordinateLabel ?? 'Keine Angabe'],
-        ['Baumhoehe (m)', formatNumber(tree.treeSizeMeters)],
+        ['Baumhöhe (m)', formatNumber(tree.treeSizeMeters)],
         ['Kronendurchmesser (m)', formatNumber(tree.crownDiameterMeters)],
-        ['Anzahl Staemme', formatNumber(tree.numberOfTrunks)],
+        ['Anzahl Stämme', formatNumber(tree.numberOfTrunks)],
         ['Stammdurchmesser 1', formatNumber(tree.trunkDiameter1)],
         ['Stammdurchmesser 2', formatNumber(tree.trunkDiameter2)],
         ['Stammdurchmesser 3', formatNumber(tree.trunkDiameter3)],
@@ -162,7 +189,7 @@ const InspectionPdfDocument: React.FC<InspectionPdfDocumentProps> = ({
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.label}>Kontrolle #{inspection.id}</Text>
+          <Text style={styles.label}>Kontrollexport</Text>
           <Text style={styles.title}>{title}</Text>
           <View style={[styles.badge, inspection.isSafeForTraffic ? styles.badgeSafe : styles.badgeDanger]}>
             <Text style={styles.badgeText}>
@@ -240,7 +267,7 @@ const InspectionPdfDocument: React.FC<InspectionPdfDocumentProps> = ({
                   ))}
                 </View>
               ) : (
-                <Text style={styles.paragraph}>Keine Auffaelligkeiten markiert.</Text>
+                <Text style={styles.paragraph}>Keine Auffälligkeiten markiert.</Text>
               )}
             </View>
           ))}

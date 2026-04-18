@@ -13,9 +13,15 @@ describe('InspectionForm', () => {
 
   it('creates an inspection and notifies the parent', async () => {
     const onCreated = vi.fn();
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ id: 1 }), { status: 200 }));
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 1 }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
 
     render(<InspectionForm treeId={5} onInspectionCreated={onCreated} />);
+
+    for (const toggle of screen.getAllByRole('button', { name: /ausklappen/i })) {
+      await userEvent.click(toggle);
+    }
 
     fireEvent.change(screen.getByLabelText(/kontrolldatum/i), {
       target: { value: '2024-05-01T12:00' },
@@ -23,20 +29,20 @@ describe('InspectionForm', () => {
     await userEvent.clear(screen.getByLabelText(/kontrollintervall/i));
     await userEvent.type(screen.getByLabelText(/kontrollintervall/i), '18');
     await userEvent.selectOptions(screen.getByLabelText(/entwicklungsstadium/i), 'Reifungsphase');
-    await userEvent.type(screen.getByLabelText(/beschreibung/i), 'Keine Maengel');
-    fireEvent.change(screen.getByLabelText(/vitalitaet/i), { target: { value: VITALITY_OPTIONS[3] } });
+    await userEvent.type(screen.getByLabelText(/beschreibung/i), 'Keine Mängel');
+    fireEvent.change(screen.getByLabelText(/vitalität/i), { target: { value: VITALITY_OPTIONS[3] } });
     await userEvent.type(screen.getByLabelText(/notizen krone/i), 'Krone ok');
-    await userEvent.type(screen.getByLabelText(/notizen stamm/i), 'Stamm ok');
+    await userEvent.type(screen.getByLabelText(/^notizen stamm$/i), 'Stamm ok');
     await userEvent.type(screen.getByLabelText(/notizen stammfuss/i), 'Stammfuss ok');
-    await userEvent.click(screen.getByLabelText(/abiotische stoerung \(krone\)/i));
-    await userEvent.click(screen.getByLabelText(/wunde mit kallusrand \(stamm\)/i));
-    await userEvent.click(screen.getByLabelText(/wuergewurzel \(stammfuss\)/i));
+    await userEvent.click(document.getElementById('crown-abioticDisturbance') as HTMLElement);
+    await userEvent.click(document.getElementById('trunk-woundWithCallusRidge') as HTMLElement);
+    await userEvent.click(screen.getByLabelText(/würgewurzel \(stammfuss\)/i));
     await userEvent.click(screen.getByLabelText(/verkehrssicherheit/i));
 
     await userEvent.click(screen.getByRole('button', { name: /kontrolle speichern/i }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    const [requestUrl, requestInit] = fetchMock.mock.calls[0];
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const [requestUrl, requestInit] = fetchMock.mock.calls[1];
     expect(requestUrl).toContain('/api/Inspections/Create');
     const body = JSON.parse((requestInit?.body as string) || '{}');
 
@@ -47,7 +53,7 @@ describe('InspectionForm', () => {
       newInspectionIntervall: 18,
       developmentalStage: 'Reifungsphase',
       vitality: VITALITY_OPTIONS[3],
-      description: 'Keine Maengel',
+      description: 'Keine Mängel',
       crownInspection: expect.objectContaining({
         notes: 'Krone ok',
         abioticDisturbance: true,
@@ -71,6 +77,6 @@ describe('InspectionForm', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /kontrolle speichern/i }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/fehler beim hinzufuegen/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/fehler beim hinzufügen/i);
   });
 });

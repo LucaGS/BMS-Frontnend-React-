@@ -1,7 +1,17 @@
 import React from 'react';
 import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
-import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
+import {
+  type CrownInspectionState,
+  type StemBaseInspectionState,
+  type TrunkInspectionState,
+  crownCheckboxes,
+  stemBaseCheckboxes,
+  trunkCheckboxes,
+} from '@/features/inspections/forms/inspectionFormConfig';
+import { getNextInspectionDaysLabel, getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
 import { hasValidCoordinates } from '@/shared/maps/leafletUtils';
+import { formatCoordinateDisplay } from '@/shared/lib/coordinateFormatting';
+import { formatDateDisplay } from '@/shared/lib/dateFormatting';
 import type { Tree } from '@/features/trees/types';
 import type { LastInspectionDetail, TreeInspectionExport } from './GreenAreaPdfDocument';
 import { normalizeVitality } from '@/entities/inspection';
@@ -15,39 +25,83 @@ type GreenAreaDataPdfDocumentProps = {
 };
 
 const styles = StyleSheet.create({
-  page: { padding: 28, fontFamily: 'Helvetica', backgroundColor: '#f8fafc', color: '#0f172a' },
-  header: { backgroundColor: '#0f172a', color: '#fff', borderRadius: 12, padding: 16, marginBottom: 16 },
-  kicker: { fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: '#cbd5e1' },
-  title: { fontSize: 18, marginBottom: 4, fontWeight: 700 },
-  meta: { fontSize: 10, color: '#e2e8f0' },
+  page: { padding: 26, fontFamily: 'Helvetica', backgroundColor: '#eef3f8', color: '#10203a' },
+  header: {
+    backgroundColor: '#f6f9fc',
+    borderRadius: 24,
+    paddingTop: 18,
+    paddingBottom: 18,
+    paddingHorizontal: 18,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: '#ffffff',
+  },
+  kicker: { fontSize: 9, letterSpacing: 1.4, textTransform: 'uppercase', color: '#0b6bcb', fontWeight: 700, marginBottom: 6 },
+  title: { fontSize: 20, marginBottom: 6, fontWeight: 700, color: '#10203a' },
+  meta: { fontSize: 10, color: '#5d6b82', marginBottom: 4 },
   section: { marginBottom: 14 },
-  sectionTitle: { fontSize: 12, marginBottom: 8, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase' },
-  table: { borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10, overflow: 'hidden' },
-  tableRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
-  tableHeaderRow: { backgroundColor: '#e2e8f0' },
-  cell: { paddingVertical: 6, paddingHorizontal: 8, fontSize: 9, flexShrink: 0 },
-  cellNumber: { width: '10%', fontWeight: 700 },
-  cellSpecies: { width: '24%' },
-  cellCoords: { width: '24%' },
-  cellSmall: { width: '14%' },
-  cellStatus: { width: '18%' },
-  card: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', padding: 12, marginBottom: 10 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
-  cardTitle: { fontSize: 14, fontWeight: 700 },
-  pill: { paddingVertical: 3, paddingHorizontal: 8, borderRadius: 8, fontSize: 9, fontWeight: 700, color: '#0f172a' },
-  pillSuccess: { backgroundColor: '#e6f4ea', borderColor: '#16a34a', borderWidth: 1, color: '#166534' },
-  pillDanger: { backgroundColor: '#fef2f2', borderColor: '#b91c1c', borderWidth: 1, color: '#991b1b' },
-  pillNeutral: { backgroundColor: '#eef2ff', borderColor: '#4338ca', borderWidth: 1, color: '#312e81' },
-  metaGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 6 },
-  metaItem: { width: '50%', paddingRight: 8, marginBottom: 6 },
-  metaLabel: { fontSize: 8, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.6 },
-  metaValue: { fontSize: 11, color: '#0f172a', fontWeight: 500 },
-  paragraph: { fontSize: 10, lineHeight: 14, color: '#0f172a' },
-  divider: { height: 1, backgroundColor: '#e2e8f0', marginVertical: 8 },
-  smallLabel: { fontSize: 9, color: '#475569' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 },
-  chip: { paddingVertical: 3, paddingHorizontal: 6, borderRadius: 6, backgroundColor: '#eef2ff', marginRight: 4, marginBottom: 4, borderWidth: 1, borderColor: '#cbd5e1' },
-  chipText: { fontSize: 9, color: '#111827' },
+  sectionTitle: { fontSize: 11, marginBottom: 8, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: '#5d6b82' },
+  card: {
+    backgroundColor: '#fdfefe',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#ffffff',
+    padding: 16,
+    marginBottom: 12,
+  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
+  cardTitle: { fontSize: 14, fontWeight: 700, color: '#10203a' },
+  pillGroup: { alignItems: 'flex-end' },
+  pill: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    fontSize: 9,
+    fontWeight: 700,
+    color: '#10203a',
+    marginBottom: 6,
+    borderWidth: 1,
+  },
+  pillSuccess: { backgroundColor: '#ecfdf3', borderColor: '#bbf7d0', color: '#166534' },
+  pillDanger: { backgroundColor: '#fef2f2', borderColor: '#fecdd3', color: '#991b1b' },
+  pillNeutral: { backgroundColor: '#eef2ff', borderColor: '#c7d2fe', color: '#3730a3' },
+  metaGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4, justifyContent: 'space-between' },
+  metaItem: {
+    width: '48.5%',
+    marginBottom: 8,
+    backgroundColor: '#f6f9fc',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e6edf5',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  metaLabel: { fontSize: 8, color: '#5d6b82', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
+  metaValue: { fontSize: 11, color: '#10203a', fontWeight: 600, lineHeight: 15 },
+  paragraph: { fontSize: 10, lineHeight: 15, color: '#10203a' },
+  divider: { height: 1, backgroundColor: '#dbe5f0', marginVertical: 10 },
+  smallLabel: { fontSize: 9, color: '#5d6b82', lineHeight: 13 },
+  subSection: {
+    marginBottom: 8,
+    backgroundColor: '#f6f9fc',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e6edf5',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 },
+  chip: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    backgroundColor: '#eef2ff',
+    marginRight: 6,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#c7d2fe',
+  },
+  chipText: { fontSize: 9, color: '#312e81' },
 });
 
 const formatNumber = (value?: number | null, fallback = '-') =>
@@ -63,23 +117,16 @@ const formatVitality = (value?: string | number | null) => {
   return '-';
 };
 
-const formatCoordinate = (value?: number | null) =>
-  typeof value === 'number' && !Number.isNaN(value) ? value.toFixed(5) : 'n/v';
-
 const formatDateTime = (value?: string | null) => {
   if (!value) {
     return 'Keine Kontrolle';
   }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.valueOf())) {
-    return value;
-  }
-  return parsed.toLocaleString('de-DE');
+  return formatDateDisplay(value, value);
 };
 
 const getCoordinatesLabel = (tree: Tree) =>
   hasValidCoordinates(tree.latitude, tree.longitude, { allowZero: false })
-    ? `${formatCoordinate(tree.latitude)}, ${formatCoordinate(tree.longitude)}`
+    ? `${formatCoordinateDisplay(tree.latitude)}, ${formatCoordinateDisplay(tree.longitude)}`
     : 'Keine Koordinaten';
 
 const buildMeasuresLabel = (inspection?: LastInspectionDetail | null) => {
@@ -92,10 +139,24 @@ const buildMeasuresLabel = (inspection?: LastInspectionDetail | null) => {
     );
   }
   if (inspection.arboriculturalMeasureIds && inspection.arboriculturalMeasureIds.length > 0) {
-    return inspection.arboriculturalMeasureIds.map((id) => `Massnahme ID ${id}`);
+    return ['Massnahme hinterlegt'];
   }
   return [];
 };
+
+const getActiveMarkings = <T extends Record<string, unknown>>(
+  items: { key: keyof T; label: string }[],
+  data?: Partial<T> | null,
+) =>
+  items
+    .filter(({ key }) => Boolean(data?.[key]))
+    .map(({ key, label }) => {
+      const descriptionKey = `${String(key)}Description` as keyof T;
+      const rawDescription = (data as any)?.[descriptionKey];
+      const description =
+        typeof rawDescription === 'string' && rawDescription.trim().length > 0 ? rawDescription.trim() : null;
+      return { label, description };
+    });
 
 const buildSafetyPillStyle = (inspection?: LastInspectionDetail | null) => {
   if (!inspection) return styles.pillNeutral;
@@ -108,7 +169,6 @@ const buildSafetyLabel = (inspection?: LastInspectionDetail | null) => {
 };
 
 const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
-  greenAreaId,
   greenAreaName,
   trees,
   exportedAt,
@@ -121,44 +181,9 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
       <Page size="A4" style={styles.page} wrap>
         <View style={styles.header}>
           <Text style={styles.kicker}>Baumdaten Export</Text>
-          <Text style={styles.title}>
-            Gruenflaeche {greenAreaName ?? 'Unbenannt'}
-            {greenAreaId ? ` | ${greenAreaId}` : ''}
-          </Text>
-          <Text style={styles.meta}>Erstellt am {generatedAt.toLocaleString('de-DE')} | Baeume: {trees.length}</Text>
+          <Text style={styles.title}>Grünfläche {greenAreaName ?? 'Unbenannt'}</Text>
+          <Text style={styles.meta}>Erstellt am {formatDateDisplay(generatedAt)} | Bäume: {trees.length}</Text>
           {centerLabel ? <Text style={styles.meta}>Mittelpunkt: {centerLabel}</Text> : null}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Kurzuebersicht</Text>
-          <View style={styles.table}>
-            <View style={[styles.tableRow, styles.tableHeaderRow]}>
-              <Text style={[styles.cell, styles.cellNumber]}>Nr.</Text>
-              <Text style={[styles.cell, styles.cellSpecies]}>Art</Text>
-              <Text style={[styles.cell, styles.cellCoords]}>Koordinaten</Text>
-              <Text style={[styles.cell, styles.cellSmall]}>Hoehe m</Text>
-              <Text style={[styles.cell, styles.cellSmall]}>Krone m</Text>
-              <Text style={[styles.cell, styles.cellStatus]}>Status</Text>
-            </View>
-            {trees.map((entry) => {
-              const inspection = entry.inspection;
-              const nextStatus = getNextInspectionStatus(entry.tree.nextInspection);
-              const safetyLabel = inspection ? (inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher') : 'Keine Kontrolle';
-              return (
-                <View key={entry.tree.id} style={styles.tableRow}>
-                  <Text style={[styles.cell, styles.cellNumber]}>{formatNumber(entry.tree.number ?? entry.tree.id)}</Text>
-                  <Text style={[styles.cell, styles.cellSpecies]}>{entry.tree.species || 'Unbekannte Art'}</Text>
-                  <Text style={[styles.cell, styles.cellCoords]}>{getCoordinatesLabel(entry.tree)}</Text>
-                  <Text style={[styles.cell, styles.cellSmall]}>{formatNumber(entry.tree.treeSizeMeters)}</Text>
-                  <Text style={[styles.cell, styles.cellSmall]}>{formatNumber(entry.tree.crownDiameterMeters)}</Text>
-                  <Text style={[styles.cell, styles.cellStatus]}>
-                    {safetyLabel}
-                    {nextStatus.hasValue ? ` | ${nextStatus.label}` : ''}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
         </View>
 
         <View style={styles.section}>
@@ -169,20 +194,38 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
           const inspection = entry.inspection;
           const nextStatus = getNextInspectionStatus(entry.tree.nextInspection);
           const measures = buildMeasuresLabel(inspection);
+          const sectionData = inspection
+            ? [
+                {
+                  title: 'Krone',
+                  notes: inspection.crownInspection?.notes,
+                  markings: getActiveMarkings<CrownInspectionState>(crownCheckboxes, inspection.crownInspection),
+                },
+                {
+                  title: 'Stamm',
+                  notes: inspection.trunkInspection?.notes,
+                  markings: getActiveMarkings<TrunkInspectionState>(trunkCheckboxes, inspection.trunkInspection),
+                },
+                {
+                  title: 'Stammfuß & Wurzelbereich',
+                  notes: inspection.stemBaseInspection?.notes,
+                  markings: getActiveMarkings<StemBaseInspectionState>(stemBaseCheckboxes, inspection.stemBaseInspection),
+                },
+              ]
+            : [];
 
           return (
             <View key={entry.tree.id} style={styles.card}>
               <View style={styles.cardHeader}>
                 <View>
                   <Text style={styles.cardTitle}>
-                    Baum {formatNumber(entry.tree.number ?? entry.tree.id)} | {entry.tree.species || 'Unbekannte Art'}
+                    Baum {formatNumber(entry.tree.number)} | {entry.tree.species || 'Unbekannte Art'}
                   </Text>
-                  <Text style={styles.smallLabel}>ID {entry.tree.id}</Text>
                 </View>
-                <View>
+                <View style={styles.pillGroup}>
                   <Text style={[styles.pill, buildSafetyPillStyle(inspection)]}>{buildSafetyLabel(inspection)}</Text>
                   <Text style={[styles.pill, styles.pillNeutral]}>
-                    {nextStatus.hasValue ? nextStatus.label : 'Keine naechste Kontrolle'}
+                    {getNextInspectionDaysLabel(nextStatus)}
                   </Text>
                 </View>
               </View>
@@ -193,7 +236,7 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
                   <Text style={styles.metaValue}>{getCoordinatesLabel(entry.tree)}</Text>
                 </View>
                 <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Hoehe (m)</Text>
+                  <Text style={styles.metaLabel}>Höhe (m)</Text>
                   <Text style={styles.metaValue}>{formatNumber(entry.tree.treeSizeMeters)}</Text>
                 </View>
                 <View style={styles.metaItem}>
@@ -217,12 +260,8 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
                   <Text style={styles.metaValue}>{formatNumber(entry.tree.trunkDiameter3)}</Text>
                 </View>
                 <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Letzte Kontrolle ID</Text>
-                  <Text style={styles.metaValue}>{entry.tree.lastInspectionId ?? '-'}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Naechste Kontrolle (Rohwert)</Text>
-                  <Text style={styles.metaValue}>{entry.tree.nextInspection ?? 'Keine geplant'}</Text>
+                  <Text style={styles.metaLabel}>Nächste Kontrolle (Tage)</Text>
+                  <Text style={styles.metaValue}>{getNextInspectionDaysLabel(nextStatus)}</Text>
                 </View>
               </View>
 
@@ -244,7 +283,7 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
                       <Text style={styles.metaValue}>{inspection.developmentalStage || '-'}</Text>
                     </View>
                     <View style={styles.metaItem}>
-                      <Text style={styles.metaLabel}>Vitalitaet</Text>
+                      <Text style={styles.metaLabel}>Vitalität</Text>
                       <Text style={styles.metaValue}>{formatVitality(inspection.vitality)}</Text>
                     </View>
                   </View>
@@ -267,6 +306,32 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
                     ) : (
                       <Text style={styles.paragraph}>Keine Massnahmen hinterlegt.</Text>
                     )}
+                  </View>
+
+                  <View style={{ marginBottom: 2 }}>
+                    <Text style={styles.metaLabel}>Notizen & Markierungen</Text>
+                    {sectionData.map((section) => (
+                      <View key={section.title} style={styles.subSection}>
+                        <Text style={styles.metaValue}>{section.title}</Text>
+                        <Text style={styles.smallLabel}>
+                          {section.notes?.trim() ? section.notes : 'Keine Notizen erfasst.'}
+                        </Text>
+                        {section.markings.length ? (
+                          <View style={styles.chipRow}>
+                            {section.markings.map(({ label, description }) => {
+                              const value = description ? `${label} (${description})` : label;
+                              return (
+                                <View key={`${section.title}-${value}`} style={styles.chip}>
+                                  <Text style={styles.chipText}>{value}</Text>
+                                </View>
+                              );
+                            })}
+                          </View>
+                        ) : (
+                          <Text style={styles.smallLabel}>Keine Auffälligkeiten markiert.</Text>
+                        )}
+                      </View>
+                    ))}
                   </View>
                 </>
               ) : (

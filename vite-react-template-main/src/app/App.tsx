@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { mapTreesFromApi, type Tree } from '@/features/trees/types';
 import AppHeader from '@/widgets/layout/AppHeader';
 import CookieBanner from '@/widgets/layout/CookieBanner';
@@ -15,10 +15,13 @@ import InspectionListPage from '@/features/inspections/pages/InspectionListPage'
 import GreenAreaList from '@/features/green-areas/components/GreenAreaList';
 import GreenAreaDetails from '@/features/green-areas/components/GreenAreaDetails';
 import { API_BASE_URL } from '@/shared/config/appConfig';
+import { AUTH_TOKEN_CHANGED_EVENT, clearStoredToken, getStoredToken } from '@/shared/lib/auth';
 
 type LocationState = {
   tree?: Tree;
 };
+
+type AuthStatus = 'checking' | 'authenticated' | 'unauthenticated';
 
 const RoutedTreeDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -112,12 +115,100 @@ const RoutedTreeDetails: React.FC = () => {
   );
 };
 
-const App: React.FC = () => (
-  <BrowserRouter>
-    <div className="d-flex flex-column min-vh-100 bg-light">
-      <AppHeader />
-      <main className="flex-grow-1 py-4">
-        <div className="container">
+const AppShell: React.FC = () => {
+  const location = useLocation();
+  const [authStatus, setAuthStatus] = useState<AuthStatus>(() => (getStoredToken() ? 'checking' : 'unauthenticated'));
+  const [authMessage, setAuthMessage] = useState<string | null>(() =>
+    getStoredToken() ? 'Sitzung wird geprüft...' : 'Sie sind aktuell nicht eingeloggt.',
+  );
+
+  const verifyAuth = React.useCallback(async () => {
+    const token = getStoredToken();
+
+    if (!token) {
+      setAuthStatus('unauthenticated');
+      setAuthMessage('Sie sind aktuell nicht eingeloggt.');
+      return;
+    }
+
+    setAuthStatus('checking');
+    setAuthMessage('Sitzung wird geprüft...');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/GreenAreas/GetAll`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        setAuthStatus('authenticated');
+        setAuthMessage(null);
+        return;
+      }
+
+      if (response.status === 401 || response.status === 403) {
+        clearStoredToken();
+        setAuthStatus('unauthenticated');
+        setAuthMessage('Ihre Sitzung ist abgelaufen. Bitte erneut einloggen.');
+        return;
+      }
+
+      setAuthStatus('authenticated');
+      setAuthMessage('Anmeldung konnte gerade nicht vollständig geprüft werden.');
+    } catch (authError) {
+      console.error('Error checking authentication status:', authError);
+      setAuthStatus('authenticated');
+      setAuthMessage('Anmeldung konnte gerade nicht geprüft werden.');
+    }
+  }, []);
+
+  useEffect(() => {
+    void verifyAuth();
+  }, [verifyAuth]);
+
+  useEffect(() => {
+    const handleAuthChanged = () => {
+      void verifyAuth();
+    };
+
+    window.addEventListener('storage', handleAuthChanged);
+    window.addEventListener(AUTH_TOKEN_CHANGED_EVENT, handleAuthChanged as EventListener);
+    return () => {
+      window.removeEventListener('storage', handleAuthChanged);
+      window.removeEventListener(AUTH_TOKEN_CHANGED_EVENT, handleAuthChanged as EventListener);
+    };
+  }, [verifyAuth]);
+
+  const handleLogout = React.useCallback(() => {
+    clearStoredToken();
+    setAuthStatus('unauthenticated');
+    setAuthMessage('Sie wurden abgemeldet.');
+  }, []);
+
+  const showUnauthenticatedBanner = authStatus === 'unauthenticated' && location.pathname !== '/login' && location.pathname !== '/signup';
+  const showCheckingBanner = authStatus === 'checking';
+
+  return (
+    <div className="app-shell d-flex flex-column min-vh-100">
+      <AppHeader authStatus={authStatus} onLogout={handleLogout} />
+      {(showCheckingBanner || showUnauthenticatedBanner) && (
+        <div className="container app-container mt-3">
+          <div className={`alert app-auth-banner ${showCheckingBanner ? 'alert-info' : 'alert-warning'}`} role="status">
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+              <span>{authMessage}</span>
+              {showUnauthenticatedBanner && (
+                <Link to="/login" className="btn btn-sm btn-outline-secondary align-self-start align-self-md-center">
+                  Zum Login
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      <main className="app-main flex-grow-1 py-4 py-lg-5">
+        <div className="container app-container">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
@@ -133,11 +224,17 @@ const App: React.FC = () => (
           </Routes>
         </div>
       </main>
-      <footer className="bg-dark text-white text-center py-3 mt-auto">
+      <footer className="app-footer text-center py-3 mt-auto">
         <small>&copy; {new Date().getFullYear()} BMS</small>
       </footer>
       <CookieBanner />
     </div>
+  );
+};
+
+const App: React.FC = () => (
+  <BrowserRouter>
+    <AppShell />
   </BrowserRouter>
 );
 

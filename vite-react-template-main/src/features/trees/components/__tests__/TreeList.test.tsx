@@ -21,11 +21,21 @@ const apiTrees = [
   { id: 2, number: 11, species: 'Buche', greenAreaId: 2 },
 ] as const;
 
+const apiGreenAreas = [
+  { id: 1, name: 'Park' },
+  { id: 2, name: 'Allee' },
+] as const;
+
 describe('TreeList', () => {
   beforeEach(() => {
-    fetchMock.mockResolvedValue(
-      new Response(JSON.stringify(apiTrees), { status: 200, headers: { 'Content-Type': 'application/json' } })
-    );
+    fetchMock.mockReset();
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(apiTrees), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(apiGreenAreas), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      );
     navigateMock.mockReset();
   });
 
@@ -34,8 +44,9 @@ describe('TreeList', () => {
 
     expect(await screen.findByText('Eiche')).toBeInTheDocument();
     expect(screen.getByText('Buche')).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/Tree/GetAll'),
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('/api/Trees/GetAll'),
       expect.objectContaining({ headers: expect.any(Object) })
     );
   });

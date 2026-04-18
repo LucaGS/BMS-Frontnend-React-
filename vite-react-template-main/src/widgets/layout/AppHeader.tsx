@@ -1,19 +1,19 @@
 import React from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 
-const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  `nav-link${isActive ? ' active fw-semibold' : ''}`;
+type AppHeaderProps = {
+  authStatus?: 'checking' | 'authenticated' | 'unauthenticated';
+  onLogout?: () => void;
+};
 
-const AppHeader: React.FC = () => {
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `nav-link apple-nav-link${isActive ? ' active fw-semibold' : ''}`;
+
+const AppHeader: React.FC<AppHeaderProps> = ({ authStatus = 'unauthenticated', onLogout }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const collapseRef = React.useRef<HTMLDivElement | null>(null);
   const togglerRef = React.useRef<HTMLButtonElement | null>(null);
-  const readHasToken = React.useCallback(
-    () => typeof window !== 'undefined' && Boolean(localStorage.getItem('token')),
-    []
-  );
-  const [hasToken, setHasToken] = React.useState<boolean>(() => readHasToken());
 
   const closeNavbar = React.useCallback(() => {
     if (collapseRef.current?.classList.contains('show')) {
@@ -22,37 +22,38 @@ const AppHeader: React.FC = () => {
   }, []);
 
   const handleLogout = React.useCallback(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    localStorage.removeItem('token');
-    setHasToken(readHasToken());
+    onLogout?.();
     navigate('/');
     closeNavbar();
-  }, [closeNavbar, navigate, readHasToken]);
+  }, [closeNavbar, navigate, onLogout]);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    const handleStorage = () => setHasToken(readHasToken());
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [readHasToken]);
+    closeNavbar();
+  }, [closeNavbar, location]);
 
-  React.useEffect(() => {
-    setHasToken(readHasToken());
-  }, [location, readHasToken]);
+  const statusLabel =
+    authStatus === 'authenticated'
+      ? 'Eingeloggt'
+      : authStatus === 'checking'
+        ? 'Sitzung wird geprüft'
+        : 'Nicht eingeloggt';
+
+  const statusClass =
+    authStatus === 'authenticated'
+      ? 'apple-status apple-status--authenticated'
+      : authStatus === 'checking'
+        ? 'apple-status apple-status--checking'
+        : 'apple-status apple-status--unauthenticated';
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
+    <nav className="navbar navbar-expand-lg site-header">
       <div className="container">
-        <Link className="navbar-brand fw-bold" to="/">
+        <Link className="navbar-brand fw-semibold" to="/">
           BMS
         </Link>
         <button
           ref={togglerRef}
-          className="navbar-toggler"
+          className="navbar-toggler apple-toggler"
           type="button"
           data-bs-toggle="collapse"
           data-bs-target="#mainNavbar"
@@ -71,12 +72,12 @@ const AppHeader: React.FC = () => {
             </li>
             <li className="nav-item">
               <NavLink to="/trees" className={navLinkClass} onClick={closeNavbar}>
-                Baeume
+                Bäume
               </NavLink>
             </li>
             <li className="nav-item">
               <NavLink to="/green-areas" className={navLinkClass} onClick={closeNavbar}>
-                Gruenflaechen
+                Grünflächen
               </NavLink>
             </li>
             <li className="nav-item">
@@ -86,7 +87,7 @@ const AppHeader: React.FC = () => {
             </li>
             <li className="nav-item dropdown">
               <button
-                className="nav-link dropdown-toggle btn btn-link text-white px-0"
+                className="nav-link apple-nav-link dropdown-toggle btn btn-link px-0"
                 id="infoDropdown"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
@@ -94,10 +95,10 @@ const AppHeader: React.FC = () => {
               >
                 Info
               </button>
-              <ul className="dropdown-menu" aria-labelledby="infoDropdown">
+              <ul className="dropdown-menu apple-menu" aria-labelledby="infoDropdown">
                 <li>
                   <NavLink to="/about" className="dropdown-item" onClick={closeNavbar}>
-                    Ueber uns
+                    Über uns
                   </NavLink>
                 </li>
                 <li>
@@ -107,15 +108,15 @@ const AppHeader: React.FC = () => {
                 </li>
               </ul>
             </li>
-            {hasToken ? (
+            <li className="nav-item">
+              <span className={`navbar-text small ${statusClass}`}>{statusLabel}</span>
+            </li>
+            {authStatus === 'authenticated' ? (
               <>
-                <li className="nav-item">
-                  <span className="navbar-text text-white-50 small">Eingeloggt</span>
-                </li>
                 <li className="nav-item">
                   <button
                     type="button"
-                    className="nav-link btn btn-link px-0"
+                    className="nav-link apple-nav-link btn btn-link px-0"
                     onClick={handleLogout}
                   >
                     Logout

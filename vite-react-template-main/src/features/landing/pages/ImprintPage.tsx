@@ -8,7 +8,7 @@ const ImprintPage: React.FC = () => (
         <h2 className="h5">Betreiber</h2>
         <p className="mb-4">
           Luca Stieme <br />
-          Die Premen&auml;cker 2D <br />
+          Die Premenäcker 2D <br />
           61138 Niederdorfelden <br />
           Deutschland
         </p>
@@ -23,8 +23,8 @@ const ImprintPage: React.FC = () => (
 
         <h3 className="h6">Hinweise</h3>
         <p className="mb-0 text-muted">
-          Inhalte werden mit groesster Sorgfalt gepflegt. Fuer externe Links wird keine Haftung
-          uebernommen. Diese Anwendung dient der Verwaltung von Baeumen und Gruenflaechen.
+          Inhalte werden mit größter Sorgfalt gepflegt. Für externe Links wird keine Haftung
+          übernommen. Diese Anwendung dient der Verwaltung von Bäumen und Grünflächen.
         </p>
       </div>
     </div>
