@@ -25,10 +25,10 @@ const HomePage: React.FC = () => (
       <div className="card-body p-4 p-lg-5">
         <div className="row align-items-center g-4">
           <div className="col-lg-7 text-start">
-            <div className="apple-kicker mb-3">BMS für Feldarbeit und Übersicht</div>
-            <h1 className="display-4 fw-semibold mb-3">Baum- und Grünflächenverwaltung mit ruhiger, klarer Oberfläche.</h1>
+            <div className="apple-kicker mb-3">BMS </div>
+            <h1 className="display-4 fw-semibold mb-3">Baum- und Grünflächenverwaltung </h1>
             <p className="lead text-muted mb-4">
-              Verwalten Sie Bäume, Kontrollen und Grünflächen in einer Oberfläche, die auf iPhone, iPad und Mac präzise, lesbar und schnell bedienbar bleibt.
+              Verwalten Sie Bäume, Kontrollen und Grünflächen in einer Oberfläche.
             </p>
             <div className="d-flex flex-wrap gap-3">
               <Link to="/trees" className="btn btn-success btn-lg px-4">

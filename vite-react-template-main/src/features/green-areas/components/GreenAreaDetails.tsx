@@ -1,5 +1,5 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapInspectionFromApi } from '@/features/inspections';
 import { mapTreesFromApi, type Tree } from '@/features/trees/types';
@@ -476,9 +476,6 @@ const GreenAreaDetails: React.FC = () => {
       <div className="card-body p-4">
         <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
           <div>
-            <Link to="/green-areas" className="btn btn-link btn-sm px-0 mb-2 text-decoration-none">
-              ← Zur Grünflächenliste
-            </Link>
             <div className="text-uppercase text-muted small fw-semibold mb-1">Grünfläche</div>
             <h1 className="h4 mb-0">
               {greenAreaId} | {currentGreenArea?.name ?? greenAreaName}
@@ -634,58 +631,6 @@ const GreenAreaDetails: React.FC = () => {
           >
             {showMap ? 'Karte verbergen' : 'Karte anzeigen'}
           </button>
-        </div>
-
-        <div className="export-panel mb-4">
-          <div className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-3">
-            <div>
-              <div className="text-uppercase text-muted small fw-semibold mb-1">Export</div>
-              <h2 className="h5 mb-1">Berichte und Karten sauber ausgeben</h2>
-              <p className="text-muted small mb-0">
-                Zwei getrennte Exporte: eine reine Karten-Druckansicht für die Fläche und ein separater PDF-Bericht mit den Baumdaten.
-              </p>
-            </div>
-            <div className="text-muted small">
-              Dateiname Bericht: <span className="fw-semibold">{reportFileName}</span>
-            </div>
-          </div>
-
-          <div className="row g-3 export-panel__grid">
-            <div className="col-12 col-lg-6">
-              <div className="export-panel__card h-100">
-                <div className="export-panel__eyebrow">Druckansicht</div>
-                <div className="fw-semibold mb-1">Nur Kartenübersicht drucken</div>
-                <div className="text-muted small mb-3 flex-grow-1">
-                  Zeigt nur die Fläche mit allen Bäumen in einer sauberen Druckansicht. Das ist nicht der Baumdaten-PDF-Bericht.
-                </div>
-                <button
-                  type="button"
-                  onClick={handleOpenMapPrint}
-                  disabled={isGeneratingMapPrint || trees.length === 0}
-                  className="btn btn-primary export-panel__button"
-                >
-                  {isGeneratingMapPrint ? 'Bereite Druckansicht vor...' : 'Kartenübersicht öffnen'}
-                </button>
-              </div>
-            </div>
-            <div className="col-12 col-lg-6">
-              <div className="export-panel__card h-100">
-                <div className="export-panel__eyebrow">PDF</div>
-                <div className="fw-semibold mb-1">Baumdaten als PDF laden</div>
-                <div className="text-muted small mb-3 flex-grow-1">
-                  Enthält die Baumdaten der Grünfläche als PDF mit Kontrollstatus, Beschreibung, Pflegemassnahmen sowie Notizen und Markierungen.
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-outline-primary export-panel__button"
-                  onClick={handleDownloadDataPdf}
-                  disabled={isGeneratingDataPdf || trees.length === 0}
-                >
-                  {isGeneratingDataPdf ? 'Erzeuge PDF-Bericht...' : 'PDF-Bericht herunterladen'}
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
         {showTreeForm && (

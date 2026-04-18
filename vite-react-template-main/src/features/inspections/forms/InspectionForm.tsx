@@ -26,16 +26,18 @@ type InspectionFormProps = {
   onInspectionCreated?: () => void;
 };
 
+const createInitialOpenSections = (): OpenSectionsState => ({
+  crown: false,
+  trunk: false,
+  stemBase: false,
+});
+
 const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCreated }) => {
   const [form, setForm] = useState<FormFields>(createInitialFormFields());
   const [crownInspection, setCrownInspection] = useState<CrownInspectionState>(createInitialCrownInspection());
   const [trunkInspection, setTrunkInspection] = useState<TrunkInspectionState>(createInitialTrunkInspection());
   const [stemBaseInspection, setStemBaseInspection] = useState<StemBaseInspectionState>(createInitialStemBaseInspection());
-  const [openSections, setOpenSections] = useState<OpenSectionsState>({
-    crown: true,
-    trunk: true,
-    stemBase: true,
-  });
+  const [openSections, setOpenSections] = useState<OpenSectionsState>(createInitialOpenSections());
   const [measures, setMeasures] = useState<ArboriculturalMeasure[]>([]);
   const [selectedMeasureIds, setSelectedMeasureIds] = useState<number[]>([]);
   const [measuresLoading, setMeasuresLoading] = useState(false);
@@ -77,6 +79,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
     setCrownInspection(createInitialCrownInspection());
     setTrunkInspection(createInitialTrunkInspection());
     setStemBaseInspection(createInitialStemBaseInspection());
+    setOpenSections(createInitialOpenSections());
     setSelectedMeasureIds([]);
   };
 

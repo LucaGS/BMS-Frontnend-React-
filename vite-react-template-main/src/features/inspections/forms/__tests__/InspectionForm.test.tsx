@@ -19,6 +19,10 @@ describe('InspectionForm', () => {
 
     render(<InspectionForm treeId={5} onInspectionCreated={onCreated} />);
 
+    expect(screen.queryByLabelText(/notizen krone/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^notizen stamm$/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/notizen stammfuss/i)).not.toBeInTheDocument();
+
     for (const toggle of screen.getAllByRole('button', { name: /ausklappen/i })) {
       await userEvent.click(toggle);
     }
@@ -35,8 +39,8 @@ describe('InspectionForm', () => {
     await userEvent.type(screen.getByLabelText(/^notizen stamm$/i), 'Stamm ok');
     await userEvent.type(screen.getByLabelText(/notizen stammfuss/i), 'Stammfuss ok');
     await userEvent.click(document.getElementById('crown-abioticDisturbance') as HTMLElement);
-    await userEvent.click(document.getElementById('trunk-woundWithCallusRidge') as HTMLElement);
-    await userEvent.click(screen.getByLabelText(/würgewurzel \(stammfuss\)/i));
+    await userEvent.click(document.getElementById('trunk-woundCallusRidge') as HTMLElement);
+    await userEvent.click(screen.getByLabelText(/^würgewurzel$/i));
     await userEvent.click(screen.getByLabelText(/verkehrssicherheit/i));
 
     await userEvent.click(screen.getByRole('button', { name: /kontrolle speichern/i }));
@@ -60,7 +64,7 @@ describe('InspectionForm', () => {
       }),
       trunkInspection: expect.objectContaining({
         notes: 'Stamm ok',
-        woundWithCallusRidge: true,
+        woundCallusRidge: true,
       }),
       stemBaseInspection: expect.objectContaining({
         notes: 'Stammfuss ok',
@@ -71,7 +75,9 @@ describe('InspectionForm', () => {
   });
 
   it('shows an error message when the request fails', async () => {
-    fetchMock.mockResolvedValueOnce(new Response('error', { status: 500 }));
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response('error', { status: 500 }));
 
     render(<InspectionForm treeId={8} />);
 
