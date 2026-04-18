@@ -3,6 +3,7 @@ import { API_BASE_URL } from '@/shared/config/appConfig';
 import type { GreenArea } from '@/features/green-areas/types';
 import TreeLocationPicker from '@/features/trees/components/TreeLocationPicker';
 import { DEFAULT_MAP_CENTER } from '@/shared/maps/leafletUtils';
+import { authFetch } from '@/shared/lib/auth';
 
 interface GreenAreaDto {
   name: string;
@@ -38,11 +39,10 @@ const GreenAreaForm: React.FC<GreenAreaFormProps> = ({ greenAreas, onChange, onS
 
     try {
       setError('');
-      const response = await fetch(`${API_BASE_URL}/api/GreenAreas/Create`, {
+      const response = await authFetch(`${API_BASE_URL}/api/GreenAreas/Create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
         },
         body: JSON.stringify(newGreenArea),
       });

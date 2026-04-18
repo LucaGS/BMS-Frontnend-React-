@@ -4,6 +4,7 @@ import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapTreesFromApi, type Tree } from '@/features/trees/types';
 import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
 import type { GreenArea } from '@/features/green-areas/types';
+import { authFetch } from '@/shared/lib/auth';
 
 const TreeList: React.FC = () => {
   const [trees, setTrees] = useState<Tree[]>([]);
@@ -20,16 +21,8 @@ const TreeList: React.FC = () => {
       setError(null);
       try {
         const [treesResponse, greenAreasResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/Trees/GetAll`, {
-            headers: {
-              Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-            },
-          }),
-          fetch(`${API_BASE_URL}/api/GreenAreas/GetAll`, {
-            headers: {
-              Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-            },
-          }),
+          authFetch(`${API_BASE_URL}/api/Trees/GetAll`),
+          authFetch(`${API_BASE_URL}/api/GreenAreas/GetAll`),
         ]);
 
         if (!treesResponse.ok) {

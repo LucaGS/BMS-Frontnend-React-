@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { API_BASE_URL } from '@/shared/config/appConfig';
+import { authFetch } from '@/shared/lib/auth';
 
 type TreeImage = {
   id: string;
@@ -9,6 +10,20 @@ type TreeImage = {
 
 type TreeImageUploaderProps = {
   treeId: number;
+};
+
+const IMAGE_UPLOAD_MAX_DIMENSION = 1800;
+const IMAGE_UPLOAD_INITIAL_QUALITY = 0.82;
+const IMAGE_UPLOAD_MIN_QUALITY = 0.58;
+const IMAGE_UPLOAD_TARGET_BYTES = 1_200_000;
+
+type PreparedUploadImage = {
+  fileName: string;
+  contentType: string;
+  data: string;
+  previewUrl: string;
+  sizeBytes: number;
+  originalSizeBytes: number;
 };
 
 const normalizeImagePayload = (payload: unknown): TreeImage[] => {
@@ -72,7 +87,7 @@ const normalizeImagePayload = (payload: unknown): TreeImage[] => {
 };
 
 const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [preparedImage, setPreparedImage] = useState<PreparedUploadImage | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<TreeImage[]>([]);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
@@ -99,11 +114,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
     setMessage(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/Images/GetImages/${treeId}`, {
-        headers: {
-          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-        },
-      });
+      const response = await authFetch(`${API_BASE_URL}/api/Images/GetImages/${treeId}`);
 
       if (!response.ok) {
         throw new Error('Failed to load images');
@@ -145,45 +156,113 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
     setMessage(null);
 
     if (!file) {
-      setSelectedFile(null);
+      setPreparedImage(null);
       setPreviewUrl(null);
       return;
     }
 
     if (!file.type.startsWith('image/')) {
-      setSelectedFile(null);
+      setPreparedImage(null);
       setPreviewUrl(null);
       setMessage({ kind: 'error', text: 'Bitte wählen Sie eine gültige Bilddatei.' });
       return;
     }
 
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
+    void prepareUploadImage(file)
+      .then((prepared) => {
+        setPreparedImage(prepared);
+        setPreviewUrl(prepared.previewUrl);
+      })
+      .catch((error) => {
+        console.error('Error preparing image for upload:', error);
+        setPreparedImage(null);
+        setPreviewUrl(null);
+        setMessage({ kind: 'error', text: 'Bild konnte nicht verarbeitet werden.' });
+      });
   };
 
   const resetSelection = () => {
     revokePreview();
-    setSelectedFile(null);
+    setPreparedImage(null);
     setPreviewUrl(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const encodeFileToBase64 = (file: File) =>
+  const readFileAsDataUrl = (file: Blob) =>
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
-        const result = reader.result as string;
-        const base64 = result.includes(',') ? result.split(',')[1] : result;
-        resolve(base64);
+        if (typeof reader.result !== 'string') {
+          reject(new Error('Invalid data URL result'));
+          return;
+        }
+        resolve(reader.result);
       };
       reader.onerror = (event) => reject(event);
       reader.readAsDataURL(file);
     });
 
+  const loadImage = (src: string) =>
+    new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = (event) => reject(event);
+      image.src = src;
+    });
+
+  const blobToBase64 = async (blob: Blob) => {
+    const dataUrl = await readFileAsDataUrl(blob);
+    return dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+  };
+
+  const compressImage = async (file: File): Promise<PreparedUploadImage> => {
+    const sourceUrl = await readFileAsDataUrl(file);
+    const image = await loadImage(sourceUrl);
+    const canvas = document.createElement('canvas');
+    const longestSide = Math.max(image.width, image.height);
+    const scale = longestSide > IMAGE_UPLOAD_MAX_DIMENSION ? IMAGE_UPLOAD_MAX_DIMENSION / longestSide : 1;
+    const targetWidth = Math.max(1, Math.round(image.width * scale));
+    const targetHeight = Math.max(1, Math.round(image.height * scale));
+
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Canvas context unavailable');
+    }
+
+    context.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+    let quality = IMAGE_UPLOAD_INITIAL_QUALITY;
+    let compressedBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+
+    while (compressedBlob && compressedBlob.size > IMAGE_UPLOAD_TARGET_BYTES && quality > IMAGE_UPLOAD_MIN_QUALITY) {
+      quality = Math.max(IMAGE_UPLOAD_MIN_QUALITY, quality - 0.08);
+      compressedBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+    }
+
+    if (!compressedBlob) {
+      throw new Error('Image compression failed');
+    }
+
+    const preview = URL.createObjectURL(compressedBlob);
+    return {
+      fileName: file.name.replace(/\.[^.]+$/, '.jpg'),
+      contentType: 'image/jpeg',
+      data: await blobToBase64(compressedBlob),
+      previewUrl: preview,
+      sizeBytes: compressedBlob.size,
+      originalSizeBytes: file.size,
+    };
+  };
+
+  const prepareUploadImage = async (file: File): Promise<PreparedUploadImage> => compressImage(file);
+
   const handleUpload = async () => {
-    if (!selectedFile) {
+    if (!preparedImage) {
       setMessage({ kind: 'error', text: 'Bitte wählen Sie zuerst eine Bilddatei aus.' });
       return;
     }
@@ -192,18 +271,16 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
     setMessage(null);
 
     try {
-      const base64Data = await encodeFileToBase64(selectedFile);
       const payload = {
         treeId,
-        fileName: selectedFile.name,
-        contentType: selectedFile.type,
-        data: base64Data,
+        fileName: preparedImage.fileName,
+        contentType: preparedImage.contentType,
+        data: preparedImage.data,
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/Images/CreateImage`, {
+      const response = await authFetch(`${API_BASE_URL}/api/Images/CreateImage`, {
         method: 'POST',
         headers: {
-          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
@@ -234,11 +311,8 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
       return;
     }
     try {
-      const response = await fetch(`${API_BASE_URL}/api/Images/${image.id}`, {
+      const response = await authFetch(`${API_BASE_URL}/api/Images/${image.id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-        },
       });
       if (!response.ok) {
         throw new Error('Delete failed');
@@ -285,6 +359,11 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
             <div className="ratio ratio-16x9 rounded border overflow-hidden">
               <img src={previewUrl} alt="Bildvorschau" style={{ objectFit: 'cover' }} />
             </div>
+            {preparedImage && (
+              <div className="small text-muted mt-2">
+                Komprimiert von {Math.round(preparedImage.originalSizeBytes / 1024)} KB auf {Math.round(preparedImage.sizeBytes / 1024)} KB.
+              </div>
+            )}
             <div className="d-flex gap-2 mt-2">
               <button
                 type="button"
@@ -298,7 +377,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
                 type="button"
                 className="btn btn-primary btn-sm"
                 onClick={handleUpload}
-                disabled={isUploading}
+                disabled={isUploading || !preparedImage}
               >
                 {isUploading ? 'Wird hochgeladen...' : 'Jetzt hochladen'}
               </button>

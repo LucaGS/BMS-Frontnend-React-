@@ -3,16 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { formatCoordinatePairDisplay } from '@/shared/lib/coordinateFormatting';
 import AppModal from '@/shared/components/AppModal';
+import { authFetch } from '@/shared/lib/auth';
 import type { GreenArea } from '@/features/green-areas/types';
 import GreenAreaForm from '../forms/GreenAreaForm';
 
 const loadGreenAreas = async (): Promise<GreenArea[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/GreenAreas/GetAll`, {
+    const response = await authFetch(`${API_BASE_URL}/api/GreenAreas/GetAll`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `bearer ${localStorage.getItem('token') || ''}`,
       },
     });
     if (!response || !response.ok) {

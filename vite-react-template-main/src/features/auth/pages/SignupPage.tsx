@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { storeToken } from '@/shared/lib/auth';
 
@@ -8,7 +9,13 @@ interface SignupFormData {
   password: string;
 }
 
+type AuthLocationState = {
+  from?: string;
+};
+
 const SignupPage: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState<SignupFormData>({
     username: '',
     email: '',
@@ -17,6 +24,7 @@ const SignupPage: React.FC = () => {
   const [correctPasswordCheck, setCorrectPasswordCheck] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const redirectTarget = (location.state as AuthLocationState | undefined)?.from || '/green-areas';
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -57,6 +65,8 @@ const SignupPage: React.FC = () => {
 
       if (data.token) {
         storeToken(data.token);
+        navigate(redirectTarget, { replace: true });
+        return;
       }
 
       setSuccess('Registrierung erfolgreich!');

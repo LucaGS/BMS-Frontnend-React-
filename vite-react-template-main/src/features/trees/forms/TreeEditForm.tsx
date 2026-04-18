@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapTreeFromApi, type Tree } from '@/entities/tree';
 import TreeLocationPicker from '@/features/trees/components/TreeLocationPicker';
+import { authFetch } from '@/shared/lib/auth';
 
 type TreeEditFormProps = {
   tree: Tree;
@@ -115,11 +116,10 @@ const TreeEditForm: React.FC<TreeEditFormProps> = ({ tree, defaultCenter, onUpda
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/Trees/${tree.id}`, {
+      const response = await authFetch(`${API_BASE_URL}/api/Trees/${tree.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
         },
         body: JSON.stringify(payload),
       });

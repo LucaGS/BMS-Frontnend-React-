@@ -1,19 +1,25 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { storeToken } from '@/shared/lib/auth';
 
+type AuthLocationState = {
+  from?: string;
+};
+
 const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const redirectTarget = (location.state as AuthLocationState | undefined)?.from || '/green-areas';
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       setError('');
-      setSuccess(false);
       const response = await fetch(`${API_BASE_URL}/api/Auth/Login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28,13 +34,12 @@ const LoginPage: React.FC = () => {
 
       if (data.token) {
         storeToken(data.token);
-        setSuccess(true);
+        navigate(redirectTarget, { replace: true });
       } else {
         throw new Error('Login erfolgreich, aber Rückmeldung fehlt.');
       }
     } catch (submitError) {
       console.error('Error during login:', submitError);
-      setSuccess(false);
       setError(submitError instanceof Error ? submitError.message : 'Unbekannter Fehler');
     }
   };
@@ -96,11 +101,6 @@ const LoginPage: React.FC = () => {
               {error && (
                 <div className="alert alert-danger mt-4 mb-0" role="alert">
                   {error}
-                </div>
-              )}
-              {success && (
-                <div className="alert alert-success mt-4 mb-0" role="alert">
-                  Erfolgreich eingeloggt.
                 </div>
               )}
             </div>

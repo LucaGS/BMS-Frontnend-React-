@@ -8,8 +8,14 @@ import type {
 import type { Inspection } from '@/features/inspections';
 import type { Tree } from '@/features/trees/types';
 import type { ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
-import { DEFAULT_MAP_CENTER, MAX_MAP_ZOOM, ensureLeafletAssets, hasValidCoordinates, type LeafletWindow } from '@/shared/maps/leafletUtils';
-import { getNextInspectionDaysLabel, getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
+import {
+  DEFAULT_MAP_CENTER,
+  MAX_MAP_ZOOM,
+  ensureLeafletAssets,
+  hasValidCoordinates,
+  type LeafletWindow,
+} from '@/shared/maps/leafletUtils';
+import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
 import { normalizeVitality } from '@/entities/inspection';
 import { formatCoordinateDisplay } from '@/shared/lib/coordinateFormatting';
 import { formatDateDisplay } from '@/shared/lib/dateFormatting';
@@ -18,220 +24,180 @@ const PdfStyles: React.FC = () => (
   <style>
     {`
       .ga-print {
-        --ga-text: #10203a;
-        --ga-muted: #5d6b82;
-        --ga-border: rgba(255, 255, 255, 0.72);
-        --ga-surface: rgba(255, 255, 255, 0.72);
-        --ga-surface-strong: rgba(255, 255, 255, 0.84);
-        --ga-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
-        --ga-shadow-soft: 0 14px 30px rgba(15, 23, 42, 0.08);
+        --ga-text: #182334;
+        --ga-muted: #67768d;
+        --ga-line: #d9e1ea;
+        --ga-surface: #ffffff;
+        --ga-surface-soft: #f7f9fc;
+        --ga-accent: #0b6bcb;
+        --ga-success: #136c45;
+        --ga-danger: #a13a3a;
         font-family: 'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', sans-serif;
         color: var(--ga-text);
-        background:
-          radial-gradient(circle at top left, rgba(135, 206, 235, 0.34), transparent 28%),
-          radial-gradient(circle at top right, rgba(122, 208, 167, 0.24), transparent 22%),
-          linear-gradient(180deg, #f4f8fb 0%, #eef3f8 46%, #e6edf5 100%);
-        line-height: 1.45;
-        max-width: 100%;
+        background: #f1f5f9;
+        line-height: 1.35;
+        width: 100%;
+        padding: 0 0 10mm;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      .ga-print::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background:
-          radial-gradient(circle at 15% 18%, rgba(255, 255, 255, 0.65), transparent 0 23%),
-          radial-gradient(circle at 85% 8%, rgba(255, 255, 255, 0.5), transparent 0 18%);
+      .ga-print,
+      .ga-print * {
+        box-sizing: border-box;
       }
-      .ga-print h1, .ga-print h2, .ga-print h3, .ga-print h4, .ga-print h5, .ga-print h6 {
-        letter-spacing: -0.02em;
-        color: var(--ga-text);
+      .ga-sheet {
+        width: 100%;
       }
       .ga-card {
-        position: relative;
         background: var(--ga-surface);
-        border: 1px solid var(--ga-border);
-        border-radius: 28px;
-        box-shadow: var(--ga-shadow-soft);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-        padding: 22px;
-        overflow: hidden;
+        border: 1px solid var(--ga-line);
+        border-radius: 14px;
+        padding: 14px;
+        page-break-inside: avoid;
+        break-inside: avoid-page;
       }
-      .ga-card::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        pointer-events: none;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      .ga-card + .ga-card {
+        margin-top: 12px;
       }
-      .ga-hero {
-        background:
-          linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(238, 243, 248, 0.78)),
-          linear-gradient(135deg, rgba(10, 132, 255, 0.08), rgba(19, 138, 87, 0.08));
-        border-radius: 32px;
-        box-shadow: var(--ga-shadow);
+      .ga-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
       }
-      .ga-hero-kicker {
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.14em;
-        color: #0b6bcb;
+      .ga-kicker {
+        font-size: 10px;
         font-weight: 700;
-        margin-bottom: 8px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ga-accent);
+        margin-bottom: 6px;
       }
-      .ga-hero-title {
-        font-size: 28px;
+      .ga-title {
+        font-size: 24px;
         line-height: 1.1;
-        margin: 0 0 6px;
+        margin: 0 0 4px;
+        font-weight: 700;
       }
-      .ga-hero-subtitle {
+      .ga-subtitle {
+        font-size: 12px;
         color: var(--ga-muted);
-        font-size: 13px;
       }
       .ga-chip-group {
         display: flex;
         flex-wrap: wrap;
         justify-content: flex-end;
-        gap: 10px;
+        gap: 6px;
+        max-width: 360px;
+      }
+      .ga-chip {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        border: 1px solid var(--ga-line);
+        background: var(--ga-surface-soft);
+        padding: 5px 9px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--ga-text);
+      }
+      .ga-chip--info {
+        color: var(--ga-accent);
+      }
+      .ga-chip--success {
+        color: var(--ga-success);
+      }
+      .ga-chip--danger {
+        color: var(--ga-danger);
+      }
+      .ga-section-title {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ga-muted);
+        margin-bottom: 8px;
       }
       .ga-table {
         width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 13px;
-        overflow: hidden;
-        border-radius: 18px;
-        border: 1px solid rgba(214, 223, 235, 0.9);
-        background: rgba(255, 255, 255, 0.78);
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 11px;
       }
       .ga-table th,
       .ga-table td {
-        border-right: 1px solid rgba(214, 223, 235, 0.9);
-        border-bottom: 1px solid rgba(214, 223, 235, 0.9);
-        padding: 10px 12px;
+        border: 1px solid var(--ga-line);
+        padding: 6px 8px;
+        text-align: left;
         vertical-align: top;
-      }
-      .ga-table th:last-child,
-      .ga-table td:last-child {
-        border-right: 0;
-      }
-      .ga-table tbody tr:last-child th,
-      .ga-table tbody tr:last-child td {
-        border-bottom: 0;
+        overflow-wrap: anywhere;
       }
       .ga-table th {
-        background: rgba(244, 248, 251, 0.92);
+        background: var(--ga-surface-soft);
+        color: var(--ga-muted);
         font-weight: 700;
-        color: var(--ga-text);
       }
-      .ga-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 7px 12px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.82);
-        color: var(--ga-text);
-        border: 1px solid rgba(255, 255, 255, 0.82);
-        font-weight: 600;
-        font-size: 12px;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 8px 18px rgba(15, 23, 42, 0.06);
+      .ga-table--meta th {
+        width: 22%;
       }
-      .ga-pill--success {
-        background: rgba(236, 253, 243, 0.95);
-        color: #166534;
-        border-color: rgba(187, 247, 208, 0.95);
+      .ga-table--summary th,
+      .ga-table--summary td,
+      .ga-table--notes th,
+      .ga-table--notes td {
+        font-size: 10.5px;
       }
-      .ga-pill--danger {
-        background: rgba(254, 242, 242, 0.95);
-        color: #991b1b;
-        border-color: rgba(254, 205, 211, 0.95);
-      }
-      .ga-pill--neutral {
-        background: rgba(238, 242, 255, 0.95);
-        color: #3730a3;
-        border-color: rgba(199, 210, 254, 0.95);
-      }
-      .ga-meta-grid {
+      .ga-table--summary th:nth-child(1) { width: 8%; }
+      .ga-table--summary th:nth-child(2) { width: 17%; }
+      .ga-table--summary th:nth-child(3) { width: 17%; }
+      .ga-table--summary th:nth-child(4) { width: 16%; }
+      .ga-table--summary th:nth-child(5) { width: 12%; }
+      .ga-table--summary th:nth-child(6) { width: 15%; }
+      .ga-table--summary th:nth-child(7) { width: 15%; }
+      .ga-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        grid-template-columns: 1.1fr 0.9fr;
         gap: 12px;
       }
-      .ga-meta-item {
-        padding: 12px 14px;
-        border: 1px solid rgba(255, 255, 255, 0.78);
-        border-radius: 18px;
-        background: var(--ga-surface-strong);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+      .ga-map-shell {
+        border: 1px solid var(--ga-line);
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fff;
+        page-break-inside: avoid;
+        break-inside: avoid-page;
       }
-      .ga-meta-label {
-        font-size: 11px;
-        color: var(--ga-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 5px;
+      .ga-tree-block {
+        page-break-inside: avoid;
+        break-inside: avoid-page;
       }
-      .ga-meta-value {
-        font-weight: 700;
-        color: var(--ga-text);
-        font-size: 13px;
+      .ga-tree-block + .ga-tree-block {
+        margin-top: 12px;
       }
-      .ga-section-title {
-        font-size: 13px;
-        font-weight: 800;
-        color: var(--ga-text);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
+      .ga-tree-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
         margin-bottom: 8px;
       }
-      .ga-muted {
-        color: var(--ga-muted);
-        font-size: 12px;
-      }
-      .ga-print-card {
-        page-break-inside: avoid;
-        margin-bottom: 22px;
-      }
-      .ga-map-shell {
-        border: 1px solid rgba(255, 255, 255, 0.78);
-        border-radius: 24px;
-        overflow: hidden;
-        background: rgba(255, 255, 255, 0.82);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
-        break-inside: avoid;
-        page-break-inside: avoid;
-      }
-      .ga-tree-marker__bubble {
-        min-width: 26px;
-        height: 26px;
-        padding: 0 6px;
-        border-radius: 999px;
-        background: #0ea341;
-        color: #fff;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
+      .ga-tree-title {
+        font-size: 16px;
+        margin: 0;
         font-weight: 700;
-        border: 2px solid #e2e8f0;
-        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.35);
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
       }
-      @media print {
-        .ga-map-shell {
-          height: 120mm !important;
-          max-height: 120mm !important;
-          width: 100%;
-          box-shadow: none;
-        }
+      .ga-tree-subtitle {
+        font-size: 11px;
+        color: var(--ga-muted);
+        margin-top: 2px;
       }
-      .ga-tree-marker__bubble--fallback {
-        background: #15803d;
+      .ga-note-text {
+        margin: 0;
+        white-space: pre-wrap;
+        color: var(--ga-text);
+        font-size: 11px;
+      }
+      .ga-empty {
+        color: var(--ga-muted);
       }
       .ga-tree-marker {
         display: flex;
@@ -240,56 +206,52 @@ const PdfStyles: React.FC = () => (
         gap: 2px;
       }
       .ga-tree-marker__label {
-        background: #0ea341;
+        background: #136c45;
         color: #fff;
         border-radius: 999px;
-        padding: 2px 8px;
-        font-size: 12px;
+        padding: 2px 7px;
+        font-size: 11px;
         font-weight: 700;
-        border: 2px solid #e2e8f0;
-        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.35);
-        line-height: 1.1;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+        border: 2px solid #fff;
       }
       .ga-tree-marker__dot {
-        width: 12px;
-        height: 12px;
+        width: 10px;
+        height: 10px;
         border-radius: 999px;
-        background: #0ea341;
-        border: 2px solid #e2e8f0;
-        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.35);
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-      img, canvas {
-        max-width: 100%;
+        background: #136c45;
+        border: 2px solid #fff;
       }
       @page {
         size: A4 portrait;
-        margin: 12mm;
+        margin: 9mm;
       }
       @media print {
-        body {
-          background: #ffffff !important;
-        }
-        body * {
-          visibility: hidden !important;
-        }
+        body { background: #fff !important; }
+        body * { visibility: hidden !important; }
         .ga-print,
-        .ga-print * {
-          visibility: visible !important;
-        }
+        .ga-print * { visibility: visible !important; }
         .ga-print {
           position: absolute;
           inset: 0;
-          width: 100%;
+          background: #fff;
           padding: 0;
-          margin: 0;
-          background:
-            radial-gradient(circle at top left, rgba(135, 206, 235, 0.34), transparent 28%),
-            radial-gradient(circle at top right, rgba(122, 208, 167, 0.24), transparent 22%),
-            linear-gradient(180deg, #f4f8fb 0%, #eef3f8 46%, #e6edf5 100%);
+        }
+        .ga-chip-group {
+          justify-content: flex-start;
+          max-width: none;
+        }
+      }
+      @media screen and (max-width: 960px) {
+        .ga-grid {
+          grid-template-columns: 1fr;
+        }
+        .ga-header,
+        .ga-tree-head {
+          flex-direction: column;
+        }
+        .ga-chip-group {
+          justify-content: flex-start;
+          max-width: none;
         }
       }
     `}
@@ -336,6 +298,19 @@ const formatDateTime = (value?: string | null) => {
   return formatDateDisplay(value, value);
 };
 
+const formatNextInspectionDate = (value?: string | null) => {
+  if (!value) {
+    return 'Keine nächste Kontrolle';
+  }
+
+  return formatDateDisplay(value, 'Keine nächste Kontrolle');
+};
+
+const getCoordinatesLabel = (tree: Tree) =>
+  hasValidCoordinates(tree.latitude, tree.longitude, { allowZero: false })
+    ? `${formatCoordinateDisplay(tree.latitude)}, ${formatCoordinateDisplay(tree.longitude)}`
+    : 'Keine Koordinaten';
+
 const getActiveMarkings = <T extends Record<string, unknown>>(
   items: { key: keyof T; label: string }[],
   data?: Partial<T> | null,
@@ -347,7 +322,7 @@ const getActiveMarkings = <T extends Record<string, unknown>>(
       const rawDescription = (data as any)?.[descriptionKey];
       const description =
         typeof rawDescription === 'string' && rawDescription.trim().length > 0 ? rawDescription.trim() : null;
-      return { label, description };
+      return description ? `${label} (${description})` : label;
     });
 
 type TreeMapInlineProps = {
@@ -357,7 +332,7 @@ type TreeMapInlineProps = {
   label?: string | number;
 };
 
-const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, height = 260, label }) => {
+const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, height = 190, label }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any | null>(null);
   const markerRef = useRef<any | null>(null);
@@ -374,11 +349,12 @@ const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, heig
         if (!isMounted || !containerRef.current) {
           return;
         }
+
         const leafletWindow = window as LeafletWindow;
-        if (!leafletWindow.L) {
+        const L = leafletWindow.L;
+        if (!L) {
           return;
         }
-        const L = leafletWindow.L;
 
         if (!mapRef.current) {
           mapRef.current = L.map(containerRef.current, {
@@ -392,13 +368,11 @@ const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, heig
             attribution: '&copy; OpenStreetMap-Mitwirkende',
             maxZoom: MAX_MAP_ZOOM,
           }).addTo(mapRef.current);
-        } else if (typeof mapRef.current.setView === 'function') {
+        } else {
           mapRef.current.setView(center, hasCoords ? 17 : mapRef.current.getZoom() ?? 6);
         }
 
-        if (mapRef.current && typeof mapRef.current.invalidateSize === 'function') {
-          requestAnimationFrame(() => mapRef.current?.invalidateSize());
-        }
+        requestAnimationFrame(() => mapRef.current?.invalidateSize?.());
 
         if (hasCoords) {
           if (!markerRef.current) {
@@ -418,8 +392,8 @@ const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, heig
         setIsReady(true);
         setMapError(null);
       })
-      .catch((err) => {
-        console.error('Leaflet map failed to load', err);
+      .catch((error) => {
+        console.error('Leaflet map failed to load', error);
         if (isMounted) {
           setMapError('Karte konnte nicht geladen werden.');
         }
@@ -428,38 +402,31 @@ const TreeMapInline: React.FC<TreeMapInlineProps> = ({ latitude, longitude, heig
     return () => {
       isMounted = false;
     };
-  }, [center, hasCoords, latitude, longitude]);
+  }, [center, hasCoords, label]);
 
-  useEffect(() => {
-    return () => {
-      if (markerRef.current && typeof markerRef.current.remove === 'function') {
-        markerRef.current.remove();
-      }
-      markerRef.current = null;
-
-      if (mapRef.current && typeof mapRef.current.remove === 'function') {
-        mapRef.current.remove();
-      }
-      mapRef.current = null;
-    };
+  useEffect(() => () => {
+    markerRef.current?.remove?.();
+    markerRef.current = null;
+    mapRef.current?.remove?.();
+    mapRef.current = null;
   }, []);
 
   return (
-    <div className="position-relative border rounded ga-map-shell" style={{ height, width: '100%', overflow: 'hidden' }}>
+    <div className="ga-map-shell position-relative" style={{ height, width: '100%' }}>
       <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
       {!isReady && (
-        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75">
+        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white bg-opacity-75">
           <span className="small text-muted">Karte wird geladen...</span>
         </div>
       )}
       {!hasCoords && isReady && (
         <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
-          <span className="badge bg-light text-dark border">Keine Koordinaten vorhanden</span>
+          <span className="ga-chip ga-chip--info">Keine Koordinaten vorhanden</span>
         </div>
       )}
       {mapError && (
-        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75">
-          <span className="text-danger small">{mapError}</span>
+        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white bg-opacity-75">
+          <span className="small text-danger">{mapError}</span>
         </div>
       )}
     </div>
@@ -475,9 +442,9 @@ type AllTreesMapProps = {
 
 const AllTreesMap: React.FC<AllTreesMapProps> = ({
   trees,
-  height = 360,
+  height = 340,
   initialZoom = 6,
-  fitBoundsMaxZoom = 12,
+  fitBoundsMaxZoom = 13,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any | null>(null);
@@ -502,6 +469,7 @@ const AllTreesMap: React.FC<AllTreesMapProps> = ({
         if (!isMounted || !containerRef.current) {
           return;
         }
+
         const leafletWindow = window as LeafletWindow;
         const L = leafletWindow.L;
         if (!L) {
@@ -522,7 +490,6 @@ const AllTreesMap: React.FC<AllTreesMapProps> = ({
           }).addTo(mapRef.current);
         }
 
-        // Clear existing markers
         markersRef.current.forEach((marker) => marker.remove());
         markersRef.current = [];
 
@@ -538,20 +505,17 @@ const AllTreesMap: React.FC<AllTreesMapProps> = ({
             bounds.extend(marker.getLatLng());
           });
           mapRef.current.fitBounds(bounds, {
-            padding: [40, 40],
+            padding: [32, 32],
             maxZoom: Math.min(fitBoundsMaxZoom, MAX_MAP_ZOOM),
           });
         }
 
-        if (mapRef.current && typeof mapRef.current.invalidateSize === 'function') {
-          requestAnimationFrame(() => mapRef.current?.invalidateSize());
-        }
-
+        requestAnimationFrame(() => mapRef.current?.invalidateSize?.());
         setIsReady(true);
         setMapError(null);
       })
-      .catch((err) => {
-        console.error('Leaflet map failed to load (all trees map)', err);
+      .catch((error) => {
+        console.error('Leaflet map failed to load (all trees map)', error);
         if (isMounted) {
           setMapError('Karte konnte nicht geladen werden.');
         }
@@ -565,231 +529,96 @@ const AllTreesMap: React.FC<AllTreesMapProps> = ({
   useEffect(() => () => {
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
-    if (mapRef.current && typeof mapRef.current.remove === 'function') {
-      mapRef.current.remove();
-    }
+    mapRef.current?.remove?.();
     mapRef.current = null;
   }, []);
-
-  const hasAnyCoords = positions.length > 0;
 
   return (
     <div className="ga-map-shell position-relative" style={{ height, width: '100%' }}>
       <div ref={containerRef} style={{ height: '100%', width: '100%' }} />
       {!isReady && (
-        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75">
+        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white bg-opacity-75">
           <span className="small text-muted">Karte wird geladen...</span>
         </div>
       )}
-      {!hasAnyCoords && isReady && (
+      {positions.length === 0 && isReady && (
         <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
-          <span className="ga-pill ga-pill--neutral">Keine Koordinaten vorhanden</span>
+          <span className="ga-chip ga-chip--info">Keine Koordinaten vorhanden</span>
         </div>
       )}
       {mapError && (
-        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75">
-          <span className="text-danger small">{mapError}</span>
+        <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white bg-opacity-75">
+          <span className="small text-danger">{mapError}</span>
         </div>
       )}
-    </div>
-  );
-};
-
-export const GreenAreaMapPrint: React.FC<{
-  greenAreaId?: string;
-  greenAreaName?: string;
-  trees: TreeInspectionExport[];
-  mapCenterLabel?: string;
-}> = ({greenAreaName, trees, mapCenterLabel }) => {
-  const generatedAt = formatDateDisplay(new Date());
-  return (
-    <div className="ga-print">
-      <PdfStyles />
-      <div className="ga-card mb-3">
-        <div className="d-flex justify-content-between align-items-start gap-3">
-          <div>
-            <div className="ga-meta-label">Grünfläche</div>
-            <h2 className="h5 mb-1">
-             {greenAreaName ? `| ${greenAreaName}` : ''}
-            </h2>
-            <div className="ga-muted">Exportiert am {generatedAt}</div>
-          </div>
-          <div className="d-flex flex-column align-items-end gap-2">
-            <span className="ga-pill">Bäume: {trees.length}</span>
-            {mapCenterLabel ? <span className="ga-pill ga-pill--neutral">Standort Koordinaten {mapCenterLabel}</span> : null}
-          </div>
-        </div>
-      </div>
-
-      <div className="ga-card mb-4">
-        <div className="d-flex justify-content-between align-items-center mb-2">
-          <div className="ga-section-title mb-0">Karte der Bäume</div>
-          <span className="ga-muted small">Übersichtlicher Zoom für die gesamte Fläche</span>
-        </div>
-        <AllTreesMap trees={trees} height={420} fitBoundsMaxZoom={14} initialZoom={10} />
-      </div>
     </div>
   );
 };
 
 const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }) => {
   const { tree, inspection, mapImage } = entry;
-  const hasCoords = hasValidCoordinates(tree.latitude, tree.longitude, { allowZero: false });
-  const coordsLabel = hasCoords
-    ? `${formatCoordinateDisplay(tree.latitude)}, ${formatCoordinateDisplay(tree.longitude)}`
-    : 'Keine Koordinaten';
-  const nextInspectionStatus = getNextInspectionStatus(tree.nextInspection);
-  const trafficSafetyExpectationLabel =
-    typeof tree.trafficSafetyExpectation === 'string' && tree.trafficSafetyExpectation.trim().length > 0
-      ? tree.trafficSafetyExpectation
-      : 'None';
-  const measuresLabel =
+  const nextInspectionLabel = formatNextInspectionDate(tree.nextInspection);
+  const safetyLabel = inspection
+    ? inspection.isSafeForTraffic
+      ? 'Verkehrssicher'
+      : 'Nicht verkehrssicher'
+    : 'Keine Kontrolle';
+  const safetyClass = inspection
+    ? inspection.isSafeForTraffic
+      ? 'ga-chip ga-chip--success'
+      : 'ga-chip ga-chip--danger'
+    : 'ga-chip ga-chip--info';
+  const measures =
     inspection?.arboriculturalMeasures && inspection.arboriculturalMeasures.length > 0
-      ? inspection.arboriculturalMeasures
-          .map((measure) => (measure.description ? `${measure.measureName} (${measure.description})` : measure.measureName))
-          .join(', ')
+      ? inspection.arboriculturalMeasures.map((measure) =>
+          measure.description ? `${measure.measureName} (${measure.description})` : measure.measureName,
+        )
       : inspection?.arboriculturalMeasureIds && inspection.arboriculturalMeasureIds.length > 0
-        ? 'Massnahmen hinterlegt'
-        : 'Keine Massnahmen erfasst';
+        ? ['Massnahmen hinterlegt']
+        : [];
 
-  const inspectionFields: Array<[string, string]> | null = inspection
+  const rows: Array<[string, string]> = [
+    ['Baumnummer', formatNumber(tree.number)],
+    ['Art', tree.species || 'Unbekannte Art'],
+    ['Koordinaten', getCoordinatesLabel(tree)],
+    ['Letzte Kontrolle', inspection ? formatDateTime(inspection.performedAt) : 'Keine Kontrolle'],
+    ['Nächste Kontrolle', nextInspectionLabel],
+    ['Verkehrssicherheit', safetyLabel],
+    ['Entwicklungsstadium', inspection?.developmentalStage || '-'],
+    ['Vitalität', inspection ? formatVitality(inspection.vitality) : '-'],
+    ['Intervall', inspection ? formatNumber(inspection.newInspectionIntervall, ' Monate') : '-'],
+    ['Sicherheitserwartung', tree.trafficSafetyExpectation || '-'],
+  ];
+
+  const sections = inspection
     ? [
-        ['Datum', formatDateTime(inspection.performedAt)],
-        ['Verkehrssicherheit', inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher'],
-        ['Intervall (Monate)', formatNumber(inspection.newInspectionIntervall)],
-        ['Entwicklungsstadium', inspection.developmentalStage || '-'],
-        ['Vitalität', formatVitality(inspection.vitality)],
-        ['Pflegemassnahmen', measuresLabel],
+        ['Krone', inspection.crownInspection?.notes, getActiveMarkings<CrownInspectionState>(crownCheckboxes, inspection.crownInspection).join(', ') || 'Keine Auffälligkeiten markiert.'],
+        ['Stamm', inspection.trunkInspection?.notes, getActiveMarkings<TrunkInspectionState>(trunkCheckboxes, inspection.trunkInspection).join(', ') || 'Keine Auffälligkeiten markiert.'],
+        ['Stammfuss und Wurzelbereich', inspection.stemBaseInspection?.notes, getActiveMarkings<StemBaseInspectionState>(stemBaseCheckboxes, inspection.stemBaseInspection).join(', ') || 'Keine Auffälligkeiten markiert.'],
       ]
-    : null;
-
-  const sectionData =
-    inspection != null
-      ? [
-          {
-            title: 'Krone',
-            notes: inspection.crownInspection?.notes,
-            markings: getActiveMarkings<CrownInspectionState>(crownCheckboxes, inspection.crownInspection),
-          },
-          {
-            title: 'Stamm',
-            notes: inspection.trunkInspection?.notes,
-            markings: getActiveMarkings<TrunkInspectionState>(trunkCheckboxes, inspection.trunkInspection),
-          },
-          {
-            title: 'Stammfuss & Wurzelbereich',
-            notes: inspection.stemBaseInspection?.notes,
-            markings: getActiveMarkings<StemBaseInspectionState>(stemBaseCheckboxes, inspection.stemBaseInspection),
-          },
-        ]
-      : [];
+    : [];
 
   return (
-    <div className="ga-print-card ga-card mb-4">
-      <div className="d-flex justify-content-between align-items-start gap-3 mb-2">
+    <div className="ga-tree-block ga-card">
+      <div className="ga-tree-head">
         <div>
-          <div className="ga-section-title">Baumprofil</div>
-          <h3 className="h6 mb-1">
-            Baum {formatNumber(tree.number)} · {tree.species || 'Unbekannte Art'}
-          </h3>
+          <h2 className="ga-tree-title">Baum {formatNumber(tree.number)} · {tree.species || 'Unbekannte Art'}</h2>
+          <div className="ga-tree-subtitle">Kompakte Stammdaten und Kontrollübersicht</div>
         </div>
-        <div className="d-flex flex-column align-items-end gap-2">
-          <span
-            className={`ga-pill ${
-              inspection ? (inspection.isSafeForTraffic ? 'ga-pill--success' : 'ga-pill--danger') : 'ga-pill--neutral'
-            }`}
-          >
-            {inspection ? (inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher') : 'Keine Kontrolle'}
-          </span>
-          <span className="ga-pill">Sicherheitserwartung: {trafficSafetyExpectationLabel}</span>
+        <div className="ga-chip-group">
+          <span className={safetyClass}>{safetyLabel}</span>
+          <span className="ga-chip ga-chip--info">Nächste Kontrolle: {nextInspectionLabel}</span>
         </div>
       </div>
 
-      <div className="ga-meta-grid mb-3">
-        <div className="ga-meta-item">
-          <div className="ga-meta-label">Baumnummer</div>
-          <div className="ga-meta-value">{formatNumber(tree.number)}</div>
-        </div>
-        <div className="ga-meta-item">
-          <div className="ga-meta-label">Koordinaten</div>
-          <div className="ga-meta-value">{coordsLabel}</div>
-        </div>
-        <div className="ga-meta-item">
-          <div className="ga-meta-label">Baumhöhe (m)</div>
-          <div className="ga-meta-value">{formatNumber(tree.treeSizeMeters)}</div>
-        </div>
-        <div className="ga-meta-item">
-          <div className="ga-meta-label">Kronendurchmesser (m)</div>
-          <div className="ga-meta-value">{formatNumber(tree.crownDiameterMeters)}</div>
-        </div>
-        <div className="ga-meta-item">
-          <div className="ga-meta-label">Letzte Kontrolle</div>
-          <div className="ga-meta-value">
-            {inspection ? formatDateTime(inspection.performedAt) : 'Keine Kontrolle'}
-          </div>
-        </div>
-        <div className="ga-meta-item">
-          <div className="ga-meta-label">Nächste Kontrolle</div>
-          <div className="ga-meta-value">
-            {getNextInspectionDaysLabel(nextInspectionStatus)}
-          </div>
-        </div>
-        <div className="ga-meta-item">
-        </div>
-      </div>
-
-      <table className="ga-table mb-3">
-        <tbody>
-          <tr>
-            <th className="w-25">Stammdaten</th>
-            <td className="w-25">Anzahl Stämme: {formatNumber(tree.numberOfTrunks)}</td>
-            <th className="w-25">Stammdurchmesser 1</th>
-            <td className="w-25">{formatNumber(tree.trunkDiameter1)}</td>
-          </tr>
-          <tr>
-            <th>Stammdurchmesser 2</th>
-            <td>{formatNumber(tree.trunkDiameter2)}</td>
-            <th>Stammdurchmesser 3</th>
-            <td>{formatNumber(tree.trunkDiameter3)}</td>
-          </tr>
-          <tr>
-            <th>Nächste Kontrolle (Tage)</th>
-            <td colSpan={3}>{getNextInspectionDaysLabel(nextInspectionStatus)}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      {hasCoords ? (
-        <div className="mb-3">
-          <div className="ga-section-title">Karte</div>
-          <TreeMapInline
-            latitude={tree.latitude ?? undefined}
-            longitude={tree.longitude ?? undefined}
-            label={tree.number ?? tree.id}
-          />
-        </div>
-      ) : mapImage ? (
-        <div className="mb-3">
-          <div className="ga-section-title">Karte</div>
-          <div className="ga-map-shell position-relative" style={{ height: 240, width: '100%' }}>
-            <img
-              src={mapImage}
-              alt="Karte"
-              className="w-100 h-100"
-              style={{ objectFit: 'cover' }}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {inspectionFields ? (
-        <>
-          <div className="ga-section-title">Kontrolldaten</div>
-          <table className="ga-table mb-3">
+      <div className="ga-grid">
+        <div>
+          <div className="ga-section-title">Stammdaten und Kontrolle</div>
+          <table className="ga-table ga-table--meta">
             <tbody>
-              {inspectionFields.map(([label, value]) => (
+              {rows.map(([label, value]) => (
                 <tr key={label}>
-                  <th className="w-40">{label}</th>
+                  <th>{label}</th>
                   <td>{value}</td>
                 </tr>
               ))}
@@ -800,33 +629,97 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
             </tbody>
           </table>
 
-          <div className="ga-section-title">Notizen & Markierungen</div>
-          <table className="ga-table">
-            <thead>
-              <tr>
-                <th>Bereich</th>
-                <th>Notizen</th>
-                <th>Markierungen</th>
+          <div className="ga-section-title" style={{ marginTop: 10 }}>Pflegemassnahmen</div>
+          {measures.length > 0 ? (
+            <table className="ga-table ga-table--notes">
+              <tbody>
+                {measures.map((measure, index) => (
+                  <tr key={`${index}-${measure}`}>
+                    <th style={{ width: '12%' }}>{index + 1}</th>
+                    <td>{measure}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="ga-note-text ga-empty">Keine Pflegemassnahmen erfasst.</p>
+          )}
+        </div>
+
+        {hasValidCoordinates(tree.latitude, tree.longitude, { allowZero: false }) ? (
+          <div>
+            <div className="ga-section-title">Position</div>
+            <TreeMapInline latitude={tree.latitude ?? undefined} longitude={tree.longitude ?? undefined} label={tree.number ?? tree.id} />
+          </div>
+        ) : mapImage ? (
+          <div>
+            <div className="ga-section-title">Position</div>
+            <div className="ga-map-shell position-relative" style={{ height: 190, width: '100%' }}>
+              <img src={mapImage} alt="Karte" className="w-100 h-100" style={{ objectFit: 'cover' }} />
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="ga-section-title" style={{ marginTop: 10 }}>Befundübersicht</div>
+      {sections.length > 0 ? (
+        <table className="ga-table ga-table--notes">
+          <thead>
+            <tr>
+              <th>Bereich</th>
+              <th>Markierungen</th>
+              <th>Notizen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sections.map(([title, notes, markings]) => (
+              <tr key={title}>
+                <td>{title}</td>
+                <td>{markings}</td>
+                <td>{notes && String(notes).trim() ? String(notes) : 'Keine Notizen erfasst.'}</td>
               </tr>
-            </thead>
-            <tbody>
-              {sectionData.map((section) => (
-                <tr key={section.title}>
-                  <td className="fw-semibold">{section.title}</td>
-                  <td>{section.notes?.trim() ? section.notes : 'Keine Notizen erfasst.'}</td>
-                  <td>
-              {section.markings.length
-                ? section.markings.map(({ label, description }) => (description ? `${label} (${description})` : label)).join(', ')
-                : 'Keine Auffälligkeiten markiert.'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
+            ))}
+          </tbody>
+        </table>
       ) : (
-        <div className="mt-2 text-muted">Keine Kontrolle vorhanden.</div>
+        <p className="ga-note-text ga-empty">Keine Kontrolle vorhanden.</p>
       )}
+    </div>
+  );
+};
+
+export const GreenAreaMapPrint: React.FC<{
+  greenAreaId?: string;
+  greenAreaName?: string;
+  trees: TreeInspectionExport[];
+  mapCenterLabel?: string;
+}> = ({ greenAreaName, trees, mapCenterLabel }) => {
+  const generatedAt = formatDateDisplay(new Date());
+
+  return (
+    <div className="ga-print">
+      <PdfStyles />
+      <div className="ga-sheet">
+        <div className="ga-card">
+          <div className="ga-header">
+            <div>
+              <div className="ga-kicker">Kartenexport</div>
+              <h1 className="ga-title">{greenAreaName ?? 'Unbenannt'}</h1>
+              <div className="ga-subtitle">Gesamtübersicht aller Bäume mit Positionsmarkern</div>
+            </div>
+            <div className="ga-chip-group">
+              <span className="ga-chip">Exportiert am {generatedAt}</span>
+              <span className="ga-chip ga-chip--info">Bäume: {trees.length}</span>
+              {mapCenterLabel ? <span className="ga-chip">Kartenmittelpunkt: {mapCenterLabel}</span> : null}
+            </div>
+          </div>
+        </div>
+
+        <div className="ga-card">
+          <div className="ga-section-title">Übersichtskarte</div>
+          <AllTreesMap trees={trees} height={430} fitBoundsMaxZoom={14} initialZoom={10} />
+        </div>
+      </div>
     </div>
   );
 };
@@ -834,37 +727,42 @@ const TreeInspectionCard: React.FC<{ entry: TreeInspectionExport }> = ({ entry }
 const GreenAreaPdfDocument: React.FC<GreenAreaPdfDocumentProps> = ({
   greenAreaName,
   trees,
-  mapCenterLabel,
 }) => {
   const generatedAt = formatDateDisplay(new Date());
+  const inspectedCount = trees.filter((entry) => Boolean(entry.inspection)).length;
+  const overdueCount = trees.filter((entry) => getNextInspectionStatus(entry.tree.nextInspection).isOverdue).length;
+
   return (
     <div className="ga-print">
       <PdfStyles />
-      <div className="ga-card ga-hero mb-3">
-        <div className="d-flex justify-content-between align-items-start gap-3">
-          <div>
-            <div className="ga-hero-kicker">Grünflächenexport</div>
-            <h2 className="ga-hero-title">{greenAreaName ?? 'Unbenannt'}</h2>
-            <div className="ga-hero-subtitle">Exportiert am {generatedAt}</div>
-          </div>
-          <div className="ga-chip-group">
-            <span className="ga-pill">Bäume: {trees.length}</span>
-            {mapCenterLabel ? <span className="ga-pill ga-pill--neutral">Kartenmittelpunkt: {mapCenterLabel}</span> : null}
+      <div className="ga-sheet">
+        <div className="ga-card">
+          <div className="ga-header">
+            <div>
+              <div className="ga-kicker">Grünflächenexport</div>
+              <h1 className="ga-title">{greenAreaName ?? 'Unbenannt'}</h1>
+              <div className="ga-subtitle">Kompakt, tabellarisch und für Ausdruck optimiert</div>
+            </div>
+            <div className="ga-chip-group">
+              <span className="ga-chip">Exportiert am {generatedAt}</span>
+              <span className="ga-chip ga-chip--info">Bäume: {trees.length}</span>
+              <span className="ga-chip">Kontrolliert: {inspectedCount}</span>
+              <span className={overdueCount > 0 ? 'ga-chip ga-chip--danger' : 'ga-chip ga-chip--success'}>
+                Überfällig: {overdueCount}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="ga-card mb-4">
-        <div className="d-flex justify-content-between align-items-center mb-2">
-          <div className="ga-section-title mb-0">Karte: Bäume in dieser Fläche</div>
-          <span className="ga-muted">Marker mit Baumnummer</span>
+        <div className="ga-card">
+          <div className="ga-section-title">Karte der Bäume</div>
+          <AllTreesMap trees={trees} />
         </div>
-        <AllTreesMap trees={trees} />
-      </div>
 
-      {trees.map((entry) => (
-        <TreeInspectionCard key={entry.tree.id} entry={entry} />
-      ))}
+        {trees.map((entry) => (
+          <TreeInspectionCard key={entry.tree.id} entry={entry} />
+        ))}
+      </div>
     </div>
   );
 };

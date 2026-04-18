@@ -311,6 +311,28 @@ textarea.form-control:focus {
   box-shadow: 0 20px 48px rgba(10, 15, 25, 0.18);
 }
 
+.app-footer__link {
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+}
+
+.app-footer__link:hover,
+.app-footer__link:focus-visible {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.cookie-banner-link {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.cookie-banner-link:hover,
+.cookie-banner-link:focus-visible {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
 .app-auth-banner {
   border-radius: 20px;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
@@ -458,6 +480,52 @@ textarea.form-control:focus {
   border: 1px solid rgba(255, 255, 255, 0.72);
 }
 
+.export-panel {
+  padding: 1.05rem 1.15rem;
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(245, 249, 252, 0.74)),
+    linear-gradient(135deg, rgba(10, 132, 255, 0.06), rgba(19, 138, 87, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--app-shadow-soft);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.export-panel__grid {
+  align-items: stretch;
+}
+
+.export-panel__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 100%;
+  padding: 1rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.export-panel__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(10, 132, 255, 0.1);
+  color: #0b6bcb;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.export-panel__button {
+  align-self: flex-start;
+}
+
 .app-modal {
   position: fixed;
   inset: 0;
@@ -603,6 +671,14 @@ textarea.form-control:focus {
 
   .quick-stats {
     grid-template-columns: 1fr;
+  }
+
+  .export-panel {
+    padding: 0.9rem;
+  }
+
+  .export-panel__card {
+    padding: 0.9rem;
   }
 
   .tree-facts-table th,

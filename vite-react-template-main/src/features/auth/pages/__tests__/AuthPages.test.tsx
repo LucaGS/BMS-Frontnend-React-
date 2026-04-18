@@ -4,6 +4,16 @@ import { renderWithRouter, screen, waitFor } from '@/test/test-utils';
 import LoginPage from '../LoginPage';
 import SignupPage from '../SignupPage';
 
+const navigateMock = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => navigateMock,
+  };
+});
+
 const createJsonResponse = (data: unknown, ok = true, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -17,13 +27,14 @@ describe('LoginPage', () => {
   beforeEach(() => {
     fetchMock.mockReset();
     localStorage.clear();
+    navigateMock.mockReset();
   });
 
   afterEach(() => {
     fetchMock.mockReset();
   });
 
-  it('submits credentials and stores the returned token', async () => {
+  it('submits credentials, stores the returned token, and navigates to green areas', async () => {
     fetchMock.mockResolvedValueOnce(createJsonResponse({ token: 'jwt-123' }));
 
     renderWithRouter(<LoginPage />, { route: '/login', path: '/login' });
@@ -41,7 +52,7 @@ describe('LoginPage', () => {
       })
     );
     expect(localStorage.getItem('token')).toBe('jwt-123');
-    expect(await screen.findByRole('alert')).toHaveTextContent(/erfolgreich eingeloggt/i);
+    expect(navigateMock).toHaveBeenCalledWith('/green-areas', { replace: true });
   });
 
   it('surfaces errors returned by the API', async () => {
@@ -65,13 +76,14 @@ describe('SignupPage', () => {
   beforeEach(() => {
     fetchMock.mockReset();
     localStorage.clear();
+    navigateMock.mockReset();
   });
 
   afterEach(() => {
     fetchMock.mockReset();
   });
 
-  it('creates an account and stores the token when provided', async () => {
+  it('creates an account, stores the token, and navigates to green areas when provided', async () => {
     fetchMock.mockResolvedValueOnce(createJsonResponse({ token: 'signup-token' }));
 
     renderWithRouter(<SignupPage />, { route: '/signup', path: '/signup' });
@@ -84,7 +96,7 @@ describe('SignupPage', () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(localStorage.getItem('token')).toBe('signup-token');
-    expect(await screen.findByRole('alert')).toHaveTextContent(/registrierung erfolgreich/i);
+    expect(navigateMock).toHaveBeenCalledWith('/green-areas', { replace: true });
   });
 
   it('shows a validation error when passwords differ', async () => {

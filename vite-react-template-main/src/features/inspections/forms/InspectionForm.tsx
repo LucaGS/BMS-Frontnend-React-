@@ -19,6 +19,7 @@ import { InspectionSection } from './InspectionFormSections';
 import type { ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
 import { mapMeasuresFromApi } from '@/entities/arboriculturalMeasure';
 import { VITALITY_OPTIONS } from '@/entities/inspection';
+import { authFetch } from '@/shared/lib/auth';
 
 type InspectionFormProps = {
   treeId: number;
@@ -49,11 +50,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
       setMeasuresLoading(true);
       setMeasuresError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/ArboriculturalMeasures/GetAll`, {
-          headers: {
-            Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-          },
-        });
+        const response = await authFetch(`${API_BASE_URL}/api/ArboriculturalMeasures/GetAll`);
         if (!response.ok) {
           throw new Error('Failed to load measures');
         }
@@ -103,10 +100,9 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
       const payload = buildPayload();
       const requestUrl = `${API_BASE_URL}/api/Inspections/Create`;
 
-      const response = await fetch(requestUrl, {
+      const response = await authFetch(requestUrl, {
         method: 'POST',
         headers: {
-          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
@@ -331,10 +327,9 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
                       onClick={async () => {
                         try {
                           setIsSubmitting(true);
-                          const response = await fetch(`${API_BASE_URL}/api/ArboriculturalMeasures/Create`, {
+                          const response = await authFetch(`${API_BASE_URL}/api/ArboriculturalMeasures/Create`, {
                             method: 'POST',
                             headers: {
-                              Authorization: `bearer ${localStorage.getItem('token') || ''}`,
                               'Content-Type': 'application/json',
                             },
                             body: JSON.stringify({
@@ -349,9 +344,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
                           setIsCreatingMeasure(false);
                           // Reload measures and select the new one
                           setMeasuresLoading(true);
-                          const reload = await fetch(`${API_BASE_URL}/api/ArboriculturalMeasures/GetAll`, {
-                            headers: { Authorization: `bearer ${localStorage.getItem('token') || ''}` },
-                          });
+                          const reload = await authFetch(`${API_BASE_URL}/api/ArboriculturalMeasures/GetAll`);
                           if (!reload.ok) {
                             throw new Error('Reload measures failed');
                           }

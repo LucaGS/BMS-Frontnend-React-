@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapTreeFromApi, mapTreeToApiPayload, type Tree } from '@/entities/tree';
 import TreeLocationPicker from '@/features/trees/components/TreeLocationPicker';
+import { authFetch } from '@/shared/lib/auth';
 
 type TreeFormProps = {
   greenAreaId: number;
@@ -56,11 +57,7 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       setIsPrefillingLastTree(true);
       setLastTreePrefillError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/Trees/GetLastCreatedTree`, {
-          headers: {
-            Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-          },
-        });
+        const response = await authFetch(`${API_BASE_URL}/api/Trees/GetLastCreatedTree`);
         if (!response.ok) {
           throw new Error('Failed to load last tree');
         }
@@ -208,11 +205,10 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
 
     try {
       console.log('Creating tree with payload:', payload);
-      const response = await fetch(`${API_BASE_URL}/api/Trees/Create`, {
+      const response = await authFetch(`${API_BASE_URL}/api/Trees/Create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
         },
         body: JSON.stringify(payload),
       });

@@ -106,6 +106,11 @@ const AppHeader: React.FC<AppHeaderProps> = ({ authStatus = 'unauthenticated', o
                     Impressum
                   </NavLink>
                 </li>
+                <li>
+                  <NavLink to="/privacy" className="dropdown-item" onClick={closeNavbar}>
+                    Datenschutz
+                  </NavLink>
+                </li>
               </ul>
             </li>
             <li className="nav-item">

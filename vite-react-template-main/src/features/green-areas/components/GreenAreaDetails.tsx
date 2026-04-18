@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { pdf } from '@react-pdf/renderer';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { mapInspectionFromApi } from '@/features/inspections';
 import { mapTreesFromApi, type Tree } from '@/features/trees/types';
@@ -8,17 +7,14 @@ import TreeForm from '@/features/trees/forms/TreeForm';
 import TreeLocationPicker from '@/features/trees/components/TreeLocationPicker';
 import GreenAreaMap from '../maps/GreenAreaMap';
 import type { GreenArea } from '@/features/green-areas/types';
-import {
-  GreenAreaMapPrint,
-  type LastInspectionDetail,
-  type TreeInspectionExport,
-} from './GreenAreaPdfDocument';
-import GreenAreaDataPdfDocument from './GreenAreaDataPdfDocument';
+import type { LastInspectionDetail, TreeInspectionExport } from './GreenAreaPdfDocument';
 import { getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
 import { mapMeasuresFromApi, type ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
 import { formatCoordinateDisplay } from '@/shared/lib/coordinateFormatting';
 import { formatDateDisplay } from '../../../shared/lib/dateFormatting';
 import AppModal from '@/shared/components/AppModal';
+import { authFetch } from '@/shared/lib/auth';
+import { createExportDateStamp, createExportFileSlug } from '@/shared/lib/exportNaming';
 
 type GreenAreaRouteParams = {
   greenAreaId: string;
@@ -31,6 +27,11 @@ type GreenAreaLocationState = {
 };
 
 const DEFAULT_GREEN_AREA_CENTER: [number, number] = [49.659, 9.9962];
+
+const LazyGreenAreaMapPrint = React.lazy(async () => {
+  const module = await import('./GreenAreaPdfDocument');
+  return { default: module.GreenAreaMapPrint };
+});
 
 const deriveCenterFromState = (state?: GreenAreaLocationState): [number, number] | null => {
   if (typeof state?.latitude === 'number' && typeof state?.longitude === 'number') {
@@ -64,11 +65,19 @@ const GreenAreaDetails: React.FC = () => {
   const [editAreaSaving, setEditAreaSaving] = useState(false);
   const [editAreaError, setEditAreaError] = useState<string | null>(null);
   const [showAreaLocationPicker, setShowAreaLocationPicker] = useState(false);
+  const previousDocumentTitleRef = useRef<string | null>(null);
   const [areaDraft, setAreaDraft] = useState<{ name: string; latitude: string; longitude: string }>({
     name: greenAreaName ?? '',
     latitude: '',
     longitude: '',
   });
+  const exportSlug = useMemo(
+    () => createExportFileSlug(currentGreenArea?.name ?? greenAreaName, 'gruenflaeche'),
+    [currentGreenArea?.name, greenAreaName],
+  );
+  const exportDateStamp = useMemo(() => createExportDateStamp(), []);
+  const reportFileName = `baumbericht-${exportSlug}-${exportDateStamp}.pdf`;
+  const mapPrintTitle = `kartenuebersicht-${exportSlug}-${exportDateStamp}`;
 
   const fetchLatestInspections = useCallback(
     async (currentTrees: Tree[]): Promise<Record<number, LastInspectionDetail | null>> => {
@@ -76,7 +85,6 @@ const GreenAreaDetails: React.FC = () => {
         return {};
       }
 
-      const token = localStorage.getItem('token') || '';
       const results = await Promise.all(
         currentTrees.map(async (tree) => {
           if (!tree.lastInspectionId) {
@@ -84,11 +92,7 @@ const GreenAreaDetails: React.FC = () => {
           }
 
           try {
-            const response = await fetch(`${API_BASE_URL}/api/Inspections/${tree.lastInspectionId}`, {
-              headers: {
-                Authorization: `bearer ${token}`,
-              },
-            });
+            const response = await authFetch(`${API_BASE_URL}/api/Inspections/${tree.lastInspectionId}`);
 
             if (!response.ok) {
               throw new Error('Failed to load last inspection.');
@@ -122,11 +126,7 @@ const GreenAreaDetails: React.FC = () => {
   );
 
   const fetchMeasuresLookup = useCallback(async (): Promise<Record<number, ArboriculturalMeasure>> => {
-    const response = await fetch(`${API_BASE_URL}/api/ArboriculturalMeasures/GetAll`, {
-      headers: {
-        Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-      },
-    });
+    const response = await authFetch(`${API_BASE_URL}/api/ArboriculturalMeasures/GetAll`);
     if (!response.ok) {
       throw new Error('Failed to load measures for export.');
     }
@@ -144,11 +144,7 @@ const GreenAreaDetails: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch(`${API_BASE_URL}/api/Trees/GetByGreenAreaId/${greenAreaId}`, {
-        headers: {
-          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-        },
-      });
+      const response = await authFetch(`${API_BASE_URL}/api/Trees/GetByGreenAreaId/${greenAreaId}`);
       if (!response.ok) {
         throw new Error('Failed to load trees for the selected green area.');
       }
@@ -197,6 +193,29 @@ const GreenAreaDetails: React.FC = () => {
   }, [locationState]);
 
   useEffect(() => {
+    if (!showMapPrint) {
+      if (previousDocumentTitleRef.current !== null) {
+        document.title = previousDocumentTitleRef.current;
+        previousDocumentTitleRef.current = null;
+      }
+      return;
+    }
+
+    if (previousDocumentTitleRef.current === null) {
+      previousDocumentTitleRef.current = document.title;
+    }
+
+    document.title = mapPrintTitle;
+
+    return () => {
+      if (previousDocumentTitleRef.current !== null) {
+        document.title = previousDocumentTitleRef.current;
+        previousDocumentTitleRef.current = null;
+      }
+    };
+  }, [mapPrintTitle, showMapPrint]);
+
+  useEffect(() => {
     if (editAreaMode && currentGreenArea) {
       setAreaDraft({
         name: currentGreenArea.name ?? greenAreaName ?? '',
@@ -221,11 +240,7 @@ const GreenAreaDetails: React.FC = () => {
 
     const fetchGreenAreaCenter = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/GreenAreas/GetAll`, {
-          headers: {
-            Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-          },
-        });
+        const response = await authFetch(`${API_BASE_URL}/api/GreenAreas/GetAll`);
 
         if (!response.ok) {
           throw new Error('Failed to load green areas.');
@@ -314,7 +329,7 @@ const GreenAreaDetails: React.FC = () => {
           ? baseInspection.arboriculturalMeasures
           : baseInspection.arboriculturalMeasureIds && baseInspection.arboriculturalMeasureIds.length > 0
             ? baseInspection.arboriculturalMeasureIds
-                .map((id) => resolvedMeasuresLookup[id])
+              .map((id: number) => resolvedMeasuresLookup[id])
                 .filter(Boolean) as ArboriculturalMeasure[]
             : null;
 
@@ -365,7 +380,10 @@ const GreenAreaDetails: React.FC = () => {
     setIsGeneratingDataPdf(true);
     try {
       const entries = await buildExportEntries();
-      const centerLabel = `${formatCoordinateDisplay(mapCenter[0])}, ${formatCoordinateDisplay(mapCenter[1])}`;
+      const [{ pdf }, { default: GreenAreaDataPdfDocument }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('./GreenAreaDataPdfDocument'),
+      ]);
 
       const blob = await pdf(
         <GreenAreaDataPdfDocument
@@ -373,15 +391,13 @@ const GreenAreaDetails: React.FC = () => {
           greenAreaName={greenAreaName}
           trees={entries}
           exportedAt={new Date()}
-          centerLabel={centerLabel}
         />,
       ).toBlob();
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      const safeName = (greenAreaName ?? 'GreenArea').replace(/[^a-z0-9_-]+/gi, '_') || 'GreenArea';
       link.href = url;
-      link.download = `GreenArea_${greenAreaId}_${safeName}_trees.pdf`;
+      link.download = reportFileName;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 500);
     } catch (exportError) {
@@ -390,7 +406,7 @@ const GreenAreaDetails: React.FC = () => {
     } finally {
       setIsGeneratingDataPdf(false);
     }
-  }, [buildExportEntries, greenAreaId, greenAreaName, mapCenter, trees]);
+  }, [buildExportEntries, greenAreaId, greenAreaName, mapCenter, reportFileName, trees]);
 
   const parseNumber = (value: string) => {
     const parsed = Number.parseFloat(value);
@@ -408,10 +424,9 @@ const GreenAreaDetails: React.FC = () => {
         longitude: parseNumber(areaDraft.longitude),
         latitude: parseNumber(areaDraft.latitude),
       };
-      const response = await fetch(`${API_BASE_URL}/api/GreenAreas/${greenAreaId}`, {
+      const response = await authFetch(`${API_BASE_URL}/api/GreenAreas/${greenAreaId}`, {
         method: 'PUT',
         headers: {
-          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
@@ -443,11 +458,8 @@ const GreenAreaDetails: React.FC = () => {
     const confirmed = window.confirm('Diese Grünfläche wirklich löschen? Alle zugehörigen Bäume könnten betroffen sein.');
     if (!confirmed) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/GreenAreas/${greenAreaId}`, {
+      const response = await authFetch(`${API_BASE_URL}/api/GreenAreas/${greenAreaId}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-        },
       });
       if (!response.ok) {
         throw new Error('Delete failed');
@@ -464,6 +476,9 @@ const GreenAreaDetails: React.FC = () => {
       <div className="card-body p-4">
         <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
           <div>
+            <Link to="/green-areas" className="btn btn-link btn-sm px-0 mb-2 text-decoration-none">
+              ← Zur Grünflächenliste
+            </Link>
             <div className="text-uppercase text-muted small fw-semibold mb-1">Grünfläche</div>
             <h1 className="h4 mb-0">
               {greenAreaId} | {currentGreenArea?.name ?? greenAreaName}
@@ -581,7 +596,7 @@ const GreenAreaDetails: React.FC = () => {
           </AppModal>
         )}
 
-        <div className="quick-actions mt-4 mb-2 d-flex flex-wrap align-items-center gap-2">
+        <div className="quick-actions mt-4 mb-3 d-flex flex-wrap align-items-center gap-2">
           <button
             type="button"
             className="btn btn-success"
@@ -594,7 +609,7 @@ const GreenAreaDetails: React.FC = () => {
             className="btn btn-outline-success"
             onClick={() => navigate('/green-areas')}
           >
-            Zurück zur Übersicht
+            Zur Grünflächenliste
           </button>
           <button
             type="button"
@@ -619,6 +634,58 @@ const GreenAreaDetails: React.FC = () => {
           >
             {showMap ? 'Karte verbergen' : 'Karte anzeigen'}
           </button>
+        </div>
+
+        <div className="export-panel mb-4">
+          <div className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-3">
+            <div>
+              <div className="text-uppercase text-muted small fw-semibold mb-1">Export</div>
+              <h2 className="h5 mb-1">Berichte und Karten sauber ausgeben</h2>
+              <p className="text-muted small mb-0">
+                Zwei getrennte Exporte: eine reine Karten-Druckansicht für die Fläche und ein separater PDF-Bericht mit den Baumdaten.
+              </p>
+            </div>
+            <div className="text-muted small">
+              Dateiname Bericht: <span className="fw-semibold">{reportFileName}</span>
+            </div>
+          </div>
+
+          <div className="row g-3 export-panel__grid">
+            <div className="col-12 col-lg-6">
+              <div className="export-panel__card h-100">
+                <div className="export-panel__eyebrow">Druckansicht</div>
+                <div className="fw-semibold mb-1">Nur Kartenübersicht drucken</div>
+                <div className="text-muted small mb-3 flex-grow-1">
+                  Zeigt nur die Fläche mit allen Bäumen in einer sauberen Druckansicht. Das ist nicht der Baumdaten-PDF-Bericht.
+                </div>
+                <button
+                  type="button"
+                  onClick={handleOpenMapPrint}
+                  disabled={isGeneratingMapPrint || trees.length === 0}
+                  className="btn btn-primary export-panel__button"
+                >
+                  {isGeneratingMapPrint ? 'Bereite Druckansicht vor...' : 'Kartenübersicht öffnen'}
+                </button>
+              </div>
+            </div>
+            <div className="col-12 col-lg-6">
+              <div className="export-panel__card h-100">
+                <div className="export-panel__eyebrow">PDF</div>
+                <div className="fw-semibold mb-1">Baumdaten als PDF laden</div>
+                <div className="text-muted small mb-3 flex-grow-1">
+                  Enthält die Baumdaten der Grünfläche als PDF mit Kontrollstatus, Beschreibung, Pflegemassnahmen sowie Notizen und Markierungen.
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-outline-primary export-panel__button"
+                  onClick={handleDownloadDataPdf}
+                  disabled={isGeneratingDataPdf || trees.length === 0}
+                >
+                  {isGeneratingDataPdf ? 'Erzeuge PDF-Bericht...' : 'PDF-Bericht herunterladen'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {showTreeForm && (
@@ -702,27 +769,28 @@ const GreenAreaDetails: React.FC = () => {
         {showMapPrint && mapPrintData && (
           <div className="mt-4">
             <div className="alert alert-info">
-              <div className="fw-semibold">Druckansicht (Karte)</div>
+              <div className="fw-semibold">Karten-Druckansicht</div>
               <div className="small mb-2">
-                Nur die Grünfläche mit allen Bäumen in einem kleineren Zoom-Level. Browser-Druck (z.B. STRG+P) nutzen
-                und als PDF speichern.
+                Diese Ansicht ist nur für Karte und Ausdruck gedacht. Der separate Button "Baumdaten als PDF laden" erzeugt den eigentlichen Baumdaten-Bericht.
               </div>
               <div className="d-flex gap-2">
                 <button type="button" className="btn btn-sm btn-primary" onClick={() => window.print()}>
-                  Drucken / als PDF speichern
+                  Drucken oder als PDF sichern
                 </button>
                 <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setShowMapPrint(false)}>
-                  Vorschau schliessen
+                  Vorschau schließen
                 </button>
               </div>
             </div>
             <div className="border rounded p-3 bg-white">
-              <GreenAreaMapPrint
-                greenAreaId={greenAreaId}
-                greenAreaName={greenAreaName}
-                trees={mapPrintData.entries}
-                mapCenterLabel={mapPrintData.centerLabel}
-              />
+              <Suspense fallback={<div className="text-muted small">Druckansicht wird geladen...</div>}>
+                <LazyGreenAreaMapPrint
+                  greenAreaId={greenAreaId}
+                  greenAreaName={greenAreaName}
+                  trees={mapPrintData.entries}
+                  mapCenterLabel={mapPrintData.centerLabel}
+                />
+              </Suspense>
             </div>
           </div>
         )}

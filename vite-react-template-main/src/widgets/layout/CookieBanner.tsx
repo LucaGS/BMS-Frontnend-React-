@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const STORAGE_KEY = 'bms-cookie-consent';
 
@@ -33,15 +34,19 @@ const CookieBanner: React.FC = () => {
       >
         <div className="toast-body d-flex flex-column flex-md-row align-items-md-center gap-3">
           <div>
-            <div className="fw-semibold">Cookies</div>
+            <div className="fw-semibold">Speicherhinweis</div>
             <div className="small text-light">
-              Wir verwenden nur essentielle Cookies, um die Anwendung funktionsfähig zu halten.
-              Mit Klick auf &quot;Akzeptieren&quot; stimmen Sie dem zu.
+              Diese Anwendung verwendet nur technisch erforderliche Browser-Speicherungen für Anmeldestatus und
+              Hinweisbestätigung. Details finden Sie in der{' '}
+              <Link to="/privacy" className="cookie-banner-link">
+                Datenschutzerklärung
+              </Link>
+              .
             </div>
           </div>
           <div className="ms-md-auto d-flex gap-2">
             <button type="button" className="btn btn-light btn-sm" onClick={accept}>
-              Akzeptieren
+              Verstanden
             </button>
           </div>
         </div>

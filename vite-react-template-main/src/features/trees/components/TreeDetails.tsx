@@ -10,6 +10,7 @@ import TreeEditForm from '@/features/trees/forms/TreeEditForm';
 import { formatCoordinateDisplay } from '@/shared/lib/coordinateFormatting';
 import { formatDateDisplay } from '@/shared/lib/dateFormatting';
 import AppModal from '@/shared/components/AppModal';
+import { authFetch } from '@/shared/lib/auth';
 
 type TreeDetailsProps = {
   tree?: Tree | null;
@@ -47,11 +48,7 @@ const TreeDetails: React.FC<TreeDetailsProps> = ({ tree, embedded = false, onClo
       setInspectionsError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/Inspections/ByTreeId/${activeTree.id}`, {
-          headers: {
-            Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-          },
-        });
+        const response = await authFetch(`${API_BASE_URL}/api/Inspections/ByTreeId/${activeTree.id}`);
 
         if (!response.ok) {
           throw new Error('Failed to load inspections.');

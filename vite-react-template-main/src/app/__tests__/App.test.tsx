@@ -16,6 +16,7 @@ describe('App', () => {
 
     expect(screen.getByRole('link', { name: /bms/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /zum login/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /datenschutz|datenschutzerklärung/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/nicht eingeloggt/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { name: /baum- und grünflächenverwaltung mit ruhiger, klarer oberfläche/i })).toBeInTheDocument();
     expect(screen.getByText(/bms/i, { selector: 'small' })).toBeInTheDocument();
@@ -25,6 +26,21 @@ describe('App', () => {
     window.history.pushState({}, '', '/about');
     render(<App />);
     expect(screen.getByRole('heading', { name: /über diese anwendung/i })).toBeInTheDocument();
+  });
+
+  it('renders the privacy page when navigated to /privacy', () => {
+    window.history.pushState({}, '', '/privacy');
+    render(<App />);
+    expect(screen.getByRole('heading', { name: /datenschutzerklärung/i })).toBeInTheDocument();
+    expect(screen.getByText(/lokale speicherung im browser/i)).toBeInTheDocument();
+  });
+
+  it('redirects unauthenticated users from protected routes to login', () => {
+    window.history.pushState({}, '', '/green-areas');
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /^grünflächen$/i })).not.toBeInTheDocument();
   });
 
   it('verifies the stored JWT on app load via green areas request', async () => {
@@ -40,12 +56,10 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByText(/eingeloggt/i)).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/GreenAreas/GetAll'),
-      expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: 'bearer jwt-token' }),
-      })
-    );
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0] ?? [];
+    expect(String(requestUrl)).toContain('/api/GreenAreas/GetAll');
+    expect(requestInit).toBeTruthy();
+    expect((requestInit?.headers as Headers).get('Authorization')).toBe('bearer jwt-token');
   });
 
   it('clears the token and shows a warning when jwt validation fails', async () => {

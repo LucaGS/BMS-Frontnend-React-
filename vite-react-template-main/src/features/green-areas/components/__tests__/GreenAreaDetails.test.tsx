@@ -78,4 +78,23 @@ describe('GreenAreaDetails', () => {
     await userEvent.click(mapToggle);
     expect(await screen.findByTestId('green-area-map-mock')).toBeInTheDocument();
   });
+
+  it('shows a direct way back to the green-area list', async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([{ id: 1, name: 'Park', latitude: 1, longitude: 2 }]), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+
+    renderWithRouter(<GreenAreaDetails />, {
+      route: '/green-areas/1/Park',
+      path: '/green-areas/:greenAreaId/:greenAreaName',
+    });
+
+    const backLink = await screen.findByRole('link', { name: /zur grünflächenliste/i });
+    expect(backLink).toHaveAttribute('href', '/green-areas');
+  });
 });

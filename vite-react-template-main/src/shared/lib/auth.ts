@@ -34,3 +34,27 @@ export const clearStoredToken = () => {
   localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   dispatchAuthChanged();
 };
+
+export const createAuthHeaders = (headers?: HeadersInit) => {
+  const mergedHeaders = new Headers(headers ?? {});
+  const token = getStoredToken();
+
+  if (token && !mergedHeaders.has('Authorization')) {
+    mergedHeaders.set('Authorization', `bearer ${token}`);
+  }
+
+  return mergedHeaders;
+};
+
+export const authFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+  const response = await fetch(input, {
+    ...init,
+    headers: createAuthHeaders(init?.headers),
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    clearStoredToken();
+  }
+
+  return response;
+};

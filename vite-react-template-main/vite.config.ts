@@ -10,6 +10,25 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return undefined;
+          }
+
+          if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/scheduler/')) {
+            return 'react-core';
+          }
+
+          const packageMatch = id.match(/node_modules[\\/]((?:@[^\\/]+[\\/])?[^\\/]+)/);
+          const packageName = packageMatch?.[1]?.replace('@', '').replace(/[\\/]/g, '-');
+          return packageName ? `vendor-${packageName}` : 'vendor';
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'happy-dom',

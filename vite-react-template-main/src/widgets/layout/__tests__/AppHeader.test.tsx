@@ -14,6 +14,7 @@ describe('AppHeader', () => {
     expect(screen.getByRole('link', { name: /startseite/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /login/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /registrieren/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /datenschutz/i })).toBeInTheDocument();
     expect(screen.getByText(/nicht eingeloggt/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /logout/i })).not.toBeInTheDocument();
   });

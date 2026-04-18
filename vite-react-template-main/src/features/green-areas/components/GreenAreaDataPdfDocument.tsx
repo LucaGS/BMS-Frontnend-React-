@@ -8,7 +8,6 @@ import {
   stemBaseCheckboxes,
   trunkCheckboxes,
 } from '@/features/inspections/forms/inspectionFormConfig';
-import { getNextInspectionDaysLabel, getNextInspectionStatus } from '@/features/trees/utils/nextInspection';
 import { hasValidCoordinates } from '@/shared/maps/leafletUtils';
 import { formatCoordinateDisplay } from '@/shared/lib/coordinateFormatting';
 import { formatDateDisplay } from '@/shared/lib/dateFormatting';
@@ -21,87 +20,64 @@ type GreenAreaDataPdfDocumentProps = {
   greenAreaName?: string;
   trees: TreeInspectionExport[];
   exportedAt?: Date;
-  centerLabel?: string;
 };
 
 const styles = StyleSheet.create({
-  page: { padding: 26, fontFamily: 'Helvetica', backgroundColor: '#eef3f8', color: '#10203a' },
+  page: { padding: 22, fontFamily: 'Helvetica', fontSize: 9.5, backgroundColor: '#f3f6fa', color: '#172033' },
   header: {
-    backgroundColor: '#f6f9fc',
-    borderRadius: 24,
-    paddingTop: 18,
-    paddingBottom: 18,
-    paddingHorizontal: 18,
-    marginBottom: 18,
+    backgroundColor: '#ffffff',
+    borderColor: '#d7e0ea',
     borderWidth: 1,
-    borderColor: '#ffffff',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
   },
-  kicker: { fontSize: 9, letterSpacing: 1.4, textTransform: 'uppercase', color: '#0b6bcb', fontWeight: 700, marginBottom: 6 },
-  title: { fontSize: 20, marginBottom: 6, fontWeight: 700, color: '#10203a' },
-  meta: { fontSize: 10, color: '#5d6b82', marginBottom: 4 },
-  section: { marginBottom: 14 },
-  sectionTitle: { fontSize: 11, marginBottom: 8, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: '#5d6b82' },
-  card: {
-    backgroundColor: '#fdfefe',
-    borderRadius: 22,
+  kicker: { fontSize: 8, color: '#0b6bcb', letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 },
+  title: { fontSize: 17, fontWeight: 700, marginBottom: 4 },
+  meta: { fontSize: 8.5, color: '#61718a', marginBottom: 2 },
+  section: {
+    backgroundColor: '#ffffff',
+    borderColor: '#d7e0ea',
     borderWidth: 1,
-    borderColor: '#ffffff',
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
-  cardTitle: { fontSize: 14, fontWeight: 700, color: '#10203a' },
-  pillGroup: { alignItems: 'flex-end' },
-  pill: {
+  sectionTitle: { fontSize: 10, color: '#61718a', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700, marginBottom: 6 },
+  treeTitle: { fontSize: 13, fontWeight: 700, marginBottom: 3 },
+  treeSubtitle: { fontSize: 8.5, color: '#61718a', marginBottom: 6 },
+  row: { flexDirection: 'row' },
+  cellHeader: {
+    backgroundColor: '#f7f9fc',
+    borderColor: '#d7e0ea',
+    borderWidth: 1,
     paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    fontSize: 9,
+    paddingHorizontal: 6,
+    fontSize: 8,
     fontWeight: 700,
-    color: '#10203a',
-    marginBottom: 6,
-    borderWidth: 1,
+    color: '#61718a',
   },
-  pillSuccess: { backgroundColor: '#ecfdf3', borderColor: '#bbf7d0', color: '#166534' },
-  pillDanger: { backgroundColor: '#fef2f2', borderColor: '#fecdd3', color: '#991b1b' },
-  pillNeutral: { backgroundColor: '#eef2ff', borderColor: '#c7d2fe', color: '#3730a3' },
-  metaGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4, justifyContent: 'space-between' },
-  metaItem: {
-    width: '48.5%',
-    marginBottom: 8,
-    backgroundColor: '#f6f9fc',
-    borderRadius: 16,
+  cell: {
+    borderColor: '#d7e0ea',
     borderWidth: 1,
-    borderColor: '#e6edf5',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 6,
+    fontSize: 8.8,
+    color: '#172033',
   },
-  metaLabel: { fontSize: 8, color: '#5d6b82', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
-  metaValue: { fontSize: 11, color: '#10203a', fontWeight: 600, lineHeight: 15 },
-  paragraph: { fontSize: 10, lineHeight: 15, color: '#10203a' },
-  divider: { height: 1, backgroundColor: '#dbe5f0', marginVertical: 10 },
-  smallLabel: { fontSize: 9, color: '#5d6b82', lineHeight: 13 },
-  subSection: {
-    marginBottom: 8,
-    backgroundColor: '#f6f9fc',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#e6edf5',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 },
-  chip: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 999,
-    backgroundColor: '#eef2ff',
-    marginRight: 6,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: '#c7d2fe',
-  },
-  chipText: { fontSize: 9, color: '#312e81' },
+  summaryColNumber: { width: '8%' },
+  summaryColSpecies: { width: '17%' },
+  summaryColLast: { width: '17%' },
+  summaryColNext: { width: '16%' },
+  summaryColStatus: { width: '12%' },
+  summaryColVitality: { width: '14%' },
+  summaryColCoords: { width: '16%' },
+  metaLabel: { width: '26%' },
+  metaValue: { width: '24%' },
+  notesLabel: { width: '18%' },
+  notesText: { width: '37%' },
+  notesMarkings: { width: '45%' },
+  paragraph: { fontSize: 8.8, lineHeight: 1.35 },
 });
 
 const formatNumber = (value?: number | null, fallback = '-') =>
@@ -124,24 +100,32 @@ const formatDateTime = (value?: string | null) => {
   return formatDateDisplay(value, value);
 };
 
+const formatNextInspectionDate = (value?: string | null) => {
+  if (!value) {
+    return 'Keine nächste Kontrolle';
+  }
+
+  return formatDateDisplay(value, 'Keine nächste Kontrolle');
+};
+
 const getCoordinatesLabel = (tree: Tree) =>
   hasValidCoordinates(tree.latitude, tree.longitude, { allowZero: false })
     ? `${formatCoordinateDisplay(tree.latitude)}, ${formatCoordinateDisplay(tree.longitude)}`
     : 'Keine Koordinaten';
 
-const buildMeasuresLabel = (inspection?: LastInspectionDetail | null) => {
+const buildMeasuresList = (inspection?: LastInspectionDetail | null) => {
   if (!inspection) {
-    return [];
+    return [] as string[];
   }
   if (inspection.arboriculturalMeasures && inspection.arboriculturalMeasures.length > 0) {
-    return inspection.arboriculturalMeasures.map((measure) =>
-      measure.description ? `${measure.measureName} (${measure.description})` : measure.measureName,
-    );
+    return inspection.arboriculturalMeasures
+      .map((measure) => (measure.description ? `${measure.measureName} (${measure.description})` : measure.measureName))
+      .filter(Boolean);
   }
   if (inspection.arboriculturalMeasureIds && inspection.arboriculturalMeasureIds.length > 0) {
-    return ['Massnahme hinterlegt'];
+    return ['Massnahmen hinterlegt'];
   }
-  return [];
+  return [] as string[];
 };
 
 const getActiveMarkings = <T extends Record<string, unknown>>(
@@ -155,189 +139,145 @@ const getActiveMarkings = <T extends Record<string, unknown>>(
       const rawDescription = (data as any)?.[descriptionKey];
       const description =
         typeof rawDescription === 'string' && rawDescription.trim().length > 0 ? rawDescription.trim() : null;
-      return { label, description };
+      return description ? `${label} (${description})` : label;
     });
 
-const buildSafetyPillStyle = (inspection?: LastInspectionDetail | null) => {
-  if (!inspection) return styles.pillNeutral;
-  return inspection.isSafeForTraffic ? styles.pillSuccess : styles.pillDanger;
-};
-
-const buildSafetyLabel = (inspection?: LastInspectionDetail | null) => {
-  if (!inspection) return 'Keine Kontrolle';
-  return inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher';
-};
+const TableRow: React.FC<{ columns: Array<{ text: string; style: any }>; header?: boolean }> = ({ columns, header = false }) => (
+  <View style={styles.row}>
+    {columns.map((column, index) => (
+      <Text key={`${index}-${column.text}`} style={[header ? styles.cellHeader : styles.cell, column.style]}>
+        {column.text}
+      </Text>
+    ))}
+  </View>
+);
 
 const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
   greenAreaName,
   trees,
   exportedAt,
-  centerLabel,
 }) => {
   const generatedAt = exportedAt ? new Date(exportedAt) : new Date();
 
   return (
     <Document>
-      <Page size="A4" style={styles.page} wrap>
+      <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.kicker}>Baumdaten Export</Text>
-          <Text style={styles.title}>Grünfläche {greenAreaName ?? 'Unbenannt'}</Text>
-          <Text style={styles.meta}>Erstellt am {formatDateDisplay(generatedAt)} | Bäume: {trees.length}</Text>
-          {centerLabel ? <Text style={styles.meta}>Mittelpunkt: {centerLabel}</Text> : null}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Baumdetails</Text>
+          <Text style={styles.title}>{greenAreaName ?? 'Unbenannt'}</Text>
+          <Text style={styles.meta}>Exportiert am {formatDateDisplay(generatedAt)}</Text>
         </View>
 
         {trees.map((entry) => {
           const inspection = entry.inspection;
-          const nextStatus = getNextInspectionStatus(entry.tree.nextInspection);
-          const measures = buildMeasuresLabel(inspection);
-          const sectionData = inspection
+          const measures = buildMeasuresList(inspection);
+          const noteRows: Array<[string, string, string]> = inspection
             ? [
-                {
-                  title: 'Krone',
-                  notes: inspection.crownInspection?.notes,
-                  markings: getActiveMarkings<CrownInspectionState>(crownCheckboxes, inspection.crownInspection),
-                },
-                {
-                  title: 'Stamm',
-                  notes: inspection.trunkInspection?.notes,
-                  markings: getActiveMarkings<TrunkInspectionState>(trunkCheckboxes, inspection.trunkInspection),
-                },
-                {
-                  title: 'Stammfuß & Wurzelbereich',
-                  notes: inspection.stemBaseInspection?.notes,
-                  markings: getActiveMarkings<StemBaseInspectionState>(stemBaseCheckboxes, inspection.stemBaseInspection),
-                },
+                ['Krone', inspection.crownInspection?.notes ?? '', getActiveMarkings<CrownInspectionState>(crownCheckboxes, inspection.crownInspection).join(', ') || 'Keine Auffälligkeiten markiert.'],
+                ['Stamm', inspection.trunkInspection?.notes ?? '', getActiveMarkings<TrunkInspectionState>(trunkCheckboxes, inspection.trunkInspection).join(', ') || 'Keine Auffälligkeiten markiert.'],
+                ['Stammfuß und Wurzelbereich', inspection.stemBaseInspection?.notes ?? '', getActiveMarkings<StemBaseInspectionState>(stemBaseCheckboxes, inspection.stemBaseInspection).join(', ') || 'Keine Auffälligkeiten markiert.'],
               ]
             : [];
 
           return (
-            <View key={entry.tree.id} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <View>
-                  <Text style={styles.cardTitle}>
-                    Baum {formatNumber(entry.tree.number)} | {entry.tree.species || 'Unbekannte Art'}
-                  </Text>
-                </View>
-                <View style={styles.pillGroup}>
-                  <Text style={[styles.pill, buildSafetyPillStyle(inspection)]}>{buildSafetyLabel(inspection)}</Text>
-                  <Text style={[styles.pill, styles.pillNeutral]}>
-                    {getNextInspectionDaysLabel(nextStatus)}
-                  </Text>
-                </View>
-              </View>
+            <View key={entry.tree.id} style={styles.section} wrap={false}>
+              <Text style={styles.treeTitle}>Baum {formatNumber(entry.tree.number)} | {entry.tree.species || 'Unbekannte Art'}</Text>
+              <Text style={styles.treeSubtitle}>Kompakte Detailansicht</Text>
 
-              <View style={styles.metaGrid}>
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Koordinaten</Text>
-                  <Text style={styles.metaValue}>{getCoordinatesLabel(entry.tree)}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Höhe (m)</Text>
-                  <Text style={styles.metaValue}>{formatNumber(entry.tree.treeSizeMeters)}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Kronendurchmesser (m)</Text>
-                  <Text style={styles.metaValue}>{formatNumber(entry.tree.crownDiameterMeters)}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Stammanzahl</Text>
-                  <Text style={styles.metaValue}>{formatNumber(entry.tree.numberOfTrunks)}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Stammdurchmesser 1</Text>
-                  <Text style={styles.metaValue}>{formatNumber(entry.tree.trunkDiameter1)}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Stammdurchmesser 2</Text>
-                  <Text style={styles.metaValue}>{formatNumber(entry.tree.trunkDiameter2)}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Stammdurchmesser 3</Text>
-                  <Text style={styles.metaValue}>{formatNumber(entry.tree.trunkDiameter3)}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>Nächste Kontrolle (Tage)</Text>
-                  <Text style={styles.metaValue}>{getNextInspectionDaysLabel(nextStatus)}</Text>
-                </View>
-              </View>
+              <TableRow
+                columns={[
+                  { text: 'Baumnummer', style: styles.metaLabel },
+                  { text: formatNumber(entry.tree.number), style: styles.metaValue },
+                  { text: 'Koordinaten', style: styles.metaLabel },
+                  { text: getCoordinatesLabel(entry.tree), style: styles.metaValue },
+                ]}
+              />
+              <TableRow
+                columns={[
+                  { text: 'Letzte Kontrolle', style: styles.metaLabel },
+                  { text: inspection ? formatDateTime(inspection.performedAt) : 'Keine Kontrolle', style: styles.metaValue },
+                  { text: 'Nächste Kontrolle', style: styles.metaLabel },
+                  { text: formatNextInspectionDate(entry.tree.nextInspection), style: styles.metaValue },
+                ]}
+              />
+              <TableRow
+                columns={[
+                  { text: 'Verkehrssicherheit', style: styles.metaLabel },
+                  { text: inspection ? (inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher') : 'Keine Kontrolle', style: styles.metaValue },
+                  { text: 'Vitalität', style: styles.metaLabel },
+                  { text: inspection ? formatVitality(inspection.vitality) : '-', style: styles.metaValue },
+                ]}
+              />
+              <TableRow
+                columns={[
+                  { text: 'Entwicklungsstadium', style: styles.metaLabel },
+                  { text: inspection?.developmentalStage || '-', style: styles.metaValue },
+                  { text: 'Intervall', style: styles.metaLabel },
+                  { text: inspection ? `${formatNumber(inspection.newInspectionIntervall)} Monate` : '-', style: styles.metaValue },
+                ]}
+              />
+              <TableRow
+                columns={[
+                  { text: 'Sicherheitserwartung', style: styles.metaLabel },
+                  { text: entry.tree.trafficSafetyExpectation || '-', style: { width: '74%' } },
+                ]}
+              />
+              <TableRow
+                columns={[
+                  { text: 'Beschreibung', style: styles.metaLabel },
+                  { text: inspection?.description?.trim() ? inspection.description : 'Keine Beschreibung erfasst.', style: { width: '74%' } },
+                ]}
+              />
 
-              <View style={styles.divider} />
-
-              {inspection ? (
-                <>
-                  <View style={styles.metaGrid}>
-                    <View style={styles.metaItem}>
-                      <Text style={styles.metaLabel}>Kontrollzeitpunkt</Text>
-                      <Text style={styles.metaValue}>{formatDateTime(inspection.performedAt)}</Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                      <Text style={styles.metaLabel}>Intervall (Monate)</Text>
-                      <Text style={styles.metaValue}>{formatNumber(inspection.newInspectionIntervall)}</Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                      <Text style={styles.metaLabel}>Entwicklungsstadium</Text>
-                      <Text style={styles.metaValue}>{inspection.developmentalStage || '-'}</Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                      <Text style={styles.metaLabel}>Vitalität</Text>
-                      <Text style={styles.metaValue}>{formatVitality(inspection.vitality)}</Text>
-                    </View>
-                  </View>
-                  <View style={{ marginBottom: 6 }}>
-                    <Text style={styles.metaLabel}>Beschreibung</Text>
-                    <Text style={styles.paragraph}>
-                      {inspection.description?.trim() ? inspection.description : 'Keine Beschreibung erfasst.'}
-                    </Text>
-                  </View>
-                  <View style={{ marginBottom: 6 }}>
-                    <Text style={styles.metaLabel}>Massnahmen</Text>
-                    {measures.length ? (
-                      <View style={styles.chipRow}>
-                        {measures.map((measure) => (
-                          <View key={measure} style={styles.chip}>
-                            <Text style={styles.chipText}>{measure}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    ) : (
-                      <Text style={styles.paragraph}>Keine Massnahmen hinterlegt.</Text>
-                    )}
-                  </View>
-
-                  <View style={{ marginBottom: 2 }}>
-                    <Text style={styles.metaLabel}>Notizen & Markierungen</Text>
-                    {sectionData.map((section) => (
-                      <View key={section.title} style={styles.subSection}>
-                        <Text style={styles.metaValue}>{section.title}</Text>
-                        <Text style={styles.smallLabel}>
-                          {section.notes?.trim() ? section.notes : 'Keine Notizen erfasst.'}
-                        </Text>
-                        {section.markings.length ? (
-                          <View style={styles.chipRow}>
-                            {section.markings.map(({ label, description }) => {
-                              const value = description ? `${label} (${description})` : label;
-                              return (
-                                <View key={`${section.title}-${value}`} style={styles.chip}>
-                                  <Text style={styles.chipText}>{value}</Text>
-                                </View>
-                              );
-                            })}
-                          </View>
-                        ) : (
-                          <Text style={styles.smallLabel}>Keine Auffälligkeiten markiert.</Text>
-                        )}
-                      </View>
-                    ))}
-                  </View>
-                </>
+              <Text style={[styles.sectionTitle, { marginTop: 8 }]}>Pflegemassnahmen</Text>
+              {measures.length > 0 ? (
+                measures.map((measure, index) => (
+                  <TableRow
+                    key={`${index}-${measure}`}
+                    columns={[
+                      { text: String(index + 1), style: { width: '12%' } },
+                      { text: measure, style: { width: '88%' } },
+                    ]}
+                  />
+                ))
               ) : (
-                <Text style={styles.smallLabel}>Keine Kontrolle vorhanden.</Text>
+                <TableRow
+                  columns={[
+                    { text: '1', style: { width: '12%' } },
+                    { text: 'Keine Pflegemassnahmen erfasst.', style: { width: '88%' } },
+                  ]}
+                />
               )}
 
+              <Text style={[styles.sectionTitle, { marginTop: 8 }]}>Befundübersicht</Text>
+              <TableRow
+                header
+                columns={[
+                  { text: 'Bereich', style: styles.notesLabel },
+                  { text: 'Markierungen', style: styles.notesMarkings },
+                  { text: 'Notizen', style: styles.notesText },
+                ]}
+              />
+              {noteRows.length > 0 ? (
+                noteRows.map(([area, notes, markings]) => (
+                  <TableRow
+                    key={area}
+                    columns={[
+                      { text: area, style: styles.notesLabel },
+                      { text: markings, style: styles.notesMarkings },
+                      { text: notes && String(notes).trim() ? String(notes) : 'Keine Notizen erfasst.', style: styles.notesText },
+                    ]}
+                  />
+                ))
+              ) : (
+                <TableRow
+                  columns={[
+                    { text: 'Kontrolle', style: styles.notesLabel },
+                    { text: '-', style: styles.notesMarkings },
+                    { text: 'Keine Kontrolle vorhanden.', style: styles.notesText },
+                  ]}
+                />
+              )}
             </View>
           );
         })}

@@ -1,27 +1,61 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import React, { Suspense, useEffect, useState } from 'react';
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { mapTreesFromApi, type Tree } from '@/features/trees/types';
 import AppHeader from '@/widgets/layout/AppHeader';
 import CookieBanner from '@/widgets/layout/CookieBanner';
 import HomePage from '@/features/landing/pages/HomePage';
 import AboutPage from '@/features/landing/pages/AboutPage';
 import ImprintPage from '@/features/landing/pages/ImprintPage';
+import PrivacyPage from '@/features/landing/pages/PrivacyPage';
 import LoginPage from '@/features/auth/pages/LoginPage';
 import SignupPage from '@/features/auth/pages/SignupPage';
-import TreeList from '@/features/trees/components/TreeList';
-import TreeDetails from '@/features/trees/components/TreeDetails';
-import InspectionDetails from '@/features/inspections/components/InspectionDetails';
-import InspectionListPage from '@/features/inspections/pages/InspectionListPage';
-import GreenAreaList from '@/features/green-areas/components/GreenAreaList';
-import GreenAreaDetails from '@/features/green-areas/components/GreenAreaDetails';
 import { API_BASE_URL } from '@/shared/config/appConfig';
-import { AUTH_TOKEN_CHANGED_EVENT, clearStoredToken, getStoredToken } from '@/shared/lib/auth';
+import { AUTH_TOKEN_CHANGED_EVENT, authFetch, clearStoredToken, getStoredToken } from '@/shared/lib/auth';
+
+const TreeList = React.lazy(() => import('@/features/trees/components/TreeList'));
+const TreeDetails = React.lazy(() => import('@/features/trees/components/TreeDetails'));
+const InspectionDetails = React.lazy(() => import('@/features/inspections/components/InspectionDetails'));
+const InspectionListPage = React.lazy(() => import('@/features/inspections/pages/InspectionListPage'));
+const GreenAreaList = React.lazy(() => import('@/features/green-areas/components/GreenAreaList'));
+const GreenAreaDetails = React.lazy(() => import('@/features/green-areas/components/GreenAreaDetails'));
 
 type LocationState = {
   tree?: Tree;
 };
 
 type AuthStatus = 'checking' | 'authenticated' | 'unauthenticated';
+
+const RouteFallback: React.FC = () => (
+  <section>
+    <div className="card shadow-sm border-0">
+      <div className="card-body p-5 text-center text-muted">Ansicht wird geladen...</div>
+    </div>
+  </section>
+);
+
+const ProtectedRoute: React.FC<{
+  authStatus: AuthStatus;
+  children: React.ReactNode;
+}> = ({ authStatus, children }) => {
+  const location = useLocation();
+
+  if (authStatus === 'checking') {
+    return (
+      <section>
+        <div className="card shadow-sm border-0">
+          <div className="card-body p-5 text-center text-muted">Sitzung wird geprüft...</div>
+        </div>
+      </section>
+    );
+  }
+
+  if (authStatus !== 'authenticated') {
+    const from = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to="/login" replace state={{ from }} />;
+  }
+
+  return <>{children}</>;
+};
 
 const RoutedTreeDetails: React.FC = () => {
   const navigate = useNavigate();
@@ -52,11 +86,7 @@ const RoutedTreeDetails: React.FC = () => {
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/Trees/GetAll`, {
-          headers: {
-            Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-          },
-        });
+        const response = await authFetch(`${API_BASE_URL}/api/Trees/GetAll`);
 
         if (!response.ok) {
           throw new Error('Failed to load trees.');
@@ -110,7 +140,9 @@ const RoutedTreeDetails: React.FC = () => {
           {error}
         </div>
       )}
-      <TreeDetails tree={resolvedTree} onBack={() => navigate(-1)} />
+      <Suspense fallback={<RouteFallback />}>
+        <TreeDetails tree={resolvedTree} onBack={() => navigate(-1)} />
+      </Suspense>
     </>
   );
 };
@@ -135,10 +167,9 @@ const AppShell: React.FC = () => {
     setAuthMessage('Sitzung wird geprüft...');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/GreenAreas/GetAll`, {
+      const response = await authFetch(`${API_BASE_URL}/api/GreenAreas/GetAll`, {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `bearer ${token}`,
         },
       });
 
@@ -213,19 +244,80 @@ const AppShell: React.FC = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/imprint" element={<ImprintPage />} />
-            <Route path="/trees" element={<TreeList />} />
-            <Route path="/trees/:treeId" element={<RoutedTreeDetails />} />
-            <Route path="/inspections" element={<InspectionListPage />} />
-            <Route path="/inspections/:inspectionId" element={<InspectionDetails />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route
+              path="/trees"
+              element={
+                <ProtectedRoute authStatus={authStatus}>
+                  <Suspense fallback={<RouteFallback />}>
+                    <TreeList />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/trees/:treeId"
+              element={
+                <ProtectedRoute authStatus={authStatus}>
+                  <RoutedTreeDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inspections"
+              element={
+                <ProtectedRoute authStatus={authStatus}>
+                  <Suspense fallback={<RouteFallback />}>
+                    <InspectionListPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/inspections/:inspectionId"
+              element={
+                <ProtectedRoute authStatus={authStatus}>
+                  <Suspense fallback={<RouteFallback />}>
+                    <InspectionDetails />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            <Route path="/green-areas" element={<GreenAreaList />} />
-            <Route path="/green-areas/:greenAreaId/:greenAreaName" element={<GreenAreaDetails />} />
+            <Route
+              path="/green-areas"
+              element={
+                <ProtectedRoute authStatus={authStatus}>
+                  <Suspense fallback={<RouteFallback />}>
+                    <GreenAreaList />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/green-areas/:greenAreaId/:greenAreaName"
+              element={
+                <ProtectedRoute authStatus={authStatus}>
+                  <Suspense fallback={<RouteFallback />}>
+                    <GreenAreaDetails />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </div>
       </main>
       <footer className="app-footer text-center py-3 mt-auto">
-        <small>&copy; {new Date().getFullYear()} BMS</small>
+        <div className="d-flex flex-column flex-md-row align-items-center justify-content-center gap-2 gap-md-3 px-3">
+          <small>&copy; {new Date().getFullYear()} BMS</small>
+          <Link to="/imprint" className="app-footer__link">
+            Impressum
+          </Link>
+          <Link to="/privacy" className="app-footer__link">
+            Datenschutz
+          </Link>
+        </div>
       </footer>
       <CookieBanner />
     </div>

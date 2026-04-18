@@ -12,6 +12,9 @@ import {
   trunkCheckboxes,
 } from '@/features/inspections/forms/inspectionFormConfig';
 import { formatDateDisplay } from '@/shared/lib/dateFormatting';
+import { authFetch } from '@/shared/lib/auth';
+import { mapMeasuresFromApi, type ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
+import { createExportDateStamp, createExportFileSlug } from '@/shared/lib/exportNaming';
 
 type InspectionDetail = Inspection & {
   crownInspection?: Partial<CrownInspectionState>;
@@ -35,6 +38,7 @@ const InspectionDetails: React.FC = () => {
   const [inspection, setInspection] = useState<InspectionDetail | null>(initialInspection);
   const [isLoading, setIsLoading] = useState(!initialInspection);
   const [error, setError] = useState<string | null>(null);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const tree = state?.tree;
 
@@ -60,11 +64,7 @@ const InspectionDetails: React.FC = () => {
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/Inspections/${inspectionId}`, {
-          headers: {
-            Authorization: `bearer ${localStorage.getItem('token') || ''}`,
-          },
-        });
+        const response = await authFetch(`${API_BASE_URL}/api/Inspections/${inspectionId}`);
 
         if (!response.ok) {
           throw new Error('Failed to load inspection.');
@@ -111,6 +111,63 @@ const InspectionDetails: React.FC = () => {
       ? `${inspection.developmentalStage} – ${dateLabel}`
       : dateLabel;
   }, [inspection]);
+
+  const exportFileName = useMemo(() => {
+    const parts = [
+      'kontrolle',
+      tree?.number ? `baum-${tree.number}` : undefined,
+      inspection ? toDateLabel(inspection.performedAt) : undefined,
+    ].filter(Boolean).join('-');
+
+    return `${createExportFileSlug(parts, 'kontrolle')}-${createExportDateStamp()}.pdf`;
+  }, [inspection, tree?.number]);
+
+  const handleDownloadPdf = async () => {
+    if (!inspection) {
+      return;
+    }
+
+    setIsExportingPdf(true);
+    setError(null);
+
+    try {
+      const [{ pdf }, { default: InspectionPdfDocument }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('./InspectionPdfDocument'),
+      ]);
+
+      let measures: ArboriculturalMeasure[] = [];
+      if ((inspection.arboriculturalMeasureIds ?? []).length > 0) {
+        const response = await authFetch(`${API_BASE_URL}/api/ArboriculturalMeasures/GetAll`);
+        if (!response.ok) {
+          throw new Error('Maßnahmen konnten nicht geladen werden.');
+        }
+        const data = await response.json();
+        measures = mapMeasuresFromApi(data);
+      }
+
+      const blob = await pdf(
+        <InspectionPdfDocument
+          inspection={inspection}
+          title={inspectionTitle}
+          tree={tree}
+          measures={measures}
+        />,
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = exportFileName;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 500);
+    } catch (exportError) {
+      console.error('Error exporting inspection PDF:', exportError);
+      setError('PDF-Export der Kontrolle fehlgeschlagen.');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   const renderBadgeList = <T extends Record<string, any>>(
     title: string,
@@ -220,6 +277,16 @@ const InspectionDetails: React.FC = () => {
               </div>
             </div>
             <div className="d-flex align-items-center gap-2">
+              {inspection && (
+                <button
+                  type="button"
+                  className="btn btn-outline-primary btn-sm"
+                  onClick={handleDownloadPdf}
+                  disabled={isExportingPdf}
+                >
+                  {isExportingPdf ? 'Erzeuge PDF...' : 'Kontrolle als PDF'}
+                </button>
+              )}
               {inspection?.treeId && (
                 <Link
                   to={`/trees/${inspection.treeId}`}
