@@ -2,6 +2,7 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { mapTreesFromApi, type Tree } from '@/features/trees/types';
 import AppHeader from '@/widgets/layout/AppHeader';
+import MobileBottomNav from '@/widgets/layout/MobileBottomNav';
 import CookieBanner from '@/widgets/layout/CookieBanner';
 import HomePage from '@/features/landing/pages/HomePage';
 import AboutPage from '@/features/landing/pages/AboutPage';
@@ -21,6 +22,8 @@ const GreenAreaDetails = React.lazy(() => import('@/features/green-areas/compone
 
 type LocationState = {
   tree?: Tree;
+  treeView?: 'overview' | 'inspections' | 'images';
+  openInspectionForm?: boolean;
 };
 
 type AuthStatus = 'checking' | 'authenticated' | 'unauthenticated';
@@ -62,6 +65,8 @@ const RoutedTreeDetails: React.FC = () => {
   const { state } = useLocation() as { state?: LocationState };
   const { treeId } = useParams<{ treeId?: string }>();
   const locationTree = state?.tree;
+  const initialTreeView = state?.treeView ?? 'overview';
+  const autoOpenInspectionForm = Boolean(state?.openInspectionForm);
   const [resolvedTree, setResolvedTree] = useState<Tree | null>(locationTree ?? null);
   const [isLoading, setIsLoading] = useState(!locationTree && Boolean(treeId));
   const [error, setError] = useState<string | null>(null);
@@ -141,7 +146,12 @@ const RoutedTreeDetails: React.FC = () => {
         </div>
       )}
       <Suspense fallback={<RouteFallback />}>
-        <TreeDetails tree={resolvedTree} onBack={() => navigate(-1)} />
+        <TreeDetails
+          tree={resolvedTree}
+          onBack={() => navigate(-1)}
+          initialView={initialTreeView}
+          autoOpenInspectionForm={autoOpenInspectionForm}
+        />
       </Suspense>
     </>
   );
@@ -220,9 +230,11 @@ const AppShell: React.FC = () => {
 
   const showUnauthenticatedBanner = authStatus === 'unauthenticated' && location.pathname !== '/login' && location.pathname !== '/signup';
   const showCheckingBanner = authStatus === 'checking';
+  const showMobileBottomNav =
+    authStatus === 'authenticated' && location.pathname !== '/login' && location.pathname !== '/signup';
 
   return (
-    <div className="app-shell d-flex flex-column min-vh-100">
+    <div className={`app-shell d-flex flex-column min-vh-100${showMobileBottomNav ? ' app-shell--with-mobile-nav' : ''}`}>
       <AppHeader authStatus={authStatus} onLogout={handleLogout} />
       {(showCheckingBanner || showUnauthenticatedBanner) && (
         <div className="container app-container mt-3">
@@ -319,6 +331,7 @@ const AppShell: React.FC = () => {
           </Link>
         </div>
       </footer>
+      {showMobileBottomNav && <MobileBottomNav />}
       <CookieBanner />
     </div>
   );

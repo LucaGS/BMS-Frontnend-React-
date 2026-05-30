@@ -13,6 +13,7 @@ import { mapMeasuresFromApi, type ArboriculturalMeasure } from '@/entities/arbor
 import { formatCoordinateDisplay } from '@/shared/lib/coordinateFormatting';
 import { formatDateDisplay } from '../../../shared/lib/dateFormatting';
 import AppModal from '@/shared/components/AppModal';
+import AppBottomSheet from '@/shared/components/AppBottomSheet';
 import { authFetch } from '@/shared/lib/auth';
 import { createExportDateStamp, createExportFileSlug } from '@/shared/lib/exportNaming';
 
@@ -41,6 +42,7 @@ const deriveCenterFromState = (state?: GreenAreaLocationState): [number, number]
 };
 
 const GreenAreaDetails: React.FC = () => {
+  const TOAST_AUTO_DISMISS_MS = 2800;
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = location.state as GreenAreaLocationState | undefined;
@@ -49,10 +51,12 @@ const GreenAreaDetails: React.FC = () => {
   const [trees, setTrees] = useState<Tree[]>([]);
   const [inspectionLookup, setInspectionLookup] = useState<Record<number, LastInspectionDetail | null>>({});
   const [showTreeForm, setShowTreeForm] = useState(false);
-  const [showMap, setShowMap] = useState(false);
+  const [activeView, setActiveView] = useState<'trees' | 'map'>('trees');
+  const [showActionSheet, setShowActionSheet] = useState(false);
   const [isGeneratingMapPrint, setIsGeneratingMapPrint] = useState(false);
   const [isGeneratingDataPdf, setIsGeneratingDataPdf] = useState(false);
   const [showMapPrint, setShowMapPrint] = useState(false);
+  const [toast, setToast] = useState<{ id: number; kind: 'success' | 'error'; text: string } | null>(null);
   const [mapPrintData, setMapPrintData] = useState<{
     entries: TreeInspectionExport[];
     centerLabel: string;
@@ -64,6 +68,7 @@ const GreenAreaDetails: React.FC = () => {
   const [editAreaMode, setEditAreaMode] = useState(false);
   const [editAreaSaving, setEditAreaSaving] = useState(false);
   const [editAreaError, setEditAreaError] = useState<string | null>(null);
+  const [showDeleteAreaConfirm, setShowDeleteAreaConfirm] = useState(false);
   const [showAreaLocationPicker, setShowAreaLocationPicker] = useState(false);
   const previousDocumentTitleRef = useRef<string | null>(null);
   const [areaDraft, setAreaDraft] = useState<{ name: string; latitude: string; longitude: string }>({
@@ -160,6 +165,18 @@ const GreenAreaDetails: React.FC = () => {
   useEffect(() => {
     fetchTrees();
   }, [fetchTrees]);
+
+  useEffect(() => {
+    if (!toast) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setToast((current) => (current?.id === toast.id ? null : current));
+    }, TOAST_AUTO_DISMISS_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [TOAST_AUTO_DISMISS_MS, toast]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -291,6 +308,7 @@ const GreenAreaDetails: React.FC = () => {
       setTrees((prev) => [...prev, createdTree]);
       setError(null);
       setShowTreeForm(false);
+      setToast({ id: Date.now(), kind: 'success', text: 'Baum erfolgreich hinzugefügt.' });
       return;
     }
 
@@ -300,6 +318,16 @@ const GreenAreaDetails: React.FC = () => {
 
   const handleOpenTree = (tree: Tree) => {
     navigate(`/trees/${tree.id}`, { state: { tree } });
+  };
+
+  const handleInspectTreeNow = (tree: Tree) => {
+    navigate(`/trees/${tree.id}`, {
+      state: {
+        tree,
+        treeView: 'inspections',
+        openInspectionForm: true,
+      },
+    });
   };
 
   const buildExportEntries = useCallback(async (): Promise<TreeInspectionExport[]> => {
@@ -455,8 +483,6 @@ const GreenAreaDetails: React.FC = () => {
 
   const handleDeleteGreenArea = async () => {
     if (!greenAreaId) return;
-    const confirmed = window.confirm('Diese Grünfläche wirklich löschen? Alle zugehörigen Bäume könnten betroffen sein.');
-    if (!confirmed) return;
     try {
       const response = await authFetch(`${API_BASE_URL}/api/GreenAreas/${greenAreaId}`, {
         method: 'DELETE',
@@ -474,6 +500,24 @@ const GreenAreaDetails: React.FC = () => {
   return (
     <div className="card shadow-sm border-0">
       <div className="card-body p-4">
+        {toast && (
+          <div
+            className={`app-toast app-toast--${toast.kind}`}
+            role="status"
+            aria-live="polite"
+            style={{ ['--toast-duration' as string]: `${TOAST_AUTO_DISMISS_MS}ms` } as React.CSSProperties}
+          >
+            <div className="app-toast__content">
+              <div className="app-toast__title">Hinweis</div>
+              <div className="app-toast__message">{toast.text}</div>
+            </div>
+            <button type="button" className="app-toast__close" onClick={() => setToast(null)} aria-label="Hinweis schließen">
+              ×
+            </button>
+            <div className="app-toast__progress" aria-hidden="true" />
+          </div>
+        )}
+
         <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
           <div>
             <div className="text-uppercase text-muted small fw-semibold mb-1">Grünfläche</div>
@@ -481,20 +525,12 @@ const GreenAreaDetails: React.FC = () => {
               {greenAreaId} | {currentGreenArea?.name ?? greenAreaName}
             </h1>
           </div>
-          <div className="d-flex gap-2 flex-wrap">
-            <button
-              type="button"
-              className="btn btn-outline-primary btn-sm"
-              onClick={() => setEditAreaMode((prev) => !prev)}
-            >
-              {editAreaMode ? 'Abbrechen' : 'Grünfläche bearbeiten'}
-            </button>
-            <button type="button" className="btn btn-outline-danger btn-sm" onClick={handleDeleteGreenArea}>
-              Löschen
-            </button>
-          </div>
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => setShowActionSheet(true)}>
+            Mehr Aktionen
+          </button>
         </div>
 
+     
         {editAreaMode && (
           <AppModal title="Grünfläche bearbeiten" onClose={() => setEditAreaMode(false)}>
             <div className="border rounded-3 p-3 bg-light">
@@ -596,40 +632,42 @@ const GreenAreaDetails: React.FC = () => {
         <div className="quick-actions mt-4 mb-3 d-flex flex-wrap align-items-center gap-2">
           <button
             type="button"
-            className="btn btn-success"
+            className={`btn btn-add${showTreeForm ? ' btn-add--open' : ''}`}
             onClick={() => setShowTreeForm((prev) => !prev)}
+            aria-label={showTreeForm ? 'Formular verbergen' : 'Baum hinzufügen'}
+            title={showTreeForm ? 'Formular verbergen' : 'Baum hinzufügen'}
           >
-            {showTreeForm ? 'Formular verbergen' : 'Baum hinzufügen'}
+            {showTreeForm ? '×' : '+'}
           </button>
+          <div className="view-toggle" role="tablist" aria-label="Ansicht umschalten">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeView === 'trees'}
+              className={`view-toggle__button${activeView === 'trees' ? ' view-toggle__button--active' : ''}`}
+              onClick={() => setActiveView('trees')}
+            >
+              Bäume
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeView === 'map'}
+              className={`view-toggle__button${activeView === 'map' ? ' view-toggle__button--active' : ''}`}
+              onClick={() => setActiveView('map')}
+            >
+              Karte
+            </button>
+          </div>
           <button
             type="button"
-            className="btn btn-outline-success"
-            onClick={() => navigate('/green-areas')}
+            className="btn btn-secondary"
+            onClick={() => setShowActionSheet(true)}
+            aria-label="Weitere Optionen"
+            title="Weitere Optionen"
+            style={{ minWidth: '2.5rem', letterSpacing: '0.05em', fontWeight: 700 }}
           >
-            Zur Grünflächenliste
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleOpenMapPrint}
-            disabled={isGeneratingMapPrint || trees.length === 0}
-          >
-            {isGeneratingMapPrint ? 'Bereite Karte vor...' : 'Druckansicht (Karte)'}
-          </button>
-          <button
-            type="button"
-            className="btn btn-outline-primary"
-            onClick={handleDownloadDataPdf}
-            disabled={isGeneratingDataPdf || trees.length === 0}
-          >
-            {isGeneratingDataPdf ? 'Exportiere PDF...' : 'PDF Export (Baumdaten)'}
-          </button>
-          <button
-            type="button"
-            className="btn btn-outline-primary"
-            onClick={() => setShowMap((prev) => !prev)}
-          >
-            {showMap ? 'Karte verbergen' : 'Karte anzeigen'}
+            &#8943;
           </button>
         </div>
 
@@ -645,8 +683,12 @@ const GreenAreaDetails: React.FC = () => {
           </AppModal>
         )}
 
-        {showMap && (
+        {activeView === 'map' && (
           <div className="bg-light border rounded p-3 my-4">
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h2 className="h6 mb-0">Kartenansicht</h2>
+              <span className="badge text-bg-light border">Grünfläche</span>
+            </div>
             <GreenAreaMap
               trees={trees}
               onError={setError}
@@ -662,9 +704,9 @@ const GreenAreaDetails: React.FC = () => {
           </div>
         )}
 
-        {trees.length === 0 && !error && <p className="text-muted mb-0">Noch keine Bäume in dieser Grünfläche.</p>}
+        {activeView === 'trees' && trees.length === 0 && !error && <p className="text-muted mb-0">Noch keine Bäume in dieser Grünfläche.</p>}
 
-        {trees.length > 0 && (
+        {activeView === 'trees' && trees.length > 0 && (
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mt-3">
             {trees.map((tree) => {
               const inspection = inspectionLookup[tree.id];
@@ -677,13 +719,13 @@ const GreenAreaDetails: React.FC = () => {
                 : 'Keine nächste Kontrolle';
               return (
                 <div className="col" key={tree.id}>
-                  <button
-                    type="button"
-                    className="click-card w-100 text-start"
-                    onClick={() => handleOpenTree(tree)}
-                  >
-                    <div className="card h-100 shadow-sm border-0">
-                      <div className="card-body">
+                  <div className="card h-100 shadow-sm border-0">
+                    <button
+                      type="button"
+                      className="click-card w-100 text-start"
+                      onClick={() => handleOpenTree(tree)}
+                    >
+                      <div className="card-body pb-2">
                         <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
                           <span className="badge rounded-pill bg-success-subtle text-success-emphasis">
                             Nr. {tree.number ?? tree.id}
@@ -703,12 +745,115 @@ const GreenAreaDetails: React.FC = () => {
                           {tree.crownDiameterMeters ? `Kronendurchmesser ${tree.crownDiameterMeters} m` : 'Keine Angaben'}
                         </p>
                       </div>
+                    </button>
+                    <div className="card-footer bg-transparent border-0 pt-0 pb-3">
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-sm rounded-pill"
+                        onClick={() => handleInspectTreeNow(tree)}
+                      >
+                        Jetzt kontrollieren
+                      </button>
                     </div>
-                  </button>
+                  </div>
                 </div>
               );
             })}
           </div>
+        )}
+
+        {showActionSheet && (
+          <AppBottomSheet title="Grünfläche Aktionen" onClose={() => setShowActionSheet(false)}>
+            <div className="d-grid gap-2">
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={() => {
+                  setShowActionSheet(false);
+                  setEditAreaMode(true);
+                }}
+              >
+                Grünfläche bearbeiten
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={() => {
+                  setShowActionSheet(false);
+                  setActiveView('map');
+                }}
+              >
+                Karte anzeigen
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setShowActionSheet(false);
+                  void handleOpenMapPrint();
+                }}
+                disabled={isGeneratingMapPrint || trees.length === 0}
+              >
+                {isGeneratingMapPrint ? 'Bereite Karte vor...' : 'Druckansicht (Karte)'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={() => {
+                  setShowActionSheet(false);
+                  void handleDownloadDataPdf();
+                }}
+                disabled={isGeneratingDataPdf || trees.length === 0}
+              >
+                {isGeneratingDataPdf ? 'Exportiere PDF...' : 'PDF Export (Baumdaten)'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-danger"
+                onClick={() => {
+                  setShowActionSheet(false);
+                  setShowDeleteAreaConfirm(true);
+                }}
+              >
+                Grünfläche löschen
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => {
+                  setShowActionSheet(false);
+                  navigate('/green-areas');
+                }}
+              >
+                Zur Grünflächenliste
+              </button>
+            </div>
+          </AppBottomSheet>
+        )}
+
+        {showDeleteAreaConfirm && (
+          <AppModal title="Grünfläche löschen" onClose={() => setShowDeleteAreaConfirm(false)}>
+            <p className="mb-3">Diese Grünfläche wirklich löschen? Alle zugehörigen Bäume könnten betroffen sein.</p>
+            <div className="d-flex gap-2">
+              <button
+                type="button"
+                className="btn btn-danger btn-sm"
+                onClick={() => {
+                  setShowDeleteAreaConfirm(false);
+                  void handleDeleteGreenArea();
+                }}
+              >
+                Ja, löschen
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => setShowDeleteAreaConfirm(false)}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </AppModal>
         )}
 
         {showMapPrint && mapPrintData && (

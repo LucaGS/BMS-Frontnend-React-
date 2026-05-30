@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { API_BASE_URL } from '@/shared/config/appConfig';
 import { authFetch } from '@/shared/lib/auth';
+import AppModal from '@/shared/components/AppModal';
 
 type TreeImage = {
   id: string;
@@ -12,10 +13,11 @@ type TreeImageUploaderProps = {
   treeId: number;
 };
 
-const IMAGE_UPLOAD_MAX_DIMENSION = 1800;
+const IMAGE_UPLOAD_MAX_DIMENSION = 1600;
 const IMAGE_UPLOAD_INITIAL_QUALITY = 0.82;
-const IMAGE_UPLOAD_MIN_QUALITY = 0.58;
-const IMAGE_UPLOAD_TARGET_BYTES = 1_200_000;
+const IMAGE_UPLOAD_MIN_QUALITY = 0.48;
+const IMAGE_UPLOAD_TARGET_BYTES = 800_000;
+const IMAGE_UPLOAD_MAX_INPUT_BYTES = 30_000_000;
 
 type PreparedUploadImage = {
   fileName: string;
@@ -93,6 +95,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [imagePendingDelete, setImagePendingDelete] = useState<TreeImage | null>(null);
   const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -165,6 +168,13 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
       setPreparedImage(null);
       setPreviewUrl(null);
       setMessage({ kind: 'error', text: 'Bitte wählen Sie eine gültige Bilddatei.' });
+      return;
+    }
+
+    if (file.size > IMAGE_UPLOAD_MAX_INPUT_BYTES) {
+      setPreparedImage(null);
+      setPreviewUrl(null);
+      setMessage({ kind: 'error', text: `Die Datei ist zu groß (${Math.round(file.size / 1_000_000)} MB). Maximal erlaubt: ${IMAGE_UPLOAD_MAX_INPUT_BYTES / 1_000_000} MB.` });
       return;
     }
 
@@ -306,10 +316,6 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
       setMessage({ kind: 'error', text: 'Dieses Bild kann nicht gelöscht werden (keine ID vorhanden).' });
       return;
     }
-    const confirmed = window.confirm('Dieses Bild wirklich löschen?');
-    if (!confirmed) {
-      return;
-    }
     try {
       const response = await authFetch(`${API_BASE_URL}/api/Images/${image.id}`, {
         method: 'DELETE',
@@ -447,7 +453,7 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
                     <button
                       type="button"
                       className="btn btn-danger btn-sm"
-                      onClick={() => handleDelete(activeImage)}
+                      onClick={() => setImagePendingDelete(activeImage)}
                       disabled={isLoadingImages || !activeImage.canDelete}
                     >
                       Löschen
@@ -486,6 +492,34 @@ const TreeImageUploader: React.FC<TreeImageUploaderProps> = ({ treeId }) => {
           </div>
         )}
       </div>
+
+      {imagePendingDelete && (
+        <AppModal title="Bild löschen" onClose={() => setImagePendingDelete(null)}>
+          <p className="mb-3">Dieses Bild wirklich löschen?</p>
+          <div className="d-flex gap-2">
+            <button
+              type="button"
+              className="btn btn-danger btn-sm"
+              onClick={() => {
+                const target = imagePendingDelete;
+                setImagePendingDelete(null);
+                if (target) {
+                  void handleDelete(target);
+                }
+              }}
+            >
+              Ja, löschen
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline-secondary btn-sm"
+              onClick={() => setImagePendingDelete(null)}
+            >
+              Abbrechen
+            </button>
+          </div>
+        </AppModal>
+      )}
     </section>
   );
 };

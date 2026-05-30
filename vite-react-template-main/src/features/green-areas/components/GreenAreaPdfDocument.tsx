@@ -134,11 +134,13 @@ const PdfStyles: React.FC = () => (
       }
       .ga-table th {
         background: var(--ga-surface-soft);
-        color: var(--ga-muted);
-        font-weight: 700;
+        color: var(--ga-text);
+        font-weight: 800;
       }
       .ga-table--meta th {
         width: 22%;
+        color: var(--ga-text);
+        font-weight: 800;
       }
       .ga-table--summary th,
       .ga-table--summary td,

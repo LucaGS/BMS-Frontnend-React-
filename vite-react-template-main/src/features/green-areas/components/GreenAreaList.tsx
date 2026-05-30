@@ -56,10 +56,12 @@ const GreenAreaList: React.FC = () => {
               </span>
               <button
                 type="button"
-                className="btn btn-success"
+                className={`btn btn-add${showGreenAreaForm ? ' btn-add--open' : ''}`}
                 onClick={() => setShowGreenAreaForm((prev) => !prev)}
+                aria-label={showGreenAreaForm ? 'Formular verbergen' : 'Grünfläche hinzufügen'}
+                title={showGreenAreaForm ? 'Formular verbergen' : 'Grünfläche hinzufügen'}
               >
-                {showGreenAreaForm ? 'Formular verbergen' : 'Grünfläche hinzufügen'}
+                {showGreenAreaForm ? '×' : '+'}
               </button>
             </div>
           </div>
@@ -81,39 +83,82 @@ const GreenAreaList: React.FC = () => {
           )}
 
           {!isLoading && greenAreas.length > 0 && (
-            <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-              {greenAreas.map((greenArea) => (
-                <div className="col" key={greenArea.id}>
-                  <button
-                    type="button"
-                    className="click-card w-100 text-start"
-                    onClick={() =>
-                      navigate(`/green-areas/${greenArea.id}/${greenArea.name}`, {
-                        state: {
-                          longitude: greenArea.longitude,
-                          latitude: greenArea.latitude,
-                        },
-                      })
-                    }
-                  >
-                    <div className="card h-100 shadow-sm border-0">
-                      <div className="card-body">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <span className="text-muted small">
-                            {formatCoordinatePairDisplay(greenArea.latitude, greenArea.longitude)}
-                          </span>
-                            <span className="badge text-bg-light border">Öffnen</span>
-                        </div>
-                        <h2 className="h6 fw-semibold mb-1">{greenArea.name}</h2>
-                        <p className="text-muted small mb-0">Tippen, um Details und Karte zu öffnen.</p>
+            <div className="green-area-results">
+              <div className="d-md-none">
+                <div className="list-group mobile-entity-list">
+                  {greenAreas.map((greenArea) => (
+                    <button
+                      type="button"
+                      className="list-group-item list-group-item-action mobile-entity-list__item"
+                      key={greenArea.id}
+                      onClick={() =>
+                        navigate(`/green-areas/${greenArea.id}/${greenArea.name}`, {
+                          state: {
+                            longitude: greenArea.longitude,
+                            latitude: greenArea.latitude,
+                          },
+                        })
+                      }
+                    >
+                      <div className="mobile-entity-list__header">
+                        <span className="badge text-bg-light border">Fläche #{greenArea.id}</span>
+                        <span className="badge text-bg-light border">Öffnen</span>
                       </div>
-                    </div>
-                  </button>
+                      <div className="fw-semibold mb-1">{greenArea.name}</div>
+                      <div className="text-muted small">
+                        {formatCoordinatePairDisplay(greenArea.latitude, greenArea.longitude)}
+                      </div>
+                    </button>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              <div className="d-none d-md-block">
+                <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+                  {greenAreas.map((greenArea) => (
+                    <div className="col" key={greenArea.id}>
+                      <button
+                        type="button"
+                        className="click-card w-100 text-start"
+                        onClick={() =>
+                          navigate(`/green-areas/${greenArea.id}/${greenArea.name}`, {
+                            state: {
+                              longitude: greenArea.longitude,
+                              latitude: greenArea.latitude,
+                            },
+                          })
+                        }
+                      >
+                        <div className="card h-100 shadow-sm border-0">
+                          <div className="card-body">
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                              <span className="text-muted small">
+                                {formatCoordinatePairDisplay(greenArea.latitude, greenArea.longitude)}
+                              </span>
+                              <span className="badge text-bg-light border">Öffnen</span>
+                            </div>
+                            <h2 className="h6 fw-semibold mb-1">{greenArea.name}</h2>
+                            <p className="text-muted small mb-0">Tippen, um Details und Karte zu öffnen.</p>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
+      </div>
+
+      <div className="d-md-none app-sticky-primary-bar">
+        <button
+          type="button"
+          className="btn btn-success w-100"
+          onClick={() => setShowGreenAreaForm(true)}
+        >
+          Grünfläche hinzufügen
+        </button>
       </div>
     </section>
   );

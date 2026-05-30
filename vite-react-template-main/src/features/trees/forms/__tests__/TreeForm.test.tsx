@@ -60,6 +60,8 @@ describe('TreeForm', () => {
     const trunkDiameterInput = screen.getByLabelText(/stammdurchmesser 1/i);
     await userEvent.clear(trunkDiameterInput);
     await userEvent.type(trunkDiameterInput, '12.5');
+    await userEvent.click(screen.getByRole('button', { name: /weiter/i }));
+    await userEvent.click(screen.getByRole('button', { name: /weiter/i }));
     await userEvent.click(screen.getByRole('button', { name: /baum hinzufügen/i }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
@@ -93,6 +95,8 @@ describe('TreeForm', () => {
     await userEvent.type(screen.getByLabelText(/^art$/i), 'Ahorn');
     fireEvent.change(screen.getByLabelText(/nummer/i), { target: { value: '1' } });
     await fillRequiredFields();
+    await userEvent.click(screen.getByRole('button', { name: /weiter/i }));
+    await userEvent.click(screen.getByRole('button', { name: /weiter/i }));
     await userEvent.click(screen.getByRole('button', { name: /baum hinzufügen/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/mindestens ein stammdurchmesser/i);

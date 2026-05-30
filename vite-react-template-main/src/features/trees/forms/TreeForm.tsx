@@ -46,6 +46,25 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
   const [isPrefillingLastTree, setIsPrefillingLastTree] = useState(false);
   const [lastTreePrefilled, setLastTreePrefilled] = useState(false);
   const [lastTreePrefillError, setLastTreePrefillError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [canSubmitOnStepThree, setCanSubmitOnStepThree] = useState(false);
+
+  useEffect(() => {
+    if (currentStep !== 3) {
+      setCanSubmitOnStepThree(false);
+      return;
+    }
+    // Verhindert versehentlichen Submit beim Wechsel von Schritt 2 auf 3.
+    const timer = window.setTimeout(() => {
+      setCanSubmitOnStepThree(true);
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [currentStep]);
 
   useEffect(() => {
     setDraftTree((current) => ({ ...current, greenAreaId }));
@@ -170,8 +189,70 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       });
     };
 
+  const validateStep = (step: 1 | 2 | 3): boolean => {
+    if (step === 1) {
+      const hasSpecies = draftTree.species.trim().length > 0;
+      const hasNumber = draftTree.number.trim().length > 0;
+      const hasLatitude = draftTree.latitude.trim().length > 0;
+      const hasLongitude = draftTree.longitude.trim().length > 0;
+
+      if (!hasSpecies || !hasNumber || !hasLatitude || !hasLongitude) {
+        setStepError('Bitte Art, Nummer sowie Breiten- und Längengrad erfassen.');
+        return false;
+      }
+
+      setStepError(null);
+      return true;
+    }
+
+    if (step === 2) {
+      if (!draftTree.trafficSafetyExpectation) {
+        setTrafficSafetyError('Bitte Sicherheitserwartung Verkehr auswählen.');
+        setStepError('Bitte Schritt 2 vervollständigen.');
+        return false;
+      }
+
+      setTrafficSafetyError(null);
+      setStepError(null);
+      return true;
+    }
+
+    if (!hasAnyTrunkDiameterValue(draftTree)) {
+      setDiameterError('Mindestens ein Stammdurchmesser muss größer als 0 sein.');
+      setStepError('Bitte in Schritt 3 mindestens einen Stammdurchmesser > 0 angeben.');
+      return false;
+    }
+
+    setDiameterError(null);
+    setStepError(null);
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (!validateStep(currentStep)) {
+      return;
+    }
+    setCurrentStep((prev) => (prev === 3 ? prev : ((prev + 1) as 1 | 2 | 3)));
+  };
+
+  const handlePrevStep = () => {
+    setStepError(null);
+    setCurrentStep((prev) => (prev === 1 ? prev : ((prev - 1) as 1 | 2 | 3)));
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSubmitError(null);
+    setStepError(null);
+
+    if (currentStep !== 3 || !canSubmitOnStepThree) {
+      return;
+    }
+
+    if (!validateStep(3)) {
+      return;
+    }
+
     let hasError = false;
     if (!draftTree.trafficSafetyExpectation) {
       setTrafficSafetyError('Bitte Sicherheitserwartung Verkehr auswählen.');
@@ -188,6 +269,9 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
     if (hasError) {
       return;
     }
+
+    setIsSubmitting(true);
+
     const payload = mapTreeToApiPayload({
       greenAreaId,
       number: parseInteger(draftTree.number),
@@ -223,7 +307,6 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
         createdTree = undefined;
       }
       onTreeCreated(createdTree);
-      alert('Baum erfolgreich hinzugefügt');
       setDraftTree({
         greenAreaId,
         number: '',
@@ -241,9 +324,14 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       setDiameterError(null);
       setTrafficSafetyError(null);
       setShowLocationPicker(false);
+      setCurrentStep(1);
+      setStepError(null);
     } catch (error) {
       console.error('Error creating tree:', error);
-      alert('Fehler beim Hinzufügen des Baumes');
+      setSubmitError('Fehler beim Hinzufügen des Baumes. Baum Nummer bereits vergeben.');
+      setCurrentStep(1);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -265,6 +353,30 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
 
   return (
     <form onSubmit={handleSubmit}>
+      <div className="inspection-stepper mb-3" role="tablist" aria-label="Baum in drei Schritten hinzufügen">
+        <button
+          type="button"
+          className={`inspection-stepper__step${currentStep === 1 ? ' inspection-stepper__step--active' : ''}`}
+          onClick={() => setCurrentStep(1)}
+        >
+          1. Basis
+        </button>
+        <button
+          type="button"
+          className={`inspection-stepper__step${currentStep === 2 ? ' inspection-stepper__step--active' : ''}`}
+          onClick={() => setCurrentStep(2)}
+        >
+          2. Baumdaten
+        </button>
+        <button
+          type="button"
+          className={`inspection-stepper__step${currentStep === 3 ? ' inspection-stepper__step--active' : ''}`}
+          onClick={() => setCurrentStep(3)}
+        >
+          3. Stamm
+        </button>
+      </div>
+
       {isPrefillingLastTree ? (
         <div className="text-muted small mb-2">Letzten Baum laden...</div>
       ) : null}
@@ -274,6 +386,21 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
       {lastTreePrefilled && !lastTreePrefillError ? (
         <div className="text-success small mb-2">Daten des zuletzt erstellten Baums wurden vorbelegt.</div>
       ) : null}
+      {submitError ? (
+        <div className="alert alert-danger py-2" role="alert">
+          {submitError}
+        </div>
+      ) : null}
+
+      {stepError ? (
+        <div className="alert alert-warning py-2" role="alert">
+          {stepError}
+        </div>
+      ) : null}
+      
+
+      {currentStep === 1 && (
+      <>
       <div className="mb-3">
         <label htmlFor="species" className="form-label">
           Art
@@ -284,7 +411,6 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           id="species"
           value={draftTree.species ?? ''}
           onChange={(event) => setDraftTree((current) => ({ ...current, species: event.target.value }))}
-          required
         />
         <label htmlFor="number" className="form-label">
           Nummer
@@ -300,7 +426,6 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
               number: event.target.value,
             }))
           }
-          required
         />
       </div>
       <div className="mb-3">
@@ -318,7 +443,6 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
               latitude: event.target.value,
             }))
           }
-          required
           step="any"
         />
       </div>
@@ -337,7 +461,6 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
               longitude: event.target.value,
             }))
           }
-          required
           step="any"
         />
       </div>
@@ -366,6 +489,11 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           />
         )}
       </div>
+      </>
+      )}
+
+      {currentStep === 2 && (
+      <>
       <div className="mb-3">
         <label htmlFor="treeSizeMeters" className="form-label">
           Baumhöhe (m)
@@ -381,7 +509,6 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
               treeSizeMeters: event.target.value,
             }))
           }
-          required
           min={0}
           step="any"
         />
@@ -401,7 +528,6 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
               crownDiameterMeters: event.target.value,
             }))
           }
-          required
           min={0}
           step="any"
         />
@@ -421,7 +547,6 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
               numberOfTrunks: event.target.value,
             }))
           }
-          required
           min={1}
         />
       </div>
@@ -440,8 +565,8 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
               setTrafficSafetyError(null);
             }
           }}
-          required
         >
+          <option value="">Bitte wählen</option>
           <option value="Keine">Keine</option>
           <option value="Höher">Höher</option>
           <option value="Niedriger">Niedriger</option>
@@ -452,6 +577,11 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           <div className="text-muted small">Bitte wählen Sie die Sicherheitserwartung für den Verkehr.</div>
         )}
       </div>
+      </>
+      )}
+
+      {currentStep === 3 && (
+      <>
       <div className="mb-3">
         <div className="d-flex justify-content-between align-items-baseline mb-1">
           <span className="form-label mb-0">Stammdurchmesser</span>
@@ -514,9 +644,33 @@ const TreeForm: React.FC<TreeFormProps> = ({ greenAreaId, defaultCenter, onTreeC
           </div>
         )}
       </div>
-      <button type="submit" className="btn btn-primary">
-        Baum hinzufügen
-      </button>
+      </>
+      )}
+
+      <div className="inspection-form__actions d-flex justify-content-between align-items-center gap-2 flex-wrap">
+        <div className="text-muted small">
+          {currentStep === 1 ? 'Schritt 1 von 3' : currentStep === 2 ? 'Schritt 2 von 3' : 'Schritt 3 von 3'}
+        </div>
+        <div className="d-flex gap-2 ms-auto">
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-sm"
+            onClick={handlePrevStep}
+            disabled={currentStep === 1 || isSubmitting}
+          >
+            Zurück
+          </button>
+          {currentStep < 3 ? (
+            <button type="button" className="btn btn-primary btn-sm" onClick={handleNextStep} disabled={isSubmitting}>
+              Weiter
+            </button>
+          ) : (
+            <button type="submit" className="btn btn-primary btn-sm" disabled={isSubmitting || !canSubmitOnStepThree}>
+              {isSubmitting ? 'Wird gespeichert...' : 'Baum hinzufügen'}
+            </button>
+          )}
+        </div>
+      </div>
     </form>
   );
 };

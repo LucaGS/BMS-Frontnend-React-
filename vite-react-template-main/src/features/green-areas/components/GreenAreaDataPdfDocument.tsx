@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 6,
     fontSize: 8,
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     color: '#61718a',
   },
   cell: {
@@ -64,6 +64,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     fontSize: 8.8,
     color: '#172033',
+  },
+  labelCell: {
+    fontFamily: 'Helvetica-Bold',
+    backgroundColor: '#f7f9fc',
+    color: '#3f4d63',
   },
   summaryColNumber: { width: '8%' },
   summaryColSpecies: { width: '17%' },
@@ -142,10 +147,17 @@ const getActiveMarkings = <T extends Record<string, unknown>>(
       return description ? `${label} (${description})` : label;
     });
 
-const TableRow: React.FC<{ columns: Array<{ text: string; style: any }>; header?: boolean }> = ({ columns, header = false }) => (
+const TableRow: React.FC<{ columns: Array<{ text: string; style: any; isLabel?: boolean }>; header?: boolean }> = ({ columns, header = false }) => (
   <View style={styles.row}>
     {columns.map((column, index) => (
-      <Text key={`${index}-${column.text}`} style={[header ? styles.cellHeader : styles.cell, column.style]}>
+      <Text
+        key={`${index}-${column.text}`}
+        style={[
+          header ? styles.cellHeader : styles.cell,
+          !header && column.isLabel ? styles.labelCell : null,
+          column.style,
+        ]}
+      >
         {column.text}
       </Text>
     ))}
@@ -186,45 +198,45 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
 
               <TableRow
                 columns={[
-                  { text: 'Baumnummer', style: styles.metaLabel },
+                  { text: 'Baumnummer', style: styles.metaLabel, isLabel: true },
                   { text: formatNumber(entry.tree.number), style: styles.metaValue },
-                  { text: 'Koordinaten', style: styles.metaLabel },
+                  { text: 'Koordinaten', style: styles.metaLabel, isLabel: true },
                   { text: getCoordinatesLabel(entry.tree), style: styles.metaValue },
                 ]}
               />
               <TableRow
                 columns={[
-                  { text: 'Letzte Kontrolle', style: styles.metaLabel },
+                  { text: 'Letzte Kontrolle', style: styles.metaLabel, isLabel: true },
                   { text: inspection ? formatDateTime(inspection.performedAt) : 'Keine Kontrolle', style: styles.metaValue },
-                  { text: 'Nächste Kontrolle', style: styles.metaLabel },
+                  { text: 'Nächste Kontrolle', style: styles.metaLabel, isLabel: true },
                   { text: formatNextInspectionDate(entry.tree.nextInspection), style: styles.metaValue },
                 ]}
               />
               <TableRow
                 columns={[
-                  { text: 'Verkehrssicherheit', style: styles.metaLabel },
+                  { text: 'Verkehrssicherheit', style: styles.metaLabel, isLabel: true },
                   { text: inspection ? (inspection.isSafeForTraffic ? 'Verkehrssicher' : 'Nicht verkehrssicher') : 'Keine Kontrolle', style: styles.metaValue },
-                  { text: 'Vitalität', style: styles.metaLabel },
+                  { text: 'Vitalität', style: styles.metaLabel, isLabel: true },
                   { text: inspection ? formatVitality(inspection.vitality) : '-', style: styles.metaValue },
                 ]}
               />
               <TableRow
                 columns={[
-                  { text: 'Entwicklungsstadium', style: styles.metaLabel },
+                  { text: 'Entwicklungsstadium', style: styles.metaLabel, isLabel: true },
                   { text: inspection?.developmentalStage || '-', style: styles.metaValue },
-                  { text: 'Intervall', style: styles.metaLabel },
+                  { text: 'Intervall', style: styles.metaLabel, isLabel: true },
                   { text: inspection ? `${formatNumber(inspection.newInspectionIntervall)} Monate` : '-', style: styles.metaValue },
                 ]}
               />
               <TableRow
                 columns={[
-                  { text: 'Sicherheitserwartung', style: styles.metaLabel },
+                  { text: 'Sicherheitserwartung', style: styles.metaLabel, isLabel: true },
                   { text: entry.tree.trafficSafetyExpectation || '-', style: { width: '74%' } },
                 ]}
               />
               <TableRow
                 columns={[
-                  { text: 'Beschreibung', style: styles.metaLabel },
+                  { text: 'Beschreibung', style: styles.metaLabel, isLabel: true },
                   { text: inspection?.description?.trim() ? inspection.description : 'Keine Beschreibung erfasst.', style: { width: '74%' } },
                 ]}
               />
@@ -235,7 +247,7 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
                   <TableRow
                     key={`${index}-${measure}`}
                     columns={[
-                      { text: String(index + 1), style: { width: '12%' } },
+                      { text: String(index + 1), style: { width: '12%' }, isLabel: true },
                       { text: measure, style: { width: '88%' } },
                     ]}
                   />
@@ -243,7 +255,7 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
               ) : (
                 <TableRow
                   columns={[
-                    { text: '1', style: { width: '12%' } },
+                    { text: '1', style: { width: '12%' }, isLabel: true },
                     { text: 'Keine Pflegemassnahmen erfasst.', style: { width: '88%' } },
                   ]}
                 />
@@ -263,7 +275,7 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
                   <TableRow
                     key={area}
                     columns={[
-                      { text: area, style: styles.notesLabel },
+                      { text: area, style: styles.notesLabel, isLabel: true },
                       { text: markings, style: styles.notesMarkings },
                       { text: notes && String(notes).trim() ? String(notes) : 'Keine Notizen erfasst.', style: styles.notesText },
                     ]}
@@ -272,7 +284,7 @@ const GreenAreaDataPdfDocument: React.FC<GreenAreaDataPdfDocumentProps> = ({
               ) : (
                 <TableRow
                   columns={[
-                    { text: 'Kontrolle', style: styles.notesLabel },
+                    { text: 'Kontrolle', style: styles.notesLabel, isLabel: true },
                     { text: '-', style: styles.notesMarkings },
                     { text: 'Keine Kontrolle vorhanden.', style: styles.notesText },
                   ]}

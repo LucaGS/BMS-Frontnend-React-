@@ -18,7 +18,7 @@ import {
 import { InspectionSection } from './InspectionFormSections';
 import type { ArboriculturalMeasure } from '@/entities/arboriculturalMeasure';
 import { mapMeasuresFromApi } from '@/entities/arboriculturalMeasure';
-import { VITALITY_OPTIONS } from '@/entities/inspection';
+import { normalizeVitality, VITALITY_OPTIONS } from '@/entities/inspection';
 import { authFetch } from '@/shared/lib/auth';
 
 type InspectionFormProps = {
@@ -46,6 +46,28 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
   const [isCreatingMeasure, setIsCreatingMeasure] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [canSubmitOnStepThree, setCanSubmitOnStepThree] = useState(false);
+  const [prefillLoading, setPrefillLoading] = useState<'tree' | 'global' | null>(null);
+  const [prefillMessage, setPrefillMessage] = useState<string | null>(null);
+  const [prefillError, setPrefillError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentStep !== 3) {
+      setCanSubmitOnStepThree(false);
+      return;
+    }
+
+    // Prevent accidental submit on the same tap that switches from step 2 to step 3.
+    const timer = window.setTimeout(() => {
+      setCanSubmitOnStepThree(true);
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [currentStep]);
 
   useEffect(() => {
     const loadMeasures = async () => {
@@ -81,6 +103,205 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
     setStemBaseInspection(createInitialStemBaseInspection());
     setOpenSections(createInitialOpenSections());
     setSelectedMeasureIds([]);
+    setCurrentStep(1);
+    setStepError(null);
+    setPrefillMessage(null);
+    setPrefillError(null);
+  };
+
+  const toDateTimeLocalValue = (value: string | null | undefined): string => {
+    if (!value) {
+      return '';
+    }
+
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return '';
+    }
+
+    const timezoneOffset = parsedDate.getTimezoneOffset();
+    const localDate = new Date(parsedDate.getTime() - timezoneOffset * 60_000);
+    return localDate.toISOString().slice(0, 16);
+  };
+
+  const getMostRecentInspection = (inspections: any[]): any | null => {
+    if (!Array.isArray(inspections) || inspections.length === 0) {
+      return null;
+    }
+
+    return [...inspections].sort((a, b) => {
+      const dateA = new Date(a?.performedAt ?? a?.date ?? 0).getTime();
+      const dateB = new Date(b?.performedAt ?? b?.date ?? 0).getTime();
+      if (dateA !== dateB) {
+        return dateB - dateA;
+      }
+
+      const idA = typeof a?.id === 'number' ? a.id : 0;
+      const idB = typeof b?.id === 'number' ? b.id : 0;
+      return idB - idA;
+    })[0];
+  };
+
+  const mergeSectionFromInspection = <T extends { notes: string }>(
+    inspectionSection: unknown,
+    createInitialState: () => T,
+    setSectionState: React.Dispatch<React.SetStateAction<T>>,
+  ) => {
+    const initialState = createInitialState();
+    const source = (inspectionSection ?? {}) as Record<string, unknown>;
+    const mergedState = { ...initialState } as Record<string, unknown>;
+
+    Object.keys(initialState).forEach((key) => {
+      const initialValue = (initialState as Record<string, unknown>)[key];
+      const nextValue = source[key];
+
+      if (typeof initialValue === 'boolean') {
+        mergedState[key] = typeof nextValue === 'boolean' ? nextValue : initialValue;
+        return;
+      }
+
+      if (typeof initialValue === 'string') {
+        mergedState[key] = typeof nextValue === 'string' ? nextValue : initialValue;
+      }
+    });
+
+    setSectionState(mergedState as T);
+  };
+
+  const hasSectionContent = (section: Record<string, unknown>): boolean =>
+    Object.entries(section).some(([key, value]) => {
+      if (key === 'notes' || key.endsWith('Description')) {
+        return typeof value === 'string' && value.trim().length > 0;
+      }
+      return value === true;
+    });
+
+  const applyInspectionPrefill = (inspectionData: any, sourceLabel: string) => {
+    const crown = inspectionData?.crownInspection ?? inspectionData?.crown ?? {};
+    const trunk = inspectionData?.trunkInspection ?? inspectionData?.trunk ?? {};
+    const stemBase = inspectionData?.stemBaseInspection ?? inspectionData?.stemBase ?? inspectionData?.root ?? {};
+
+    setForm((prev) => ({
+      ...prev,
+      performedAt: toDateTimeLocalValue(inspectionData?.performedAt ?? inspectionData?.date) || prev.performedAt,
+      isSafeForTraffic:
+        typeof inspectionData?.isSafeForTraffic === 'boolean'
+          ? inspectionData.isSafeForTraffic
+          : prev.isSafeForTraffic,
+      newInspectionIntervall:
+        typeof inspectionData?.newInspectionIntervall === 'number'
+          ? inspectionData.newInspectionIntervall
+          : prev.newInspectionIntervall,
+      developmentalStage:
+        typeof inspectionData?.developmentalStage === 'string'
+          ? inspectionData.developmentalStage
+          : prev.developmentalStage,
+      vitality: normalizeVitality(inspectionData?.vitality),
+      description: typeof inspectionData?.description === 'string' ? inspectionData.description : prev.description,
+    }));
+
+    mergeSectionFromInspection(crown, createInitialCrownInspection, setCrownInspection);
+    mergeSectionFromInspection(trunk, createInitialTrunkInspection, setTrunkInspection);
+    mergeSectionFromInspection(stemBase, createInitialStemBaseInspection, setStemBaseInspection);
+
+    if (Array.isArray(inspectionData?.arboriculturalMeasureIds)) {
+      setSelectedMeasureIds(inspectionData.arboriculturalMeasureIds.filter((id: unknown) => typeof id === 'number'));
+    }
+
+    const crownHasData = hasSectionContent(crown as Record<string, unknown>);
+    const trunkHasData = hasSectionContent(trunk as Record<string, unknown>);
+    const stemBaseHasData = hasSectionContent(stemBase as Record<string, unknown>);
+    setOpenSections({
+      crown: crownHasData,
+      trunk: trunkHasData,
+      stemBase: stemBaseHasData,
+    });
+
+    setCurrentStep(1);
+    setStepError(null);
+    setPrefillError(null);
+    setPrefillMessage(`Daten wurden aus ${sourceLabel} übernommen.`);
+  };
+
+  const fetchInspectionDetailsById = async (id: number): Promise<any | null> => {
+    const response = await authFetch(`${API_BASE_URL}/api/Inspections/${id}`);
+    if (!response.ok) {
+      return null;
+    }
+    return response.json();
+  };
+
+  const handlePrefillFromTreeLatest = async () => {
+    setPrefillLoading('tree');
+    setPrefillError(null);
+    setPrefillMessage(null);
+
+    try {
+      const listResponse = await authFetch(`${API_BASE_URL}/api/Inspections/ByTreeId/${treeId}`);
+      if (!listResponse.ok) {
+        throw new Error('Tree inspections unavailable');
+      }
+
+      const listData = await listResponse.json();
+      const latestInspection = getMostRecentInspection(Array.isArray(listData) ? listData : []);
+      if (!latestInspection) {
+        setPrefillError('Für diesen Baum ist noch keine Kontrolle vorhanden.');
+        return;
+      }
+
+      const detailedInspection =
+        typeof latestInspection.id === 'number'
+          ? (await fetchInspectionDetailsById(latestInspection.id)) ?? latestInspection
+          : latestInspection;
+
+      applyInspectionPrefill(detailedInspection, 'der letzten Kontrolle dieses Baums');
+    } catch (prefillLoadError) {
+      console.error('Error prefilling from latest tree inspection:', prefillLoadError);
+      setPrefillError('Die letzte Baumkontrolle konnte nicht geladen werden.');
+    } finally {
+      setPrefillLoading(null);
+    }
+  };
+
+  const handlePrefillFromGlobalLatest = async () => {
+    setPrefillLoading('global');
+    setPrefillError(null);
+    setPrefillMessage(null);
+
+    try {
+      let latestInspection: any | null = null;
+
+      const latestResponse = await authFetch(`${API_BASE_URL}/api/Inspections/GetLastCreatedInspection`);
+      if (latestResponse.ok) {
+        latestInspection = await latestResponse.json();
+      }
+
+      if (!latestInspection) {
+        const allResponse = await authFetch(`${API_BASE_URL}/api/Inspections/GetAll`);
+        if (!allResponse.ok) {
+          throw new Error('Global inspections unavailable');
+        }
+        const allData = await allResponse.json();
+        latestInspection = getMostRecentInspection(Array.isArray(allData) ? allData : []);
+      }
+
+      if (!latestInspection) {
+        setPrefillError('Es ist noch keine Kontrolle vorhanden.');
+        return;
+      }
+
+      const detailedInspection =
+        typeof latestInspection.id === 'number'
+          ? (await fetchInspectionDetailsById(latestInspection.id)) ?? latestInspection
+          : latestInspection;
+
+      applyInspectionPrefill(detailedInspection, 'der insgesamt letzten Kontrolle');
+    } catch (prefillLoadError) {
+      console.error('Error prefilling from latest global inspection:', prefillLoadError);
+      setPrefillError('Die insgesamt letzte Kontrolle konnte nicht geladen werden.');
+    } finally {
+      setPrefillLoading(null);
+    }
   };
 
   const buildPayload = () => ({
@@ -96,8 +317,16 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (currentStep !== 3 || !canSubmitOnStepThree) {
+      setCurrentStep(3);
+      setStepError('Bitte Angaben in Schritt 3 prüfen und dann speichern.');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
+    setStepError(null);
 
     try {
       const payload = buildPayload();
@@ -135,11 +364,93 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
     description,
   } = form;
 
+  const canGoNextFromStepOne = performedAt.trim().length > 0;
+
+  const stepLabel =
+    currentStep === 1 ? 'Basisdaten' : currentStep === 2 ? 'Befunde' : 'Massnahmen';
+
+  const handleNextStep = () => {
+    if (currentStep === 1 && !canGoNextFromStepOne) {
+      setStepError('Bitte zuerst ein Kontrolldatum erfassen.');
+      return;
+    }
+
+    setStepError(null);
+    setCurrentStep((prev) => (prev === 3 ? prev : ((prev + 1) as 1 | 2 | 3)));
+  };
+
+  const handlePreviousStep = () => {
+    setStepError(null);
+    setCurrentStep((prev) => (prev === 1 ? prev : ((prev - 1) as 1 | 2 | 3)));
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="card shadow-sm border-0 mt-3">
+    <form onSubmit={handleSubmit} className="card shadow-sm border-0 mt-3 inspection-form">
       <div className="card-body">
+        <div className="border rounded-3 p-3 bg-light mb-3">
+          <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+            <div>
+              <div className="fw-semibold">Daten übernehmen</div>
+              <small className="text-muted">
+                Wähle aus, ob Werte aus der letzten Baumkontrolle oder der insgesamt letzten Kontrolle übernommen werden sollen.
+              </small>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                onClick={handlePrefillFromTreeLatest}
+                disabled={isSubmitting || prefillLoading !== null}
+              >
+                {prefillLoading === 'tree' ? 'Lade...' : 'Letzte Kontrolle dieses Baums'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-primary"
+                onClick={handlePrefillFromGlobalLatest}
+                disabled={isSubmitting || prefillLoading !== null}
+              >
+                {prefillLoading === 'global' ? 'Lade...' : 'Insgesamt letzte Kontrolle'}
+              </button>
+            </div>
+          </div>
+          {prefillMessage && <div className="text-success small mt-2">{prefillMessage}</div>}
+          {prefillError && <div className="text-danger small mt-2">{prefillError}</div>}
+        </div>
+
+        <div className="inspection-stepper mb-3" role="tablist" aria-label="Schritte Kontrolle erfassen">
+          <button
+            type="button"
+            className={`inspection-stepper__step${currentStep === 1 ? ' inspection-stepper__step--active' : ''}`}
+            onClick={() => setCurrentStep(1)}
+          >
+            1 Basis
+          </button>
+          <button
+            type="button"
+            className={`inspection-stepper__step${currentStep === 2 ? ' inspection-stepper__step--active' : ''}`}
+            onClick={() => setCurrentStep(2)}
+          >
+            2 Befunde
+          </button>
+          <button
+            type="button"
+            className={`inspection-stepper__step${currentStep === 3 ? ' inspection-stepper__step--active' : ''}`}
+            onClick={() => setCurrentStep(3)}
+          >
+            3 Abschluss
+          </button>
+        </div>
+
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <div className="text-muted small">Schritt {currentStep} von 3</div>
+          <span className="badge text-bg-light border">{stepLabel}</span>
+        </div>
+
         <div className="row g-3">
-          <div className="col-md-6">
+          {currentStep === 1 && (
+            <>
+              <div className="col-md-6">
             <label htmlFor="performedAt" className="form-label">
               Kontrolldatum
             </label>
@@ -152,6 +463,9 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
               disabled={isSubmitting}
               required
             />
+            {!canGoNextFromStepOne && (
+              <small className="text-danger d-block mt-1">Kontrolldatum ist erforderlich.</small>
+            )}
             <small className="text-muted">Wann wurde die Kontrolle durchgeführt?</small>
           </div>
 
@@ -231,6 +545,63 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
             </select>
             <small className="text-muted">Vitalität anhand von fünf Stufen wählen.</small>
           </div>
+            </>
+          )}
+
+          {currentStep === 2 && (
+            <>
+              <InspectionSection
+                sectionKey="crown"
+                title="Kronen"
+                badge="Krone"
+                description="Schnell erfassbare Mängel in der Krone über markante Checkboxen."
+                notesId="crownNotes"
+                notesLabel="Notizen Krone"
+                notesPlaceholder="z. B. Totholz in oberer Krone, Sicherung vorhanden ..."
+                state={crownInspection}
+                setState={setCrownInspection}
+                items={crownCheckboxes}
+                isOpen={openSections.crown}
+                onToggle={() => toggleSection('crown')}
+                isSubmitting={isSubmitting}
+              />
+
+              <InspectionSection
+                sectionKey="trunk"
+                title="Stamm"
+                badge="Stamm"
+                description="Alle Beobachtungen am Stamm markieren und dokumentieren."
+                notesId="trunkNotes"
+                notesLabel="Notizen Stamm"
+                notesPlaceholder="z. B. Wundverschluss, Risse, Harzfluss ..."
+                state={trunkInspection}
+                setState={setTrunkInspection}
+                items={trunkCheckboxes}
+                isOpen={openSections.trunk}
+                onToggle={() => toggleSection('trunk')}
+                isSubmitting={isSubmitting}
+              />
+
+              <InspectionSection
+                sectionKey="stemBase"
+                title="Stammfuss & Wurzelbereich"
+                badge="Stammfuss"
+                description="Befunde am Stammfuss oder im Wurzelanlauf gezielt abhaken."
+                notesId="stemBaseNotes"
+                notesLabel="Notizen Stammfuss"
+                notesPlaceholder="z. B. Freilegung, Wurzelräume, Fäule ..."
+                state={stemBaseInspection}
+                setState={setStemBaseInspection}
+                items={stemBaseCheckboxes}
+                isOpen={openSections.stemBase}
+                onToggle={() => toggleSection('stemBase')}
+                isSubmitting={isSubmitting}
+              />
+            </>
+          )}
+
+          {currentStep === 3 && (
+            <>
 
           <div className="col-12">
             <div className="border rounded-3 p-3 bg-light">
@@ -400,54 +771,8 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
               disabled={isSubmitting}
             />
           </div>
-
-          <InspectionSection
-            sectionKey="crown"
-            title="Kronen"
-            badge="Krone"
-            description="Schnell erfassbare Mängel in der Krone über markante Checkboxen."
-            notesId="crownNotes"
-            notesLabel="Notizen Krone"
-            notesPlaceholder="z. B. Totholz in oberer Krone, Sicherung vorhanden ..."
-            state={crownInspection}
-            setState={setCrownInspection}
-            items={crownCheckboxes}
-            isOpen={openSections.crown}
-            onToggle={() => toggleSection('crown')}
-            isSubmitting={isSubmitting}
-          />
-
-          <InspectionSection
-            sectionKey="trunk"
-            title="Stamm"
-            badge="Stamm"
-            description="Alle Beobachtungen am Stamm markieren und dokumentieren."
-            notesId="trunkNotes"
-            notesLabel="Notizen Stamm"
-              notesPlaceholder="z. B. Wundverschluss, Risse, Harzfluss ..."
-              state={trunkInspection}
-            setState={setTrunkInspection}
-            items={trunkCheckboxes}
-            isOpen={openSections.trunk}
-            onToggle={() => toggleSection('trunk')}
-            isSubmitting={isSubmitting}
-          />
-
-          <InspectionSection
-            sectionKey="stemBase"
-            title="Stammfuss & Wurzelbereich"
-            badge="Stammfuss"
-            description="Befunde am Stammfuss oder im Wurzelanlauf gezielt abhaken."
-            notesId="stemBaseNotes"
-            notesLabel="Notizen Stammfuss"
-            notesPlaceholder="z. B. Freilegung, Wurzelräume, Fäule ..."
-            state={stemBaseInspection}
-            setState={setStemBaseInspection}
-            items={stemBaseCheckboxes}
-            isOpen={openSections.stemBase}
-            onToggle={() => toggleSection('stemBase')}
-            isSubmitting={isSubmitting}
-          />
+            </>
+          )}
 
           {error && (
             <div className="col-12">
@@ -465,10 +790,40 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
             </div>
           )}
 
-          <div className="col-12 d-flex justify-content-end">
-            <button type="submit" className="btn btn-success" disabled={isSubmitting}>
-              {isSubmitting ? 'Wird gespeichert...' : 'Kontrolle speichern'}
-            </button>
+          {stepError && (
+            <div className="col-12">
+              <div className="alert alert-warning py-2 mb-0" role="alert">
+                {stepError}
+              </div>
+            </div>
+          )}
+
+          <div className="col-12">
+            <div className="inspection-form__actions d-flex justify-content-between align-items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={handlePreviousStep}
+                disabled={currentStep === 1 || isSubmitting}
+              >
+                Zurück
+              </button>
+
+              {currentStep < 3 ? (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleNextStep}
+                  disabled={isSubmitting}
+                >
+                  Weiter
+                </button>
+              ) : (
+                <button type="submit" className="btn btn-success" disabled={isSubmitting || !canSubmitOnStepThree}>
+                  {isSubmitting ? 'Wird gespeichert...' : 'Kontrolle speichern'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
