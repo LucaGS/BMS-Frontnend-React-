@@ -5,6 +5,12 @@ import react from '@vitejs/plugin-react';
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    allowedHosts: ['baum-verwaltungs-system.up.railway.app'],
+  },
+  preview: {
+    allowedHosts: ['baum-verwaltungs-system.up.railway.app'],
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
