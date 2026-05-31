@@ -1,0 +1,12 @@
+[variables]
+# Ensure devDependencies are available for Vite/TypeScript build steps.
+NPM_CONFIG_PRODUCTION = "false"
+
+[phases.install]
+cmds = ["cd vite-react-template-main && npm install --legacy-peer-deps"]
+
+[phases.build]
+cmds = ["cd vite-react-template-main && npm run build"]
+
+[start]
+cmd = "cd vite-react-template-main && npm run preview -- --host 0.0.0.0 --port ${PORT:-3000}"
