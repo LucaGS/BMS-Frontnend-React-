@@ -35,6 +35,11 @@ describe('InspectionForm', () => {
     await userEvent.selectOptions(screen.getByLabelText(/entwicklungsstadium/i), 'Reifungsphase');
     await userEvent.type(screen.getByLabelText(/beschreibung/i), 'Keine Mängel');
     fireEvent.change(screen.getByLabelText(/vitalität/i), { target: { value: VITALITY_OPTIONS[3] } });
+    await userEvent.click(screen.getByRole('button', { name: /weiter/i }));
+    const toggles = await screen.findAllByRole('button', { name: /ausklappen/i });
+    for (const toggle of toggles) {
+      await userEvent.click(toggle);
+    }
     await userEvent.type(screen.getByLabelText(/notizen krone/i), 'Krone ok');
     await userEvent.type(screen.getByLabelText(/^notizen stamm$/i), 'Stamm ok');
     await userEvent.type(screen.getByLabelText(/notizen stammfuss/i), 'Stammfuss ok');
@@ -72,6 +77,16 @@ describe('InspectionForm', () => {
       }),
     });
     expect(onCreated).toHaveBeenCalled();
+  });
+
+  it('defaults to no prefill', async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
+
+    render(<InspectionForm treeId={3} />);
+
+    expect(screen.getByRole('button', { name: /keine vorbefüllung/i, pressed: true })).toBeInTheDocument();
   });
 
   it('shows an error message when the request fails', async () => {

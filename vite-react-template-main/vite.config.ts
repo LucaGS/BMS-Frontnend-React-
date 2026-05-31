@@ -6,10 +6,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    allowedHosts: ['baum-verwaltungs-system.up.railway.app'],
+    allowedHosts: ['baum-verwaltungs-system.up.railway.app', 'bms-frontnend-react-demo.up.railway.app'],
   },
   preview: {
-    allowedHosts: ['baum-verwaltungs-system.up.railway.app'],
+    allowedHosts: ['baum-verwaltungs-system.up.railway.app', 'bms-frontnend-react-demo.up.railway.app'],
   },
   resolve: {
     alias: {

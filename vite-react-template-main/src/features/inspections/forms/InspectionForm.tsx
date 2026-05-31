@@ -26,6 +26,8 @@ type InspectionFormProps = {
   onInspectionCreated?: () => void;
 };
 
+type PrefillSource = 'none' | 'tree' | 'global';
+
 const createInitialOpenSections = (): OpenSectionsState => ({
   crown: false,
   trunk: false,
@@ -50,6 +52,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
   const [stepError, setStepError] = useState<string | null>(null);
   const [canSubmitOnStepThree, setCanSubmitOnStepThree] = useState(false);
   const [prefillLoading, setPrefillLoading] = useState<'tree' | 'global' | null>(null);
+  const [prefillSource, setPrefillSource] = useState<PrefillSource>('none');
   const [prefillMessage, setPrefillMessage] = useState<string | null>(null);
   const [prefillError, setPrefillError] = useState<string | null>(null);
 
@@ -105,6 +108,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
     setSelectedMeasureIds([]);
     setCurrentStep(1);
     setStepError(null);
+    setPrefillSource('none');
     setPrefillMessage(null);
     setPrefillError(null);
   };
@@ -304,6 +308,24 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
     }
   };
 
+  const handlePrefillSelection = async (source: PrefillSource) => {
+    setPrefillSource(source);
+
+    if (source === 'none') {
+      setPrefillLoading(null);
+      setPrefillError(null);
+      setPrefillMessage('Keine Vorbefüllung ausgewählt.');
+      return;
+    }
+
+    if (source === 'tree') {
+      await handlePrefillFromTreeLatest();
+      return;
+    }
+
+    await handlePrefillFromGlobalLatest();
+  };
+
   const buildPayload = () => ({
     treeId,
     ...form,
@@ -392,23 +414,34 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ treeId, onInspectionCre
             <div>
               <div className="fw-semibold">Daten übernehmen</div>
               <small className="text-muted">
-                Wähle aus, ob Werte aus der letzten Baumkontrolle oder der insgesamt letzten Kontrolle übernommen werden sollen.
+                Standard ist keine Vorbefüllung. Wähle bei Bedarf die letzte Baumkontrolle oder die insgesamt letzte Kontrolle aus.
               </small>
             </div>
-            <div className="d-flex flex-wrap gap-2">
+            <div className="d-flex flex-wrap gap-2 align-items-center">
               <button
                 type="button"
-                className="btn btn-sm btn-outline-secondary"
-                onClick={handlePrefillFromTreeLatest}
+                className={`btn btn-sm ${prefillSource === 'none' ? 'btn-secondary' : 'btn-outline-secondary'}`}
+                onClick={() => handlePrefillSelection('none')}
                 disabled={isSubmitting || prefillLoading !== null}
+                aria-pressed={prefillSource === 'none'}
+              >
+                Keine Vorbefüllung
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${prefillSource === 'tree' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => handlePrefillSelection('tree')}
+                disabled={isSubmitting || prefillLoading !== null}
+                aria-pressed={prefillSource === 'tree'}
               >
                 {prefillLoading === 'tree' ? 'Lade...' : 'Letzte Kontrolle dieses Baums'}
               </button>
               <button
                 type="button"
-                className="btn btn-sm btn-outline-primary"
-                onClick={handlePrefillFromGlobalLatest}
+                className={`btn btn-sm ${prefillSource === 'global' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => handlePrefillSelection('global')}
                 disabled={isSubmitting || prefillLoading !== null}
+                aria-pressed={prefillSource === 'global'}
               >
                 {prefillLoading === 'global' ? 'Lade...' : 'Insgesamt letzte Kontrolle'}
               </button>

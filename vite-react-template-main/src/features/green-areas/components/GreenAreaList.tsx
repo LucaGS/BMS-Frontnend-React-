@@ -85,11 +85,11 @@ const GreenAreaList: React.FC = () => {
           {!isLoading && greenAreas.length > 0 && (
             <div className="green-area-results">
               <div className="d-md-none">
-                <div className="list-group mobile-entity-list">
+                <div className="list-group mobile-entity-list green-area-mobile-list">
                   {greenAreas.map((greenArea) => (
                     <button
                       type="button"
-                      className="list-group-item list-group-item-action mobile-entity-list__item"
+                      className="list-group-item list-group-item-action mobile-entity-list__item green-area-mobile-list__item"
                       key={greenArea.id}
                       onClick={() =>
                         navigate(`/green-areas/${greenArea.id}/${greenArea.name}`, {
@@ -101,7 +101,6 @@ const GreenAreaList: React.FC = () => {
                       }
                     >
                       <div className="mobile-entity-list__header">
-                        <span className="badge text-bg-light border">Fläche #{greenArea.id}</span>
                         <span className="badge text-bg-light border">Öffnen</span>
                       </div>
                       <div className="fw-semibold mb-1">{greenArea.name}</div>

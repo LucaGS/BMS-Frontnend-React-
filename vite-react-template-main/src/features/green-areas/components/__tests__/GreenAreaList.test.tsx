@@ -20,7 +20,7 @@ describe('GreenAreaList', () => {
 
     renderWithRouter(<GreenAreaList />, { route: '/green-areas', path: '/green-areas' });
 
-    expect(await screen.findByText(/stadtpark/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/stadtpark/i)).length).toBeGreaterThan(0);
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/api/GreenAreas/GetAll'),
       expect.any(Object)
@@ -32,7 +32,7 @@ describe('GreenAreaList', () => {
 
     renderWithRouter(<GreenAreaList />, { route: '/green-areas', path: '/green-areas' });
 
-    const toggleButton = await screen.findByRole('button', { name: /grünfläche hinzufügen/i });
+    const [toggleButton] = await screen.findAllByRole('button', { name: /grünfläche hinzufügen/i });
     await userEvent.click(toggleButton);
 
     expect(screen.getByText(/name der grünfläche/i)).toBeInTheDocument();
